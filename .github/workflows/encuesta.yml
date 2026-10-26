@@ -1,0 +1,43 @@
+name: Encuesta de vendedores
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # el buzón guarda 12 h; se recoge cada 15 min
+  workflow_dispatch:
+
+concurrency:
+  group: encuesta
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  encuesta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -q openpyxl
+      - name: Preparar rama de datos
+        run: |
+          git config user.name "monitor-lives"
+          git config user.email "monitor-lives@users.noreply.github.com"
+          git fetch -q origin data
+          git worktree add -q _data origin/data
+          git -C _data checkout -q -B data origin/data
+      - name: Recoger respuestas y generar Excel
+        env:
+          DATA_DIR: _data/data
+        run: python3 encuesta.py
+      - name: Guardar
+        run: |
+          cd _data && git add -A data
+          git diff --cached --quiet && exit 0
+          git commit -q -m "encuesta $(date -u +%FT%TZ)"
+          for i in 1 2 3 4 5; do
+            git push -q origin data && exit 0
+            git pull -q --rebase origin data || { git rebase --abort; git pull -q --no-rebase -X ours origin data; }
+            sleep 3
+          done
+          exit 1

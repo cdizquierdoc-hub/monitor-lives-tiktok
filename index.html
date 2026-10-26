@@ -103,6 +103,7 @@
   .pill.ofi{background:rgba(234,179,8,.18);color:#a16207}
   @media (prefers-color-scheme:dark){.pill.ofi{color:#facc15}.red.tt{background:#e5e7eb;color:#111}}
   .aviso-ig{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:12.5px;color:var(--mute);margin-bottom:12px}
+  .encuesta-box{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:16px;font-size:13.5px}
   h2.seccion{font-size:16px;margin:4px 0 10px;display:block}
   .seg{display:flex;gap:6px;margin-bottom:10px}
   .seg label{border:1px solid var(--line);border-radius:10px;padding:7px 12px;font-size:13.5px;cursor:pointer}
@@ -349,6 +350,16 @@
 
 <div class="modal" id="modal" onclick="if(event.target===this)cerrarPanel()">
   <div class="panel">
+    <div class="encuesta-box">
+      <b>📋 Encuesta para vendedores</b> — compártela por WhatsApp para que cada vendedor registre su TikTok, su agencia y cuentas de la competencia.
+      <div class="row" style="margin-top:8px">
+        <input type="text" id="enc-link" readonly style="flex:1;min-width:180px;font:13px ui-monospace,monospace;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
+        <button type="button" id="enc-copiar">Copiar link</button>
+        <a class="u" id="enc-abrir" target="_blank" rel="noopener">Abrir ↗</a>
+        <a class="u" href="https://github.com/cdizquierdoc-hub/monitor-lives-tiktok/raw/data/data/encuesta/Encuesta_TikTok_Cresa.xlsx">⬇ Excel de respuestas</a>
+      </div>
+      <div class="hint" id="enc-resumen" style="margin-top:6px"></div>
+    </div>
     <div class="row" style="margin-top:0"><h3>Agregar cuentas</h3><button class="close" onclick="cerrarPanel()" aria-label="Cerrar">×</button></div>
     <div class="seg">
       <label><input type="radio" name="ptipo" value="propio" checked>Cresa</label>
@@ -441,7 +452,7 @@ async function cargar() {
   if ($('#detalle').classList.contains('open') && DETALLE) abrirDetalle(DETALLE);
 }
 
-const CADENAS = {CRECOS: 'Crecos', ORVE: 'Orve Hogar', JAPON: 'Japón', 'JAPÓN': 'Japón', MOTOZONE: 'Motozone', PAGAMENOS: 'Pagamenos', PAGA: 'Pagamenos'};
+const CADENAS = {CRECOS: 'Crecos', ORVE: 'Orve Hogar', JAPON: 'Japón', 'JAPÓN': 'Japón', MOTOZONE: 'Motozone', PAGAMENOS: 'Pagamenos', PAGA: 'Pagamenos', SAMSUNG: 'Samsung'};
 const cadenaDe = a => CADENAS[String(a || '').trim().split(/\s+/)[0].toUpperCase()] || 'Otra';
 function opciones(sel, todos, valores) {
   const actual = sel.value;
@@ -997,7 +1008,18 @@ function ayudaPanel() {
   actualizarInfo();
 }
 document.querySelectorAll('input[name=ptipo]').forEach(r => r.addEventListener('change', ayudaPanel));
-function abrirPanel(tipo) { if (typeof tipo === 'string') document.querySelector(`input[name=ptipo][value=${tipo}]`).checked = true; ayudaPanel(); $('#modal').classList.add('open'); renderPanel(); setTimeout(() => $('#nuevos').focus(), 50); }
+const ENC_URL = 'https://cdizquierdoc-hub.github.io/monitor-lives-tiktok/encuesta/';
+$('#enc-link').value = ENC_URL; $('#enc-abrir').href = ENC_URL;
+$('#enc-copiar').addEventListener('click', () => { navigator.clipboard?.writeText(ENC_URL).then(() => $('#enc-copiar').textContent = '¡Copiado!', () => $('#enc-link').select()); });
+async function resumenEncuesta() {
+  try {
+    const r = await fetch(urlDatos(SHA, 'encuesta/resumen.json'), {cache: 'no-store'}); if (!r.ok) throw 0;
+    const x = await r.json();
+    $('#enc-resumen').textContent = x.respuestas + ' respuestas · ' + x.vendedores + ' cuentas de vendedores · ' + x.competencia + ' cuentas de competencia · ' +
+      x.agencias_con_respuesta + ' de ' + x.agencias_total + ' agencias respondieron · actualizado ' + fmtF(x.actualizado);
+  } catch (e) { $('#enc-resumen').textContent = 'Aún no hay respuestas. El Excel se genera cada 15 minutos.'; }
+}
+function abrirPanel(tipo) { resumenEncuesta(); if (typeof tipo === 'string') document.querySelector(`input[name=ptipo][value=${tipo}]`).checked = true; ayudaPanel(); $('#modal').classList.add('open'); renderPanel(); setTimeout(() => $('#nuevos').focus(), 50); }
 function cerrarPanel() { $('#modal').classList.remove('open'); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarPanel(); });
 

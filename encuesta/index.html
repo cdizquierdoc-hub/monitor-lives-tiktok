@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Encuesta TikTok · SAPO</title>
+<meta name="description" content="Registra tu cuenta de TikTok de ventas y cuéntanos qué cuentas de la competencia conoces.">
+<meta property="og:title" content="Encuesta TikTok de vendedores · Cresa">
+<meta property="og:description" content="2 minutos: tu usuario de TikTok, tu agencia y cuentas de la competencia que conozcas.">
+<style>
+  /* Layout: una sola columna tipo formulario móvil, tarjetas por paso */
+  :root{
+    --bg:#f3f6f4; --card:#ffffff; --ink:#0f1f17; --mute:#5b6b63; --line:#dfe7e2;
+    --frog:#16a34a; --frog-ink:#0f7a37; --soft:#e8f6ee; --err:#dc2626; --them:#7c3aed;
+    --radius:14px;
+    --f-body: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){:root{--bg:#0b1310;--card:#121c18;--ink:#e6efe9;--mute:#94a69c;--line:#22312a;--soft:#13281d;--frog:#22c55e;--frog-ink:#4ade80;--them:#a78bfa;color-scheme:dark}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);-webkit-text-size-adjust:100%}
+  .wrap{max-width:620px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right)) 60px max(16px,env(safe-area-inset-left))}
+  header{display:flex;gap:12px;align-items:center;margin:6px 0 18px}
+  .logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#22c55e,#14b8c4);display:grid;place-items:center;font-size:22px;flex:none}
+  h1{font-size:21px;margin:0;line-height:1.2;text-wrap:balance}
+  .sub{color:var(--mute);font-size:13.5px;margin-top:2px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:12px}
+  .paso{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--frog-ink);margin-bottom:4px}
+  h2{font-size:17px;margin:0 0 4px}
+  p.hint,.hint{color:var(--mute);font-size:13px;margin:2px 0 10px}
+  label.lbl{display:block;font-weight:600;font-size:14px;margin:14px 0 6px}
+  label.lbl:first-of-type{margin-top:8px}
+  .opt{font-weight:400;color:var(--mute)}
+  input[type=text],select{width:100%;font:inherit;font-size:16px;padding:12px 13px;border:1.5px solid var(--line);border-radius:11px;background:var(--bg);color:var(--ink);outline:none}
+  input[type=text]:focus,select:focus{border-color:var(--frog);background:var(--card)}
+  .at{position:relative}
+  .at span{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--mute);font-weight:600;pointer-events:none}
+  .at input{padding-left:30px}
+  .prev{font-size:13px;margin-top:7px;color:var(--mute);word-break:break-all}
+  .prev a{color:var(--frog-ink);font-weight:600}
+  .bad{border-color:var(--err)!important}
+  .msg-err{color:var(--err);font-size:13px;margin-top:6px}
+  /* combo de agencias */
+  .combo{position:relative}
+  .lista{position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--card);border:1px solid var(--line);border-radius:11px;max-height:290px;overflow:auto;z-index:5;box-shadow:0 12px 30px rgba(0,0,0,.14)}
+  .lista button{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;font:inherit;padding:10px 13px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);cursor:pointer}
+  .lista button:last-child{border-bottom:0}
+  .lista button.act,.lista button:hover{background:var(--soft)}
+  .lista mark{background:none;color:var(--frog-ink);font-weight:700}
+  .cad{font-size:11.5px;color:var(--mute);white-space:nowrap}
+  .vacio{padding:12px 13px;color:var(--mute);font-size:13.5px}
+  .elegida{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--soft);border:1.5px solid var(--frog);border-radius:11px;padding:11px 13px;font-weight:600}
+  .elegida button{font:inherit;font-size:13px;background:none;border:0;color:var(--frog-ink);cursor:pointer;font-weight:600}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chips label{border:1.5px solid var(--line);border-radius:999px;padding:8px 14px;cursor:pointer;font-size:14px;user-select:none}
+  .chips input{position:absolute;opacity:0;pointer-events:none}
+  .chips label:has(input:checked){border-color:var(--frog);background:var(--soft);color:var(--frog-ink);font-weight:600}
+  .chips label:has(input:focus-visible){outline:2px solid var(--frog);outline-offset:2px}
+  .check{display:flex;gap:8px;align-items:center;font-size:13.5px;color:var(--mute);margin-top:8px}
+  .comp{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px;display:grid;gap:8px;background:var(--bg)}
+  .comp-head{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:700;color:var(--them);letter-spacing:.04em;text-transform:uppercase}
+  .comp-head button{font:inherit;font-size:13px;color:var(--mute);background:none;border:0;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:500}
+  .add{width:100%;margin-top:10px;font:inherit;font-weight:600;padding:11px;border:1.5px dashed var(--line);border-radius:11px;background:none;color:var(--ink);cursor:pointer}
+  .add:hover{border-color:var(--them);color:var(--them)}
+  .enviar{width:100%;font:inherit;font-size:17px;font-weight:700;padding:15px;border:0;border-radius:13px;background:var(--frog);color:#fff;cursor:pointer;margin-top:4px}
+  .enviar:disabled{opacity:.6;cursor:wait}
+  .enviar:focus-visible,.add:focus-visible,button:focus-visible{outline:2px solid var(--frog);outline-offset:2px}
+  .ok{text-align:center;padding:34px 18px}
+  .ok .big{font-size:52px;line-height:1}
+  .ok h2{font-size:22px;margin:12px 0 6px}
+  .ok button{margin-top:16px;font:inherit;font-weight:600;padding:11px 18px;border-radius:11px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+  .pie{color:var(--mute);font-size:12px;text-align:center;margin-top:14px}
+  @media (prefers-reduced-motion:no-preference){.card{animation:in .35s ease both}@keyframes in{from{transform:translateY(6px);opacity:.6}}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🐸</div>
+    <div>
+      <h1>Encuesta TikTok para vendedores</h1>
+      <div class="sub">Cresa · Crecos, Orve Hogar, Japón, Motozone, Pagamenos y Samsung · 2 minutos</div>
+    </div>
+  </header>
+
+  <form id="f" novalidate>
+    <div class="card">
+      <div class="paso">Paso 1 de 3</div>
+      <h2>Tus datos</h2>
+      <label class="lbl" for="nombre">Nombre y apellido</label>
+      <input type="text" id="nombre" autocomplete="name" placeholder="Ej. María Fernanda León" maxlength="80">
+
+      <label class="lbl" for="buscar-ag">Tu agencia</label>
+      <div class="combo" id="combo">
+        <input type="text" id="buscar-ag" placeholder="Escribe para buscar: ej. parque california" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="lista-ag">
+        <div class="lista" id="lista-ag" role="listbox" hidden></div>
+      </div>
+      <div class="elegida" id="ag-elegida" hidden><span id="ag-texto"></span><button type="button" id="ag-cambiar">Cambiar</button></div>
+    </div>
+
+    <div class="card">
+      <div class="paso">Paso 2 de 3</div>
+      <h2>Tu cuenta de TikTok de ventas</h2>
+      <p class="hint">Escríbelo <b>exactamente</b> como aparece en tu perfil de TikTok (debajo de tu foto, empieza con @). También puedes pegar el link de tu perfil.</p>
+      <label class="lbl" for="tiktok">Usuario de TikTok</label>
+      <div class="at"><span>@</span><input type="text" id="tiktok" placeholder="tu.usuario" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="120"></div>
+      <div class="prev" id="tt-prev"></div>
+      <label class="check"><input type="checkbox" id="sin-tt"> Todavía no tengo TikTok de ventas</label>
+
+      <label class="lbl">¿Haces lives en TikTok?</label>
+      <div class="chips" id="lives">
+        <label><input type="radio" name="lives" value="Sí, seguido">Sí, seguido</label>
+        <label><input type="radio" name="lives" value="A veces">A veces</label>
+        <label><input type="radio" name="lives" value="No">No</label>
+      </div>
+
+      <label class="lbl" for="instagram">Instagram de ventas <span class="opt">(opcional)</span></label>
+      <div class="at"><span>@</span><input type="text" id="instagram" placeholder="tu.usuario" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="120"></div>
+    </div>
+
+    <div class="card">
+      <div class="paso">Paso 3 de 3 · opcional</div>
+      <h2>¿Conoces cuentas de la competencia en TikTok?</h2>
+      <p class="hint">Vendedores o tiendas de Artefacta, Marcimex, Almacenes España, Comandato, Jaher, Almacenes Al Precio u otras que hagan lives o publiquen videos.</p>
+      <div id="comps"></div>
+      <button type="button" class="add" id="add-comp">+ Agregar cuenta de la competencia</button>
+    </div>
+
+    <div class="msg-err" id="err-global" hidden></div>
+    <button class="enviar" id="enviar" type="submit">Enviar respuesta</button>
+    <div class="pie">Solo usamos estos datos para medir la presencia de Cresa en TikTok.</div>
+  </form>
+
+  <div class="card ok" id="ok" hidden>
+    <div class="big">🐸</div>
+    <h2>¡Gracias! Respuesta enviada</h2>
+    <p class="hint" id="ok-det"></p>
+    <button type="button" id="otra">Enviar otra respuesta</button>
+  </div>
+</div>
+
+<script>
+const BUZON = 'https://ntfy.sh/sapo-cresa-encuesta-609141a776';
+const AGENCIAS = ["JAPON CUENCA", "ORVE CUENCA 1", "ORVE EL ARENAL", "CRECOS CUENCA", "JAPON LOJA", "ORVE LOJA", "JAPON MACHALA", "JAPON PASAJE", "JAPON SANTA ROSA", "ORVE MACHALA 2", "ORVE PINAS", "CRECOS MACHALA", "CRECOS PINAS", "CRECOS SANTA ROSA", "JAPON PARQUE CALIFORNIA", "ORVE PARQUE CALIFORNIA", "PAGA MENOS PARQUE CALIFORNIA", "CRECOS PARQUE CALIFORNIA", "MOTOZONE PARQUE CALIFORNIA", "CRECOS POLICENTRO", "ORVE BALZAR", "ORVE SANTA LUCIA", "ORVE DAULE", "CRECOS BALZAR", "PAGA MENOS DAULE", "CRECOS DAULE", "MOTOZONE VINCES", "ORVE VINCES", "CRECOS EL DORADO", "SAMSUNG EL DORADO", "CRECOS DURAN SHOPPING", "SAMSUNG DURAN SHOPPING", "ORVE DURAN SHOPPING", "JAPON ISLA MALL DEL SOL", "SAMSUNG MALL DEL SOL", "CRECOS MALL DEL SOL", "JAPON BABAHOYO", "CRECOS BABAHOYO", "ORVE BABAHOYO", "MOTOZONE BABAHOYO", "CRECOS ALBORADA", "ORVE ALBORADA", "CRECOS CITY MALL", "SAMSUNG CITY MALL", "CRECOS RIOCENTRO NORTE", "CRECOS MALL DEL NORTE", "JAPON MALL DEL NORTE", "CRECOS NARANJAL", "CRECOS EL EMPALME", "JAPON QUEVEDO", "MOTOZONE VENTANAS", "ORVE QUEVEDO", "CRECOS QUEVEDO", "ORVE 9 DE OCTUBRE", "ORVE PORTETE", "CRECOS 9 DE OCTUBRE 1", "CRECOS 9 DE OCTUBRE 2", "CRECOS PORTETE", "CRECOS LA TRONCAL", "ORVE NARANJITO", "CRECOS NARANJITO", "JAPON MILAGRO", "ORVE MILAGRO", "CRECOS MILAGRO", "MOTOZONE MILAGRO", "ORVE MALL DEL SUR", "CRECOS EL GUASMO", "CRECOS MALL DEL SUR", "CRECOS RIOCENTRO SUR", "CRECOS PIAZZA VIA A LA COSTA", "ORVE PLAYAS", "CRECOS PLAYAS", "MOTOZONE PLAYAS", "MOTOZONE LA LIBERTAD", "PAGA MENOS LA LIBERTAD", "JAPON LA LIBERTAD", "ORVE LA LIBERTAD", "CRECOS LA LIBERTAD", "CRECOS SALINAS", "JAPON CHONE", "ORVE CHONE", "CRECOS CHONE", "PAGA MENOS CHONE", "ORVE CALCETA", "CRECOS SAN VICENTE", "JAPON MANTA 2", "JAPON MANTA 1", "ORVE MANTA 1", "CRECOS MANTA", "CRECOS MALL DEL PACIFICO", "JAPON MALL DEL PACIFICO", "ORVE JIPIJAPA", "CRECOS JIPIJAPA", "JAPON PORTOVIEJO 1", "JAPON PORTOVIEJO 2", "ORVE PORTOVIEJO 1", "ORVE SANTA ANA", "ORVE PORTOVIEJO 3", "CRECOS PORTOVIEJO 1", "CRECOS PORTOVIEJO 2", "PAGA MENOS PORTOVIEJO", "MOTOZONE PORTOVIEJO", "CRECOS LA PRENSA", "CRECOS NACIONES UNIDAS", "CRECOS TUMBACO", "JAPON LA PRENSA", "JAPON NACIONES UNIDAS", "JAPON SCALA SHOPPING", "JAPON TUMBACO", "MOTOZONE LA PRENSA", "MOTOZONE TUMBACO", "ORVE LA PRENSA", "ORVE NACIONES UNIDAS", "SAMSUNG QUICENTRO NORTE", "ORVE PIFO", "ORVE TUMBACO", "MOTOZONE EL COCA", "ORVE LAGO AGRIO", "CRECOS EL RECREO", "CRECOS ISLA EL RECREO", "JAPON CHILLOGALLO", "JAPON EL RECREO 1", "JAPON EL RECREO 2", "JAPON GUAMANI", "JAPON SANGOLQUI", "ORVE EL RECREO 1", "ORVE EL RECREO 2", "ORVE EL RECREO 3", "ORVE GUAMANI", "ORVE NUEVA AURORA", "ORVE SANGOLQUI", "CRECOS SANGOLQUI", "CRECOS AMBATO", "JAPON AMBATO", "MOTOZONE AMBATO", "ORVE AMBATO", "CRECOS GUARANDA", "ORVE GUARANDA", "CRECOS LATACUNGA", "JAPON LATACUNGA", "ORVE LATACUNGA 1", "CRECOS QUICENTRO SUR", "JAPON MACHACHI", "JAPON QUICENTRO SUR", "MOTOZONE ISLA QUICENTRO SUR", "ORVE MACHACHI", "ORVE QUICENTRO SUR", "JAPON RIOBAMBA", "ORVE RIOBAMBA 1", "CRECOS EL CARMEN", "MOTOZONE EL CARMEN", "ORVE EL CARMEN", "ORVE PEDERNALES", "CRECOS SANTO DOMINGO 1", "CRECOS SANTO DOMINGO 2", "JAPON SANTO DOMINGO 1", "JAPON SANTO DOMINGO 2", "MOTOZONE SANTO DOMINGO", "ORVE SANTO DOMINGO", "CRECOS BOMBOLI SHOPPING", "CRECOS PEDERNALES", "MOTOZONE SANTO DOMINGO 2", "CRECOS CAYAMBE", "JAPON CAYAMBE", "ORVE CAYAMBE", "JAPON EL QUINCHE", "ORVE EL QUINCHE", "CRECOS IBARRA", "JAPON IBARRA 1", "JAPON IBARRA 2", "ORVE IBARRA 1", "CRECOS OTAVALO", "ORVE OTAVALO", "CRECOS CALDERON", "JAPON CALDERON", "JAPON CARAPUNGO", "ORVE CALDERON", "ORVE CARAPUNGO", "CRECOS COMITE DEL PUEBLO", "JAPON COMITE DEL PUEBLO", "CRECOS ESMERALDAS", "JAPON ESMERALDAS", "ORVE ESMERALDAS", "CRECOS LA CONCORDIA", "JAPON LA CONCORDIA", "ORVE LA CONCORDIA", "ORVE QUININDE", "CRECOS PORTAL SHOPPING", "JAPON CONDADO SHOPPING", "JAPON SAN ANTONIO", "ORVE CONDADO SHOPPING"];
+const EMPRESAS = ['Artefacta', 'Marcimex', 'Almacenes España', 'Comandato', 'Jaher', 'Almacenes Al Precio', 'La Ganga'];
+const CADENAS = [['PAGA MENOS', 'Pagamenos'], ['MOTOZONE', 'Motozone'], ['SAMSUNG', 'Samsung'], ['CRECOS', 'Crecos'], ['ORVE', 'Orve Hogar'], ['JAPON', 'Japón']];
+const $ = s => document.querySelector(s);
+const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+const cadena = a => (CADENAS.find(([p]) => a.startsWith(p)) || [, ''])[1];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+const limpiar = t => { let u = String(t || '').trim(); const m = u.match(/tiktok\.com\/@([^/?#\s]+)/i) || u.match(/instagram\.com\/([^/?#\s]+)/i); if (m) u = m[1];
+  return u.replace(/^@+/, '').replace(/\s+/g, '').toLowerCase(); };
+const valido = u => /^[a-z0-9._]{2,24}$/.test(u);
+let agencia = '';
+
+/* ---------- agencia con búsqueda ---------- */
+const inp = $('#buscar-ag'), lista = $('#lista-ag');
+let act = -1, res = [];
+function pintar() {
+  const q = norm(inp.value).trim(), ps = q.split(/\s+/).filter(Boolean);
+  res = AGENCIAS.filter(a => ps.every(p => norm(a).includes(p)));
+  act = res.length ? 0 : -1;
+  lista.innerHTML = res.length ? res.map((a, i) => {
+    let h = esc(a); ps.forEach(p => { h = h.replace(new RegExp('(' + p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'i'), '<mark>$1</mark>'); });
+    return '<button type="button" role="option" data-i="' + i + '" class="' + (i === act ? 'act' : '') + '"><span>' + h + '</span><span class="cad">' + cadena(a) + '</span></button>';
+  }).join('') : '<div class="vacio">No encontramos esa agencia. Revisa cómo la escribiste.</div>';
+  lista.hidden = false; inp.setAttribute('aria-expanded', 'true');
+}
+function elegir(a) {
+  agencia = a; $('#ag-texto').textContent = a + ' · ' + cadena(a);
+  $('#combo').hidden = true; $('#ag-elegida').hidden = false; lista.hidden = true; inp.classList.remove('bad'); guardar();
+}
+inp.addEventListener('focus', pintar);
+inp.addEventListener('input', pintar);
+inp.addEventListener('keydown', e => {
+  if (lista.hidden) return;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); act = Math.max(0, Math.min(res.length - 1, act + (e.key === 'ArrowDown' ? 1 : -1)));
+    lista.querySelectorAll('button').forEach((b, i) => b.classList.toggle('act', i === act)); lista.children[act]?.scrollIntoView({block: 'nearest'}); }
+  if (e.key === 'Enter') { e.preventDefault(); if (res[act]) elegir(res[act]); }
+  if (e.key === 'Escape') lista.hidden = true;
+});
+lista.addEventListener('mousedown', e => e.preventDefault());
+lista.addEventListener('click', e => { const b = e.target.closest('button'); if (b) elegir(res[+b.dataset.i]); });
+inp.addEventListener('blur', () => setTimeout(() => { lista.hidden = true; inp.setAttribute('aria-expanded', 'false'); }, 120));
+$('#ag-cambiar').addEventListener('click', () => { agencia = ''; $('#combo').hidden = false; $('#ag-elegida').hidden = true; inp.value = ''; inp.focus(); });
+
+/* ---------- usuario de TikTok ---------- */
+function prevTT() {
+  const u = limpiar($('#tiktok').value), box = $('#tt-prev');
+  if ($('#sin-tt').checked || !$('#tiktok').value.trim()) { box.innerHTML = ''; return; }
+  box.innerHTML = valido(u)
+    ? 'Revisa que sea tu perfil: <a href="https://www.tiktok.com/@' + encodeURIComponent(u) + '" target="_blank" rel="noopener">tiktok.com/@' + esc(u) + ' ↗</a>'
+    : '<span style="color:var(--err)">Un usuario de TikTok solo tiene letras, números, puntos o guiones bajos (sin espacios).</span>';
+}
+$('#tiktok').addEventListener('input', () => { $('#tiktok').classList.remove('bad'); prevTT(); guardar(); });
+$('#sin-tt').addEventListener('change', () => { $('#tiktok').disabled = $('#sin-tt').checked; prevTT(); });
+
+/* ---------- competencia ---------- */
+let nComp = 0;
+function agregarComp(d = {}) {
+  if (document.querySelectorAll('.comp').length >= 8) return;
+  const i = ++nComp, el = document.createElement('div');
+  el.className = 'comp'; el.dataset.i = i;
+  el.innerHTML = '<div class="comp-head">Cuenta de la competencia<button type="button" aria-label="Quitar">Quitar ✕</button></div>' +
+    '<div class="at"><span>@</span><input type="text" class="c-user" id="c-user-' + i + '" placeholder="usuario de TikTok" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="120"></div>' +
+    '<select class="c-emp" id="c-emp-' + i + '"><option value="">¿De qué empresa es?</option>' + EMPRESAS.map(e => '<option>' + e + '</option>').join('') + '<option value="otra">Otra empresa…</option></select>' +
+    '<input type="text" class="c-otra" id="c-otra-' + i + '" placeholder="Nombre de la empresa" hidden maxlength="60">' +
+    '<div class="chips"><label><input type="radio" name="c-tipo-' + i + '" value="Lives">Hace lives</label><label><input type="radio" name="c-tipo-' + i + '" value="Videos">Publica videos</label><label><input type="radio" name="c-tipo-' + i + '" value="Ambos">Ambos</label></div>';
+  el.querySelector('.comp-head button').onclick = () => { el.remove(); guardar(); $('#add-comp').hidden = false; };
+  const emp = el.querySelector('.c-emp'), otra = el.querySelector('.c-otra');
+  emp.onchange = () => { otra.hidden = emp.value !== 'otra'; if (!otra.hidden) otra.focus(); guardar(); };
+  el.querySelector('.c-user').value = d.usuario || ''; if (d.empresa) { if (EMPRESAS.includes(d.empresa)) emp.value = d.empresa; else { emp.value = 'otra'; otra.hidden = false; otra.value = d.empresa; } }
+  if (d.contenido) { const r = el.querySelector('input[value="' + d.contenido + '"]'); if (r) r.checked = true; }
+  el.addEventListener('input', guardar); el.addEventListener('change', guardar);
+  $('#comps').appendChild(el);
+  $('#add-comp').hidden = document.querySelectorAll('.comp').length >= 8;
+  return el;
+}
+$('#add-comp').addEventListener('click', () => agregarComp().querySelector('.c-user').focus());
+const leerComps = () => [...document.querySelectorAll('.comp')].map(el => ({
+  usuario: limpiar(el.querySelector('.c-user').value),
+  empresa: el.querySelector('.c-emp').value === 'otra' ? el.querySelector('.c-otra').value.trim() : el.querySelector('.c-emp').value,
+  contenido: el.querySelector('input[type=radio]:checked')?.value || ''
+})).filter(c => c.usuario);
+
+/* ---------- borrador local ---------- */
+function guardar() {
+  try { localStorage.setItem('sapo-encuesta', JSON.stringify({nombre: $('#nombre').value, agencia, tiktok: $('#tiktok').value, instagram: $('#instagram').value,
+    lives: document.querySelector('input[name=lives]:checked')?.value || '', comps: leerComps()})); } catch (e) {}
+}
+['#nombre', '#instagram'].forEach(s => $(s).addEventListener('input', guardar));
+document.querySelectorAll('input[name=lives]').forEach(r => r.addEventListener('change', guardar));
+try {
+  const b = JSON.parse(localStorage.getItem('sapo-encuesta') || 'null');
+  if (b) { $('#nombre').value = b.nombre || ''; if (b.agencia && AGENCIAS.includes(b.agencia)) elegir(b.agencia); $('#tiktok').value = b.tiktok || ''; $('#instagram').value = b.instagram || '';
+    if (b.lives) { const r = document.querySelector('input[name=lives][value="' + b.lives + '"]'); if (r) r.checked = true; } (b.comps || []).forEach(agregarComp); prevTT(); }
+} catch (e) {}
+
+/* ---------- envío ---------- */
+$('#f').addEventListener('input', e => { e.target.classList?.remove('bad'); if (!document.querySelector('.bad')) $('#err-global').hidden = true; });
+$('#f').addEventListener('submit', async e => {
+  e.preventDefault();
+  const errs = [], nombre = $('#nombre').value.trim(), sinTT = $('#sin-tt').checked, tt = limpiar($('#tiktok').value);
+  $('#nombre').classList.toggle('bad', !nombre); if (!nombre) errs.push('tu nombre');
+  if (!agencia) { inp.classList.add('bad'); errs.push('tu agencia'); }
+  if (!sinTT && !valido(tt)) { $('#tiktok').classList.add('bad'); errs.push('tu usuario de TikTok'); }
+  const comps = leerComps(), compMal = comps.filter(c => !valido(c.usuario));
+  if (compMal.length) errs.push('revisar el usuario de la competencia @' + compMal[0].usuario);
+  const g = $('#err-global');
+  if (errs.length) { g.hidden = false; g.textContent = 'Falta ' + errs.join(', ') + '.'; document.querySelector('.bad')?.scrollIntoView({behavior: 'smooth', block: 'center'}); return; }
+  g.hidden = true;
+  const datos = {v: 1, enviado: new Date().toISOString(), nombre, agencia, cadena: cadena(agencia), tiktok: sinTT ? '' : tt,
+    lives: document.querySelector('input[name=lives]:checked')?.value || '', instagram: limpiar($('#instagram').value), competencia: comps};
+  const btn = $('#enviar'); btn.disabled = true; btn.textContent = 'Enviando…';
+  try {
+    const r = await fetch(BUZON, {method: 'POST', body: JSON.stringify(datos), headers: {'Content-Type': 'text/plain'}});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    try { localStorage.removeItem('sapo-encuesta'); } catch (e) {}
+    $('#f').hidden = true; $('#ok').hidden = false;
+    $('#ok-det').textContent = (datos.tiktok ? '@' + datos.tiktok + ' · ' : '') + agencia + (comps.length ? ' · ' + comps.length + ' cuenta(s) de competencia' : '');
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  } catch (err) {
+    g.hidden = false; g.textContent = 'No se pudo enviar (revisa tu conexión a internet) y vuelve a tocar "Enviar respuesta". Tus datos siguen aquí.';
+  } finally { btn.disabled = false; btn.textContent = 'Enviar respuesta'; }
+});
+$('#otra').addEventListener('click', () => location.reload());
+</script>
+</body>
+</html>

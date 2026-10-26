@@ -84,6 +84,7 @@ CADENAS_CRESA = [
     ("ALMACENES JAPON", "Japón"), ("ALMACENES JAPÓN", "Japón"), ("JAPON", "Japón"), ("JAPÓN", "Japón"),
     ("CRECOS", "Crecos"), ("ORVE HOGAR", "Orve Hogar"), ("ORVE", "Orve Hogar"),
     ("MOTOZONE", "Motozone"), ("MOTO ZONE", "Motozone"), ("PAGA MENOS", "Pagamenos"), ("PAGAMENOS", "Pagamenos"),
+    ("SAMSUNG", "Samsung"),
 ]
 COLUMNAS = {
     "usuario": ("usuario", "usuario tiktok", "user", "username", "tiktok"),
