@@ -21,7 +21,11 @@ jobs:
       - name: Probar
         run: |
           mkdir -p /tmp/out
-          if [ "${{ github.event.inputs.modo }}" = "meta" ]; then
+          if [ "${{ github.event.inputs.modo }}" = "ntfy" ]; then
+            T="${{ github.event.inputs.usuarios }}"
+            { curl -s -i -X POST -H "Origin: https://cdizquierdoc-hub.github.io" -H "Content-Type: text/plain" -d '{"prueba":true,"nombre":"Ñandú Pérez"}' "https://ntfy.sh/$T" | head -20; echo; sleep 2;
+              curl -s "https://ntfy.sh/$T/json?poll=1&since=1h"; } 2>&1 | tee /tmp/out/resultado.txt
+          elif [ "${{ github.event.inputs.modo }}" = "meta" ]; then
             IG_TOKEN="${{ secrets.IG_TOKEN }}" python3 probar_meta.py ${{ github.event.inputs.usuarios }} 2>&1 | tee /tmp/out/resultado.txt
           elif [ "${{ github.event.inputs.modo }}" = "explorar_ig" ]; then
             python3 explorar_ig.py ${{ github.event.inputs.usuarios }} 2>&1 | tee /tmp/out/resultado.txt
