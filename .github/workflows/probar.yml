@@ -1,0 +1,15 @@
+name: Probar cuentas
+
+on:
+  workflow_dispatch:
+    inputs:
+      usuarios:
+        description: "Usuarios de TikTok separados por espacio"
+        default: "tiktok"
+
+jobs:
+  probar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 monitor.py probar ${{ github.event.inputs.usuarios }}
