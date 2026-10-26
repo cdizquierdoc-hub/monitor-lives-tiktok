@@ -94,8 +94,11 @@ def existe_txt(v):
     return {True: "Sí", False: "NO EXISTE – revisar", None: "Sin verificar"}[v.get("existe")]
 
 
-def main():
+def main(solo_si_hay_nuevas=False):
+    """Genera el Excel. Con solo_si_hay_nuevas=True (uso desde el monitor, cada minuto) no hace nada si no llegó nada."""
     respuestas, n_nuevas = traer_respuestas()
+    if solo_si_hay_nuevas and n_nuevas == 0 and os.path.exists(EXCEL):
+        return 0
     cache = leer_json(VALID, {})
     en_sapo = {v["handle"] for v in leer_vendedores() if v["plataforma"] == "tiktok"}
     agencias = leer_json(AGENCIAS, [])
@@ -211,6 +214,7 @@ def main():
     with open(os.path.join(CARPETA, "resumen.json"), "w", encoding="utf-8") as f:
         json.dump(resumen, f)
     log("Encuesta: %d respuestas (%d nuevas) · %d cuentas de competencia" % (len(respuestas), n_nuevas, len(comp)))
+    return max(n_nuevas, 1)
 
 
 if __name__ == "__main__":

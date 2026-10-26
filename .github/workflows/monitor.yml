@@ -23,6 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - run: pip install -q openpyxl
       - name: Preparar rama de datos
         run: |
           git config user.name "monitor-lives"

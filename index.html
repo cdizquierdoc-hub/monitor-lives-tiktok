@@ -356,7 +356,7 @@
         <input type="text" id="enc-link" readonly style="flex:1;min-width:180px;font:13px ui-monospace,monospace;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
         <button type="button" id="enc-copiar">Copiar link</button>
         <a class="u" id="enc-abrir" target="_blank" rel="noopener">Abrir ↗</a>
-        <a class="u" href="https://github.com/cdizquierdoc-hub/monitor-lives-tiktok/raw/data/data/encuesta/Encuesta_TikTok_Cresa.xlsx">⬇ Excel de respuestas</a>
+        <a class="u" id="enc-excel" href="https://github.com/cdizquierdoc-hub/monitor-lives-tiktok/raw/data/data/encuesta/Encuesta_TikTok_Cresa.xlsx">⬇ Excel de respuestas</a>
       </div>
       <div class="hint" id="enc-resumen" style="margin-top:6px"></div>
     </div>
@@ -1012,12 +1012,13 @@ const ENC_URL = 'https://cdizquierdoc-hub.github.io/monitor-lives-tiktok/encuest
 $('#enc-link').value = ENC_URL; $('#enc-abrir').href = ENC_URL;
 $('#enc-copiar').addEventListener('click', () => { navigator.clipboard?.writeText(ENC_URL).then(() => $('#enc-copiar').textContent = '¡Copiado!', () => $('#enc-link').select()); });
 async function resumenEncuesta() {
+  if (SHA) $('#enc-excel').href = urlDatos(SHA, 'encuesta/Encuesta_TikTok_Cresa.xlsx');   // versión más reciente, sin caché
   try {
     const r = await fetch(urlDatos(SHA, 'encuesta/resumen.json'), {cache: 'no-store'}); if (!r.ok) throw 0;
     const x = await r.json();
     $('#enc-resumen').textContent = x.respuestas + ' respuestas · ' + x.vendedores + ' cuentas de vendedores · ' + x.competencia + ' cuentas de competencia · ' +
       x.agencias_con_respuesta + ' de ' + x.agencias_total + ' agencias respondieron · actualizado ' + fmtF(x.actualizado);
-  } catch (e) { $('#enc-resumen').textContent = 'Aún no hay respuestas. El Excel se genera cada 15 minutos.'; }
+  } catch (e) { $('#enc-resumen').textContent = 'Aún no hay respuestas. El Excel se actualiza 1–2 minutos después de cada respuesta.'; }
 }
 function abrirPanel(tipo) { resumenEncuesta(); if (typeof tipo === 'string') document.querySelector(`input[name=ptipo][value=${tipo}]`).checked = true; ayudaPanel(); $('#modal').classList.add('open'); renderPanel(); setTimeout(() => $('#nuevos').focus(), 50); }
 function cerrarPanel() { $('#modal').classList.remove('open'); }

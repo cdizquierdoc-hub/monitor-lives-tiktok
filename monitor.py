@@ -461,6 +461,16 @@ def revisar(d):
     return vendedores, cambios
 
 
+def revisar_encuesta():
+    """Revisa el buzón de la encuesta en cada vuelta; regenera el Excel solo si llegaron respuestas."""
+    try:
+        import encuesta
+        return encuesta.main(solo_si_hay_nuevas=True)
+    except Exception as e:
+        log("Encuesta: error", str(e)[:150])
+        return 0
+
+
 def main():
     if len(sys.argv) > 1 and sys.argv[1] == "crudo":
         for u in sys.argv[2:]:
@@ -494,6 +504,8 @@ def main():
         if AL_GUARDAR:
             subprocess.run(["git", "pull", "-q", "--ff-only"], check=False)  # toma vendedores nuevos
         vendedores, cambios = revisar(d)
+        if revisar_encuesta():
+            cambios = True
         if cambios or time.time() - ultimo_guardado >= LATIDO_SEG:
             guardar_datos(d, vendedores)
             ultimo_guardado = time.time()
