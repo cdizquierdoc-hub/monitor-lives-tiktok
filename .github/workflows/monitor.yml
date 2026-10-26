@@ -38,7 +38,7 @@ jobs:
       - name: Monitorear
         env:
           DATA_DIR: _data/data
-          INTERVALO: "120"
+          INTERVALO: "60"
           DURACION_MIN: ${{ github.event.inputs.duracion || '340' }}
           AL_GUARDAR: >-
             cd _data && git add -A data &&

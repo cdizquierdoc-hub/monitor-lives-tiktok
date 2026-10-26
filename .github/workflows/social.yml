@@ -2,7 +2,7 @@ name: Métricas de contenido
 
 on:
   schedule:
-    - cron: "17 */4 * * *"   # cada 4 horas
+    - cron: "7 * * * *"   # cada hora
   workflow_dispatch:
 
 concurrency:

@@ -1,9 +1,11 @@
-# Monitor de lives TikTok · Vendedores
+# SAPO · Sistema de Análisis de Presencia Online
+
+Monitor de lives y contenido de TikTok de los vendedores de Cresa (Crecos, Orve Hogar, Japón, Motozone, Pagamenos) y de la competencia.
 
 **Dashboard:** https://cdizquierdoc-hub.github.io/monitor-lives-tiktok/
 
 ## Cómo funciona
-- GitHub Actions revisa cada 2 minutos si cada vendedor está en LIVE (`monitor.py`).
+- GitHub Actions revisa cada minuto si cada vendedor está en LIVE (`monitor.py`).
 - Cada live queda registrado con inicio, fin y duración en la rama `data` (`data/data.json`).
 - El dashboard (`index.html`, GitHub Pages) lee esos datos y se actualiza solo.
 

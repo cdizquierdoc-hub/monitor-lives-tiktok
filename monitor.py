@@ -33,7 +33,7 @@ VENDEDORES_DIR = os.environ.get("VENDEDORES_DIR", "vendedores")
 INTERVALO = int(os.environ.get("INTERVALO", "120"))
 DURACION_MIN = float(os.environ.get("DURACION_MIN", "0"))
 AL_GUARDAR = os.environ.get("AL_GUARDAR", "")
-REVISIONES_PARA_CERRAR = 2      # revisiones seguidas sin live para dar por terminado
+REVISIONES_PARA_CERRAR = 3      # revisiones seguidas sin live para dar por terminado (evita cortes por señal)
 DIAS_EN_DASHBOARD = 120         # historial que se publica en data.json
 LATIDO_SEG = 600                # guarda aunque no haya cambios, para mostrar "última revisión"
 HILOS = 8
@@ -65,7 +65,9 @@ def limpiar_usuario(txt):
     return re.sub(r"\s+", "", u.lstrip("@")).lower()
 
 
-CADENAS = {"JAPON": "Japón", "JAPÓN": "Japón", "CRECOS": "Crecos", "ORVE": "Orve"}
+# Cadenas de Cresa: se reconocen por la 1.ª palabra de la agencia (ej. "JAPON PARQUE CALIFORNIA")
+CADENAS = {"CRECOS": "Crecos", "ORVE": "Orve Hogar", "JAPON": "Japón", "JAPÓN": "Japón",
+           "MOTOZONE": "Motozone", "PAGAMENOS": "Pagamenos", "PAGA": "Pagamenos"}
 COLUMNAS = {
     "usuario": ("usuario", "usuario tiktok", "user", "username", "tiktok"),
     "agencia": ("agencia", "zona", "zona / agencia", "tienda", "almacen", "almacén"),
@@ -79,6 +81,33 @@ ORDEN_POR_DEFECTO = ["usuario", "agencia", "nombre", "activo", "tipo"]
 def tipo_de(txt):
     t = str(txt or "").strip().upper()
     return "competencia" if t == "C" or t.startswith("COMP") else "propio"
+
+
+# Competidores conocidos: si la agencia empieza así, la cuenta es de competencia y se agrupa en esa empresa.
+# Se pueden agregar más; cualquier otra empresa también funciona marcándola como competencia.
+COMPETIDORES = [
+    ("ALMACENES ESPAÑA", "Almacenes España"), ("ALMACENES ESPANA", "Almacenes España"), ("ESPAÑA", "Almacenes España"),
+    ("ALMACENES AL PRECIO", "Almacenes Al Precio"), ("AL PRECIO", "Almacenes Al Precio"),
+    ("ARTEFACTA", "Artefacta"), ("MARCIMEX", "Marcimex"), ("COMANDATO", "Comandato"), ("JAHER", "Jaher"),
+    ("LA GANGA", "La Ganga"), ("ALMACENES TIA", "Almacenes Tía"), ("TVENTAS", "Tventas"),
+]
+
+
+def competidor_de(agencia):
+    a = agencia.upper()
+    for prefijo, nombre in COMPETIDORES:
+        if a == prefijo or a.startswith(prefijo + " "):
+            return nombre
+    return None
+
+
+def clasificar(agencia, tipo_txt):
+    """Devuelve (cadena, tipo). Cadenas Cresa por 1.ª palabra; competidores conocidos por prefijo."""
+    comp = competidor_de(agencia)
+    if comp:
+        return comp, "competencia"
+    tipo = tipo_de(tipo_txt)
+    return cadena_de(agencia, tipo), tipo
 
 
 def cadena_de(agencia, tipo="propio"):
@@ -111,12 +140,12 @@ def leer_vendedores():
             if not usuario:
                 continue
             agencia = re.sub(r"\s+", " ", datos.get("agencia", "")).strip().upper() or "SIN AGENCIA"
-            tipo = tipo_de(datos.get("tipo"))
+            cadena, tipo = clasificar(agencia, datos.get("tipo"))
             v = {
                 "usuario": usuario,
                 "nombre": datos.get("nombre") or "@" + usuario,
                 "agencia": agencia,
-                "cadena": cadena_de(agencia, tipo),
+                "cadena": cadena,
                 "tipo": tipo,
                 "activo": datos.get("activo", "").upper() not in ("NO", "N", "0", "FALSE", "INACTIVO"),
                 "archivo": archivo,

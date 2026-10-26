@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Monitor TikTok · Vendedores</title>
+<title>SAPO · Presencia Online</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root{--bg:#f5f6f8;--card:#ffffff;--ink:#0f172a;--mute:#64748b;--line:#e6e8ec;--accent:#fe2c55;--accent2:#14b8c4;--soft:#fff1f4}
@@ -12,9 +12,11 @@
   body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
   .wrap{max-width:1240px;margin:0 auto;padding:22px 16px 48px}
   header{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
-  h1{font-size:22px;margin:0;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
-  .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--accent2),var(--accent));display:grid;place-items:center;color:#fff;font-size:15px}
+  h1{font-size:24px;margin:0;letter-spacing:.02em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#22c55e,#14b8c4);display:grid;place-items:center;color:#fff;font-size:19px}
   .sub{color:var(--mute);font-size:13px;margin-top:4px}
+  .marca{font-size:13px;font-weight:500;color:var(--mute);letter-spacing:0;margin-left:2px}
+  @media (max-width:600px){.marca{display:block;width:100%}}
   .filters{display:flex;gap:8px;flex-wrap:wrap}
   select,input,button{font:inherit;font-size:14px;padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
   button{cursor:pointer} button:hover{border-color:var(--accent)}
@@ -96,6 +98,7 @@
   @media (max-width:880px){.grid2b{grid-template-columns:1fr}}
   .legend{display:flex;gap:14px;font-size:12.5px;color:var(--mute)}
   .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+  h2.seccion{font-size:16px;margin:4px 0 10px;display:block}
   .seg{display:flex;gap:6px;margin-bottom:10px}
   .seg label{border:1px solid var(--line);border-radius:10px;padding:7px 12px;font-size:13.5px;cursor:pointer}
   .seg input{margin-right:6px}
@@ -106,7 +109,7 @@
 <div class="wrap">
   <header>
     <div>
-      <h1><span class="logo">▶</span> Monitor TikTok · Vendedores</h1>
+      <h1><span class="logo">🐸</span> SAPO <span class="marca">Sistema de Análisis de Presencia Online</span></h1>
       <div class="sub" id="actualizado">Cargando…</div>
       <nav class="tabs"><a href="#" id="t-resumen" class="on">Resumen</a><a href="#competencia" id="t-comp">Nosotros vs Competencia</a><a href="#contenido" id="t-cont">Contenido (posts y seguidores)</a></nav>
     </div>
@@ -150,8 +153,16 @@
   <div class="card section">
     <h2>Ranking de vendedores <small>ordenado por horas en live</small></h2>
     <div class="tablewrap"><table>
-      <thead><tr><th>#</th><th>Vendedor</th><th>Agencia</th><th class="num">Lives</th><th class="num">Horas</th><th></th><th class="num">Promedio</th><th class="num">Vistas</th><th class="num">Vistas/live</th><th>Último live</th><th>Estado</th></tr></thead>
+      <thead><tr><th>#</th><th>Vendedor</th><th>Cadena</th><th>Agencia</th><th class="num">Lives</th><th class="num">Horas</th><th></th><th class="num">Promedio</th><th class="num">Vistas</th><th class="num">Vistas/live</th><th>Último live</th><th>Estado</th></tr></thead>
       <tbody id="ranking"></tbody>
+    </table></div>
+  </div>
+
+  <div class="card section">
+    <h2>Por cadena <small>suma de todas las agencias / cuentas de cada cadena</small></h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Cadena / empresa</th><th></th><th class="num">Cuentas</th><th class="num">Hicieron live</th><th class="num">Lives</th><th class="num">Horas</th><th class="num">Horas por cuenta</th><th></th><th class="num">Duración prom.</th><th class="num">Vistas</th><th class="num">Vistas por live</th><th class="num">En vivo ahora</th></tr></thead>
+      <tbody id="cadenas-l"></tbody>
     </table></div>
   </div>
 
@@ -171,7 +182,7 @@
   <div class="card">
     <h2>Historial de lives <small id="hist-sub"></small></h2>
     <div class="tablewrap"><table>
-      <thead><tr><th>Vendedor</th><th>Agencia</th><th>Inicio</th><th>Fin</th><th class="num">Duración</th><th class="num">Vistas</th><th class="num">Pico</th><th>Título</th></tr></thead>
+      <thead><tr><th>Vendedor</th><th>Cadena</th><th>Agencia</th><th>Inicio</th><th>Fin</th><th class="num">Duración</th><th class="num">Vistas</th><th class="num">Pico</th><th>Título</th></tr></thead>
       <tbody id="historial"></tbody>
     </table></div>
   </div>
@@ -192,9 +203,10 @@
         <button class="primary" onclick="abrirPanel('competencia')">＋ Agregar competencia</button>
       </div>
     </div>
+    <h2 class="seccion">Lives</h2>
     <div class="grid2b">
       <div class="card">
-        <h2>Comparativo del periodo <span class="legend"><span><i style="background:var(--us)"></i>Nosotros</span><span><i style="background:var(--them)"></i>Competencia</span></span></h2>
+        <h2>Lives: comparativo del periodo <span class="legend"><span><i style="background:var(--us)"></i>Nosotros</span><span><i style="background:var(--them)"></i>Competencia</span></span></h2>
         <div class="tablewrap"><table class="vs">
           <thead><tr><th>Indicador</th><th class="num">Nosotros</th><th class="num">Competencia</th></tr></thead>
           <tbody id="c-vs"></tbody>
@@ -208,7 +220,7 @@
     </div>
 
     <div class="card section">
-      <h2>Por empresa <small>ordenado por horas en live por cuenta</small></h2>
+      <h2>Lives por cadena / empresa <small>ordenado por horas en live por cuenta</small></h2>
       <div class="tablewrap"><table>
         <thead><tr><th>Empresa / cadena</th><th></th><th class="num">Cuentas</th><th class="num">Hicieron live</th><th class="num">Lives</th><th class="num">Horas</th><th class="num">Horas por cuenta</th><th></th><th class="num">Duración prom.</th><th class="num">Vistas por live</th><th class="num">Pico prom.</th></tr></thead>
         <tbody id="c-empresas"></tbody>
@@ -223,9 +235,28 @@
     <div class="card">
       <h2>Top cuentas <small>nosotros y competencia, por horas en live</small></h2>
       <div class="tablewrap"><table>
-        <thead><tr><th>#</th><th>Cuenta</th><th></th><th>Empresa / agencia</th><th class="num">Lives</th><th class="num">Horas</th><th class="num">Vistas</th><th class="num">Vistas por live</th><th>Estado</th></tr></thead>
+        <thead><tr><th>#</th><th>Cuenta</th><th></th><th>Cadena / empresa</th><th>Agencia</th><th class="num">Lives</th><th class="num">Horas</th><th class="num">Vistas</th><th class="num">Vistas por live</th><th>Estado</th></tr></thead>
         <tbody id="c-top"></tbody>
       </table></div>
+    </div>
+
+    <h2 class="seccion" style="margin-top:22px">Contenido (posts y seguidores)</h2>
+    <div class="grid2b">
+      <div class="card">
+        <h2>Contenido: comparativo del periodo <span class="legend"><span><i style="background:var(--us)"></i>Nosotros</span><span><i style="background:var(--them)"></i>Competencia</span></span></h2>
+        <div class="tablewrap"><table class="vs">
+          <thead><tr><th>Indicador</th><th class="num">Nosotros</th><th class="num">Competencia</th></tr></thead>
+          <tbody id="c-cont-vs"></tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <h2>Engagement por cadena / empresa <small>interacciones ÷ views</small></h2>
+        <div class="chartbox" style="height:360px"><canvas id="chart4"></canvas></div>
+      </div>
+    </div>
+    <div class="card section">
+      <h2>Contenido por cadena / empresa <small>suma de todas sus cuentas</small></h2>
+      <div class="tablewrap"><table id="c-cont-cad-t"><tbody id="c-cont-cad"></tbody></table></div>
     </div>
   </section>
 
@@ -233,7 +264,7 @@
     <div class="card section" id="s-vacio" hidden>
       <div class="empty-cta">
         <h2 style="justify-content:center">Todavía no hay métricas de contenido</h2>
-        <p>Se recolectan cada 4 horas para todas las cuentas cargadas. Vuelve en un rato.</p>
+        <p>Se recolectan cada hora para todas las cuentas cargadas. Vuelve en un rato.</p>
       </div>
     </div>
     <div class="kpis">
@@ -260,9 +291,14 @@
     </div>
 
     <div class="card section">
+      <h2>Por cadena <small>suma de todas las cuentas de cada cadena / empresa</small></h2>
+      <div class="tablewrap"><table id="s-cadenas-t"><tbody id="s-cadenas"></tbody></table></div>
+    </div>
+
+    <div class="card section">
       <h2>Por cuenta <small>publicaciones del periodo; seguidores al día de hoy</small></h2>
       <div class="tablewrap"><table>
-        <thead><tr><th>Cuenta</th><th></th><th>Agencia / empresa</th><th class="num">Seguidores</th><th class="num">Δ periodo</th><th class="num">Posts</th><th class="num">Por día</th><th class="num">Por semana</th><th class="num">Por mes</th><th class="num">Views</th><th class="num">Views/post</th><th class="num">Likes</th><th class="num">Coment.</th><th class="num">Compart.</th><th class="num">Guard.</th><th class="num">Engagement</th><th>Último post</th></tr></thead>
+        <thead><tr><th>Cuenta</th><th></th><th>Cadena / empresa</th><th>Agencia</th><th class="num">Seguidores</th><th class="num">Δ periodo</th><th class="num">Posts</th><th class="num">Por día</th><th class="num">Por semana</th><th class="num">Por mes</th><th class="num">Views</th><th class="num">Views/post</th><th class="num">Likes</th><th class="num">Coment.</th><th class="num">Compart.</th><th class="num">Guard.</th><th class="num">Engagement</th><th>Último post</th></tr></thead>
         <tbody id="s-cuentas"></tbody>
       </table></div>
     </div>
@@ -274,10 +310,10 @@
           <option value="vistas">Views</option><option value="er">Engagement</option><option value="likes">Likes</option><option value="comentarios">Comentarios</option><option value="compartidos">Compartidos</option><option value="guardados">Guardados</option><option value="creado">Más recientes</option>
         </select></div>
       <div class="tablewrap"><table>
-        <thead><tr><th>Publicado</th><th>Cuenta</th><th>Descripción</th><th class="num">Views</th><th class="num">Likes</th><th class="num">Coment.</th><th class="num">Compart.</th><th class="num">Guard.</th><th class="num">Engagement</th><th></th></tr></thead>
+        <thead><tr><th>Publicado</th><th>Cuenta</th><th>Cadena / empresa</th><th>Descripción</th><th class="num">Views</th><th class="num">Likes</th><th class="num">Coment.</th><th class="num">Compart.</th><th class="num">Guard.</th><th class="num">Engagement</th><th></th></tr></thead>
         <tbody id="s-posts-t"></tbody>
       </table></div>
-      <p class="hint" style="margin-top:10px">Se actualiza cada 4 horas. TikTok permite leer gratis las ~13 publicaciones más recientes de cada cuenta, así que el historial anterior al inicio del monitoreo es parcial; desde ahora cada publicación nueva queda registrada. Las métricas de cada post se siguen actualizando durante 45 días.</p>
+      <p class="hint" style="margin-top:10px">Se actualiza cada hora. TikTok permite leer gratis las ~13 publicaciones más recientes de cada cuenta, así que el historial anterior al inicio del monitoreo es parcial; desde ahora cada publicación nueva queda registrada. Las métricas de cada post se siguen actualizando durante 45 días.</p>
     </div>
   </section>
 </div>
@@ -303,7 +339,7 @@
       <label><input type="radio" name="ptipo" value="competencia">Competencia</label>
     </div>
     <p id="p-ayuda"></p>
-    <textarea id="nuevos" placeholder="&quot;@pepito&quot; &quot;JAPON PARQUE CALIFORNIA&quot;&#10;@andrea.ventas, CRECOS MALL DEL SOL, Andrea Mora&#10;https://www.tiktok.com/@dani.tecno, ORVE QUITO NORTE"></textarea>
+    <textarea id="nuevos" placeholder="&quot;@pepito&quot; &quot;JAPON PARQUE CALIFORNIA&quot;&#10;@andrea.ventas, CRECOS MALL DEL SOL, Andrea Mora&#10;https://www.tiktok.com/@dani.tecno, ORVE HOGAR QUITO NORTE"></textarea>
     <div class="row">
       <span class="hint" id="nuevos-info">0 vendedores listos</span>
       <span style="flex:1"></span>
@@ -328,6 +364,7 @@ let RAW = null, chart = null, ULTIMOS = [];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtDur = m => { m = Math.round(m || 0); if (m < 60) return m + ' min'; const h = Math.floor(m / 60), r = m % 60; return h + ' h' + (r ? ' ' + r + ' min' : ''); };
 const fmtF = ms => ms ? new Date(ms).toLocaleString('es-EC', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : '—';
+const pillTipo = t => t === 'competencia' ? '<span class="pill them">competencia</span>' : '<span class="pill us">nosotros</span>';
 const fmtN = n => n == null ? '—' : Math.round(n).toLocaleString('es-EC');
 const fmtH = m => (m / 60).toLocaleString('es-EC', {maximumFractionDigits: 1});
 const diaKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -339,15 +376,29 @@ const VACIO = {generado: 0, intervalo: 2, vendedores: [], lives: [], estado: []}
 const SOCIAL_URL = 'https://raw.githubusercontent.com/' + REPO + '/data/data/social.json';
 let SOC = {cuentas: {}, posts: {}};
 
+let SHA = null, apiPausaHasta = 0;
+async function ultimoSha() {
+  if (Date.now() < apiPausaHasta) return null;
+  try {
+    const r = await fetch('https://api.github.com/repos/' + REPO + '/commits/data', {headers: {Accept: 'application/vnd.github.sha'}, cache: 'no-store'});
+    if (!r.ok) { apiPausaHasta = Date.now() + 10 * 60 * 1000; return null; }   // límite de la API: se usa la copia en caché un rato
+    return (await r.text()).trim();
+  } catch (e) { return null; }
+}
+const urlDatos = (sha, archivo) => 'https://raw.githubusercontent.com/' + REPO + '/' + (sha || 'data') + '/data/' + archivo + (sha ? '' : '?t=' + Date.now());
+
 async function cargar() {
   if (new URLSearchParams(location.search).has('demo')) {
     RAW = demo(); SOC = demoSocial(RAW.vendedores); $('#modo').hidden = false; prepararFiltros(); pagina(); return;
   }
   try {
-    const r = await fetch(DATA_URL + '?t=' + Date.now(), {cache: 'no-store'});
+    const sha = await ultimoSha();
+    if (sha && sha === SHA && RAW) return;            // no hay datos nuevos
+    const r = await fetch(urlDatos(sha, 'data.json'), {cache: 'no-store'});
     RAW = r.status === 404 ? VACIO : await r.json();
     if (!r.ok && r.status !== 404) throw new Error('HTTP ' + r.status);
-    try { const rs = await fetch(SOCIAL_URL + '?t=' + Date.now(), {cache: 'no-store'}); if (rs.ok) SOC = await rs.json(); } catch (e) {}
+    try { const rs = await fetch(urlDatos(sha, 'social.json'), {cache: 'no-store'}); if (rs.ok) SOC = await rs.json(); } catch (e) {}
+    SHA = sha;
   } catch (e) {
     if (!RAW) RAW = VACIO;
     $('#actualizado').textContent = 'No se pudieron cargar los datos (' + e.message + '). Reintentando…';
@@ -357,7 +408,7 @@ async function cargar() {
   if ($('#detalle').classList.contains('open') && DETALLE) abrirDetalle(DETALLE);
 }
 
-const CADENAS = {JAPON: 'Japón', 'JAPÓN': 'Japón', CRECOS: 'Crecos', ORVE: 'Orve'};
+const CADENAS = {CRECOS: 'Crecos', ORVE: 'Orve Hogar', JAPON: 'Japón', 'JAPÓN': 'Japón', MOTOZONE: 'Motozone', PAGAMENOS: 'Pagamenos', PAGA: 'Pagamenos'};
 const cadenaDe = a => CADENAS[String(a || '').trim().split(/\s+/)[0].toUpperCase()] || 'Otra';
 function opciones(sel, todos, valores) {
   const actual = sel.value;
@@ -383,7 +434,7 @@ function render() {
     (!q || v.nombre.toLowerCase().includes(q) || v.usuario.includes(q) || v.agencia.toLowerCase().includes(q)));
   const permit = new Set(vend.map(v => v.usuario));
   const porUsuario = Object.fromEntries(RAW.vendedores.map(v => [v.usuario, v]));
-  const conDatos = l => { const v = porUsuario[l.usuario] || {}; return {...l, nombre: v.nombre || l.nombre, agencia: v.agencia || l.agencia || l.zona || '', d: dur(l)}; };
+  const conDatos = l => { const v = porUsuario[l.usuario] || {}; return {...l, nombre: v.nombre || l.nombre, agencia: v.agencia || l.agencia || l.zona || '', cadena: v.cadena || l.cadena || '', d: dur(l)}; };
 
   const dur = l => l.estado === 'EN VIVO' ? Math.max(1, (ahora - l.inicio) / 60000) : (l.min || (l.fin ? (l.fin - l.inicio) / 60000 : 0));
   const lives = RAW.lives.filter(l => permit.has(l.usuario) && l.inicio >= desde).map(conDatos);
@@ -436,6 +487,7 @@ function render() {
     <tr class="click ${f.n ? '' : 'zero'}" data-u="${esc(f.v.usuario)}" title="Ver detalle de sus lives">
       <td>${f.n ? i + 1 : '–'}</td>
       <td><b>${esc(f.v.nombre)}</b> ${f.v.tipo === 'competencia' ? '<span class="pill them">competencia</span> ' : ''}<a class="u" href="https://www.tiktok.com/@${encodeURIComponent(f.v.usuario)}" target="_blank" rel="noopener">@${esc(f.v.usuario)}</a></td>
+      <td>${esc(f.v.cadena)}</td>
       <td>${esc(f.v.agencia)}</td>
       <td class="num">${f.n}</td>
       <td class="num">${fmtH(f.min)}</td>
@@ -445,7 +497,26 @@ function render() {
       <td class="num">${f.nVis ? fmtN(f.vis / f.nVis) : '—'}</td>
       <td>${f.ult ? fmtF(f.ult) + ' <span class="ver">ver detalle ›</span>' : 'Sin lives en el periodo'}</td>
       <td>${vivoSet.has(f.v.usuario) ? '<span class="pill live">EN VIVO</span>' : '<span class="pill off">offline</span>'}</td>
-    </tr>`).join('') || '<tr><td colspan="11" class="empty">No hay vendedores con esos filtros.</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="12" class="empty">No hay vendedores con esos filtros.</td></tr>';
+
+  // Por cadena
+  const cd = {};
+  filas.forEach(f => {
+    const c = cd[f.v.tipo + '|' + f.v.cadena] ||= {cadena: f.v.cadena, tipo: f.v.tipo, cuentas: 0, act: 0, n: 0, min: 0, vis: 0, nVis: 0, vivo: 0};
+    c.cuentas++; c.n += f.n; c.min += f.min; c.vis += f.vis; c.nVis += f.nVis; if (f.n) c.act++; if (vivoSet.has(f.v.usuario)) c.vivo++;
+  });
+  const cds = Object.values(cd).sort((a, b) => b.min - a.min || a.cadena.localeCompare(b.cadena));
+  const maxCd = Math.max(1, ...cds.map(c => c.min / c.cuentas));
+  $('#cadenas-l').innerHTML = cds.map(c => `
+    <tr class="${c.n ? '' : 'zero'}">
+      <td><b>${esc(c.cadena)}</b></td><td>${pillTipo(c.tipo)}</td>
+      <td class="num">${c.cuentas}</td><td class="num">${c.act} <span class="hint">(${Math.round(c.act / c.cuentas * 100)}%)</span></td>
+      <td class="num">${c.n}</td><td class="num">${fmtH(c.min)}</td><td class="num"><b>${fmtH(c.min / c.cuentas)}</b></td>
+      <td><span class="bar"><i style="width:${(c.min / c.cuentas / maxCd * 100).toFixed(1)}%;${c.tipo === 'competencia' ? 'background:var(--them)' : ''}"></i></span></td>
+      <td class="num">${c.n ? fmtDur(c.min / c.n) : '—'}</td>
+      <td class="num">${c.nVis ? fmtN(c.vis) : '—'}</td><td class="num">${c.nVis ? fmtN(c.vis / c.nVis) : '—'}</td>
+      <td class="num">${c.vivo ? '<span class="pill live">' + c.vivo + '</span>' : '0'}</td>
+    </tr>`).join('') || '<tr><td colspan="12" class="empty">Sin cuentas con esos filtros.</td></tr>';
 
   // Resumen por agencia
   const ag = {};
@@ -473,14 +544,14 @@ function render() {
   $('#hist-sub').textContent = hist.length > 200 ? 'mostrando los 200 más recientes de ' + hist.length : hist.length + ' lives';
   $('#historial').innerHTML = hist.slice(0, 200).map(l => `
     <tr class="click" data-u="${esc(l.usuario)}" title="Ver detalle del vendedor">
-      <td><b>${esc(l.nombre)}</b></td><td>${esc(l.agencia)}</td>
+      <td><b>${esc(l.nombre)}</b></td><td>${esc(l.cadena)}</td><td>${esc(l.agencia)}</td>
       <td>${fmtF(l.inicio)}</td>
       <td>${l.estado === 'EN VIVO' ? '<span class="pill live">EN VIVO</span>' : fmtF(l.fin)}</td>
       <td class="num">${fmtDur(l.d)}</td>
       <td class="num">${fmtN(l.vistas)}</td>
       <td class="num">${fmtN(l.pico)}</td>
       <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis">${esc(l.titulo)}</td>
-    </tr>`).join('') || '<tr><td colspan="8" class="empty">Sin lives en el periodo.</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="9" class="empty">Sin lives en el periodo.</td></tr>';
 
   $('#sinvendedores').hidden = RAW.vendedores.some(v => (v.tipo || 'propio') === 'propio');
   const rev = Math.max(0, ...(RAW.estado || []).map(e => e.ultimaRev || 0));
@@ -594,11 +665,52 @@ function renderComp() {
     <tr class="click" data-u="${esc(a.v.usuario)}">
       <td>${i + 1}</td><td><b>${esc(a.v.nombre)}</b>${a.v.nombre === '@' + a.v.usuario ? '' : ` <span class="hint">@${esc(a.v.usuario)}</span>`}</td>
       <td>${a.v.tipo === 'competencia' ? '<span class="pill them">competencia</span>' : '<span class="pill us">nosotros</span>'}</td>
-      <td>${esc(a.v.agencia)}</td><td class="num">${a.n}</td><td class="num">${fmtH(a.min)}</td>
+      <td>${esc(a.v.cadena)}</td><td>${esc(a.v.agencia)}</td><td class="num">${a.n}</td><td class="num">${fmtH(a.min)}</td>
       <td class="num">${a.nVis ? fmtN(a.vis) : '—'}</td><td class="num">${a.nVis ? fmtN(a.vis / a.nVis) : '—'}</td>
       <td>${a.vivo ? '<span class="pill live">EN VIVO</span>' : '<span class="pill off">offline</span>'}</td>
-    </tr>`).join('') || '<tr><td colspan="9" class="empty">Sin lives en el periodo.</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="10" class="empty">Sin lives en el periodo.</td></tr>';
+
+  // ---- Contenido: nosotros vs competencia
+  const sc = statsContenido(vend, desde);
+  const lado = t => {
+    const cs = sc.cuentas.filter(a => a.v.tipo === t), g = agruparContenido(cs, () => 'x')[0] || {cuentas: 0, seg: 0, conSeg: 0, delta: 0, conDelta: 0, n: 0, V: 0, L: 0, C: 0, S: 0, G: 0, activas: 0};
+    return g;
+  };
+  const X = lado('propio'), Y = lado('competencia');
+  const pp = (g, k) => g.n ? g[k] / g.n : null;
+  const filasC = [
+    ['Cuentas monitoreadas', X.cuentas, Y.cuentas, fmtN, false],
+    ['Seguidores totales', X.conSeg ? X.seg : null, Y.conSeg ? Y.seg : null, fmtN, true],
+    ['Seguidores por cuenta', X.conSeg ? X.seg / X.conSeg : null, Y.conSeg ? Y.seg / Y.conSeg : null, fmtN, true],
+    ['Seguidores ganados en el periodo', X.conDelta ? X.delta : null, Y.conDelta ? Y.delta : null, fmtN, true],
+    ['Publicaciones', X.n, Y.n, fmtN, true],
+    ['Posts por semana, por cuenta', X.cuentas ? X.n / X.cuentas / dias * 7 : null, Y.cuentas ? Y.n / Y.cuentas / dias * 7 : null, f1, true],
+    ['% de cuentas que publicaron', X.cuentas ? X.activas / X.cuentas * 100 : null, Y.cuentas ? Y.activas / Y.cuentas * 100 : null, x => x == null ? '—' : Math.round(x) + '%', true],
+    ['Views por post', pp(X, 'V'), pp(Y, 'V'), fmtN, true],
+    ['Likes por post', pp(X, 'L'), pp(Y, 'L'), fmtN, true],
+    ['Comentarios por post', pp(X, 'C'), pp(Y, 'C'), f1, true],
+    ['Compartidos por post', pp(X, 'S'), pp(Y, 'S'), f1, true],
+    ['Guardados por post', pp(X, 'G'), pp(Y, 'G'), f1, true],
+    ['Engagement', X.V ? (X.L + X.C + X.S + X.G) / X.V : null, Y.V ? (Y.L + Y.C + Y.S + Y.G) / Y.V : null, pct, true],
+  ];
+  $('#c-cont-vs').innerHTML = filasC.map(([k, a, b, f, cmp]) => {
+    const gana = !cmp || a == null || b == null || a === b ? '' : a > b ? '<span class="gana" style="color:var(--us)">▲ ganamos</span>' : '<span class="gana" style="color:var(--them)">▼ nos ganan</span>';
+    return `<tr><td>${k}<br>${gana}</td><td class="us">${f(a)}</td><td class="them">${f(b)}</td></tr>`;
+  }).join('');
+  const gruposC = agruparContenido(sc.cuentas, a => a.v.tipo + '|' + a.v.cadena);
+  $('#c-cont-cad-t').innerHTML = CAB_CADENA_CONT + '<tbody id="c-cont-cad">' + filasCadenaContenido(gruposC, dias) + '</tbody>';
+  if (window.Chart) {
+    const gs = gruposC.filter(g => g.V).map(g => ({...g, er: (g.L + g.C + g.S + g.G) / g.V})).sort((a, b) => b.er - a.er);
+    const css = getComputedStyle(document.documentElement), mute = css.getPropertyValue('--mute').trim(), line = css.getPropertyValue('--line').trim();
+    const data = {labels: gs.map(g => g.cadena), datasets: [{label: 'Engagement', data: gs.map(g => +(g.er * 100).toFixed(2)),
+      backgroundColor: gs.map(g => g.tipo === 'competencia' ? '#8b5cf6' : '#14b8c4'), borderRadius: 4, maxBarThickness: 26}]};
+    if (chart4) { chart4.data = data; chart4.update(); }
+    else chart4 = new Chart($('#chart4'), {type: 'bar', data, options: {indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {legend: {display: false}, tooltip: {callbacks: {label: c => c.parsed.x.toLocaleString('es-EC', {maximumFractionDigits: 1}) + '% engagement'}}},
+      scales: {x: {beginAtZero: true, ticks: {color: mute, callback: v => v + '%'}, grid: {color: line}}, y: {ticks: {color: mute}, grid: {display: false}}}}});
+  }
 }
+let chart4 = null;
 
 /* ---------- Navegación entre páginas ---------- */
 function pagina() {
@@ -613,6 +725,49 @@ function pagina() {
 /* ---------- Página: Contenido (posts y seguidores) ---------- */
 let chart3 = null;
 const pct = x => x == null || !isFinite(x) ? '—' : (x * 100).toLocaleString('es-EC', {maximumFractionDigits: 1}) + '%';
+const interacciones = p => (p.likes || 0) + (p.comentarios || 0) + (p.compartidos || 0) + (p.guardados || 0);
+const f1 = x => x == null || !isFinite(x) ? '—' : x.toLocaleString('es-EC', {maximumFractionDigits: 1});
+function statsContenido(cuentas, desde) {
+  const porU = Object.fromEntries(cuentas.map(v => [v.usuario, v]));
+  const posts = Object.entries(SOC.posts || {}).map(([id, p]) => ({id, ...p})).filter(p => porU[p.usuario] && p.creado >= desde);
+  posts.forEach(p => p.er = p.vistas ? interacciones(p) / p.vistas : null);
+  const desdeKey = diaKey(new Date(desde));
+  const ac = Object.fromEntries(cuentas.map(v => {
+    const c = (SOC.cuentas || {})[v.usuario], h = c?.historial || [];
+    const base = [...h].reverse().find(x => x.d <= desdeKey) || h[0];
+    const seg = c?.seguidores ?? null;
+    return [v.usuario, {v, seg, delta: base && seg != null && base.seguidores != null && h.length > 1 ? seg - base.seguidores : null,
+      err: c?.error, n: 0, V: 0, L: 0, C: 0, S: 0, G: 0, ult: null}];
+  }));
+  posts.forEach(p => { const a = ac[p.usuario]; a.n++; a.V += p.vistas || 0; a.L += p.likes || 0; a.C += p.comentarios || 0; a.S += p.compartidos || 0; a.G += p.guardados || 0; });
+  Object.values(SOC.posts || {}).forEach(p => { const a = ac[p.usuario]; if (a && (!a.ult || p.creado > a.ult)) a.ult = p.creado; });
+  return {porU, posts, cuentas: Object.values(ac)};
+}
+function agruparContenido(filas, clave) {
+  const g = {};
+  filas.forEach(a => {
+    const k = clave(a), x = g[k] ||= {cadena: a.v.cadena, tipo: a.v.tipo, cuentas: 0, seg: 0, conSeg: 0, delta: 0, conDelta: 0, n: 0, V: 0, L: 0, C: 0, S: 0, G: 0, activas: 0};
+    x.cuentas++; if (a.seg != null) { x.seg += a.seg; x.conSeg++; } if (a.delta != null) { x.delta += a.delta; x.conDelta++; }
+    x.n += a.n; x.V += a.V; x.L += a.L; x.C += a.C; x.S += a.S; x.G += a.G; if (a.n) x.activas++;
+  });
+  return Object.values(g);
+}
+function filasCadenaContenido(grupos, dias) {
+  const orden = [...grupos].sort((a, b) => b.seg - a.seg || a.cadena.localeCompare(b.cadena));
+  return orden.map(x => `
+    <tr class="${x.n ? '' : 'zero'}">
+      <td><b>${esc(x.cadena)}</b></td><td>${pillTipo(x.tipo)}</td>
+      <td class="num">${x.cuentas}</td>
+      <td class="num"><b>${x.conSeg ? fmtN(x.seg) : '—'}</b></td>
+      <td class="num">${x.conDelta ? (x.delta >= 0 ? '<span class="ok">+' : '<span class="err">') + fmtN(x.delta) + '</span>' : '—'}</td>
+      <td class="num">${x.n}</td><td class="num">${f1(x.n / dias * 7)}</td><td class="num">${f1(x.n / x.cuentas / dias * 7)}</td>
+      <td class="num">${x.n ? fmtN(x.V) : '—'}</td><td class="num">${x.n ? fmtN(x.V / x.n) : '—'}</td>
+      <td class="num">${x.n ? fmtN(x.L) : '—'}</td><td class="num">${x.n ? fmtN(x.C) : '—'}</td><td class="num">${x.n ? fmtN(x.S) : '—'}</td><td class="num">${x.n ? fmtN(x.G) : '—'}</td>
+      <td class="num"><b>${x.V ? pct((x.L + x.C + x.S + x.G) / x.V) : '—'}</b></td>
+    </tr>`).join('') || '<tr><td colspan="15" class="empty">Sin cuentas.</td></tr>';
+}
+const CAB_CADENA_CONT = '<thead><tr><th>Cadena / empresa</th><th></th><th class="num">Cuentas</th><th class="num">Seguidores</th><th class="num">Δ periodo</th><th class="num">Posts</th><th class="num">Posts / semana</th><th class="num">Posts / semana por cuenta</th><th class="num">Views</th><th class="num">Views / post</th><th class="num">Likes</th><th class="num">Coment.</th><th class="num">Compart.</th><th class="num">Guard.</th><th class="num">Engagement</th></tr></thead>';
+
 function renderContenido() {
   const dias = +$('#periodo').value;
   const hoy0 = new Date(); hoy0.setHours(0, 0, 0, 0);
@@ -620,22 +775,10 @@ function renderContenido() {
   const tipo = $('#tipo').value, cad = $('#cadena').value, agencia = $('#agencia').value, q = $('#buscar').value.trim().toLowerCase();
   const cuentas = RAW.vendedores.filter(v => v.activo !== false && (!tipo || v.tipo === tipo) && (!cad || v.cadena === cad) && (!agencia || v.agencia === agencia) &&
     (!q || v.nombre.toLowerCase().includes(q) || v.usuario.includes(q) || v.agencia.toLowerCase().includes(q)));
-  const porU = Object.fromEntries(cuentas.map(v => [v.usuario, v]));
-  const posts = Object.entries(SOC.posts || {}).map(([id, p]) => ({id, ...p})).filter(p => porU[p.usuario] && p.creado >= desde);
-  const inter = p => (p.likes || 0) + (p.comentarios || 0) + (p.compartidos || 0) + (p.guardados || 0);
-  posts.forEach(p => p.er = p.vistas ? inter(p) / p.vistas : null);
+  const st = statsContenido(cuentas, desde), porU = st.porU, posts = st.posts;
   $('#s-vacio').hidden = Object.keys(SOC.cuentas || {}).length > 0;
-
-  // seguidores y crecimiento
-  const desdeKey = diaKey(new Date(desde));
-  const segInfo = u => {
-    const c = (SOC.cuentas || {})[u]; if (!c) return {seg: null, delta: null};
-    const h = c.historial || [];
-    const base = [...h].reverse().find(x => x.d <= desdeKey) || h[0];
-    return {seg: c.seguidores ?? null, delta: base && c.seguidores != null && base.seguidores != null && h.length > 1 ? c.seguidores - base.seguidores : null, desde: base?.d};
-  };
   let segTot = 0, segDelta = 0, conDelta = 0;
-  cuentas.forEach(v => { const s = segInfo(v.usuario); if (s.seg != null) segTot += s.seg; if (s.delta != null) { segDelta += s.delta; conDelta++; } });
+  st.cuentas.forEach(a => { if (a.seg != null) segTot += a.seg; if (a.delta != null) { segDelta += a.delta; conDelta++; } });
   const sum = k => posts.reduce((s, p) => s + (p[k] || 0), 0);
   const V = sum('vistas'), L = sum('likes'), C = sum('comentarios'), S = sum('compartidos'), G = sum('guardados');
   const np = posts.length || 1;
@@ -681,18 +824,16 @@ function renderContenido() {
   H.forEach((f, di) => { hh += `<div>${DIAS[di]}</div>` + f.map((c, h) => `<div class="c" title="${DIAS[di]} ${h}:00 · ${c} post${c === 1 ? '' : 's'}" style="${c ? `background:rgba(254,44,85,${(0.15 + c / maxH * 0.85).toFixed(2)})` : ''}"></div>`).join(''); });
   $('#s-heat').innerHTML = hh;
 
+  // por cadena
+  $('#s-cadenas-t').innerHTML = CAB_CADENA_CONT + '<tbody id="s-cadenas">' + filasCadenaContenido(agruparContenido(st.cuentas, a => a.v.tipo + '|' + a.v.cadena), dias) + '</tbody>';
+
   // por cuenta
-  const ac = Object.fromEntries(cuentas.map(v => [v.usuario, {v, n: 0, V: 0, L: 0, C: 0, S: 0, G: 0, ult: null}]));
-  posts.forEach(p => { const a = ac[p.usuario]; a.n++; a.V += p.vistas || 0; a.L += p.likes || 0; a.C += p.comentarios || 0; a.S += p.compartidos || 0; a.G += p.guardados || 0; });
-  Object.entries(SOC.posts || {}).forEach(([id, p]) => { const a = ac[p.usuario]; if (a && (!a.ult || p.creado > a.ult)) a.ult = p.creado; });
-  const filas = Object.values(ac).map(a => ({...a, ...segInfo(a.v.usuario), err: (SOC.cuentas || {})[a.v.usuario]?.error}))
-    .sort((a, b) => (b.seg ?? -1) - (a.seg ?? -1));
-  const f1 = x => x.toLocaleString('es-EC', {maximumFractionDigits: 1});
+  const filas = [...st.cuentas].sort((a, b) => (b.seg ?? -1) - (a.seg ?? -1));
   $('#s-cuentas').innerHTML = filas.map(a => `
     <tr>
       <td><b>${esc(a.v.nombre)}</b>${a.v.nombre === '@' + a.v.usuario ? '' : ` <span class="hint">@${esc(a.v.usuario)}</span>`} <a class="u" href="https://www.tiktok.com/@${encodeURIComponent(a.v.usuario)}" target="_blank" rel="noopener">↗</a></td>
-      <td>${a.v.tipo === 'competencia' ? '<span class="pill them">competencia</span>' : '<span class="pill us">nosotros</span>'}</td>
-      <td>${esc(a.v.agencia)}</td>
+      <td>${pillTipo(a.v.tipo)}</td>
+      <td>${esc(a.v.cadena)}</td><td>${esc(a.v.agencia)}</td>
       <td class="num"><b>${a.seg == null ? (a.err ? '<span class="err" title="' + esc(a.err) + '">⚠</span>' : '<span class="hint">pendiente</span>') : fmtN(a.seg)}</b></td>
       <td class="num">${a.delta == null ? '—' : (a.delta >= 0 ? '<span class="ok">+' : '<span class="err">') + fmtN(a.delta) + '</span>'}</td>
       <td class="num">${a.n}</td><td class="num">${f1(a.n / dias)}</td><td class="num">${f1(a.n / dias * 7)}</td><td class="num">${f1(a.n / dias * 30)}</td>
@@ -700,7 +841,7 @@ function renderContenido() {
       <td class="num">${a.n ? fmtN(a.L) : '—'}</td><td class="num">${a.n ? fmtN(a.C) : '—'}</td><td class="num">${a.n ? fmtN(a.S) : '—'}</td><td class="num">${a.n ? fmtN(a.G) : '—'}</td>
       <td class="num"><b>${a.V ? pct((a.L + a.C + a.S + a.G) / a.V) : '—'}</b></td>
       <td>${a.ult ? fmtF(a.ult) : '—'}</td>
-    </tr>`).join('') || '<tr><td colspan="17" class="empty">No hay cuentas con esos filtros.</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="18" class="empty">No hay cuentas con esos filtros.</td></tr>';
 
   // publicaciones
   const orden = $('#s-orden').value;
@@ -710,14 +851,15 @@ function renderContenido() {
     <tr>
       <td>${new Date(p.creado).toLocaleString('es-EC', {weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'})}</td>
       <td><b>${esc(v.nombre)}</b> ${v.tipo === 'competencia' ? '<span class="pill them">comp.</span>' : ''}</td>
+      <td>${esc(v.cadena)}</td>
       <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis" title="${esc(p.desc)}">${esc(p.desc) || '<span class="hint">sin descripción</span>'}</td>
       <td class="num"><b>${fmtN(p.vistas)}</b></td><td class="num">${fmtN(p.likes)}</td><td class="num">${fmtN(p.comentarios)}</td>
       <td class="num">${fmtN(p.compartidos)}</td><td class="num">${fmtN(p.guardados)}</td><td class="num"><b>${pct(p.er)}</b></td>
       <td><a class="u" href="https://www.tiktok.com/@${encodeURIComponent(p.usuario)}/video/${p.id}" target="_blank" rel="noopener">ver ↗</a></td>
-    </tr>`; }).join('') || '<tr><td colspan="10" class="empty">Sin publicaciones en el periodo.</td></tr>';
+    </tr>`; }).join('') || '<tr><td colspan="11" class="empty">Sin publicaciones en el periodo.</td></tr>';
 
   const gen = SOC.generado;
-  $('#actualizado').textContent = 'Métricas de contenido cada 4 h · última actualización: ' + (gen ? fmtF(gen) : '—');
+  $('#actualizado').textContent = 'Métricas de contenido cada hora · última actualización: ' + (gen ? fmtF(gen) : '—');
 }
 window.addEventListener('hashchange', pagina);
 
@@ -805,11 +947,11 @@ function tipoPanel() { return document.querySelector('input[name=ptipo]:checked'
 function ayudaPanel() {
   const comp = tipoPanel() === 'competencia';
   $('#p-ayuda').innerHTML = comp
-    ? 'Pega una cuenta por línea: <b>usuario y empresa</b> (ej. <code>"@comandato.ofertas" "COMANDATO"</code>). Usa el mismo nombre de empresa para agrupar varias cuentas de esa marca. Sirve con comillas, comas, @usuario, el link del perfil o columnas de Excel.'
-    : 'Pega uno por línea: <b>usuario y agencia</b> (el nombre del vendedor es opcional, al final). Sirve con comillas, comas, @usuario, el link del perfil o copiando columnas desde Excel. Puedes agregar todos los que quieras.';
+    ? 'Pega una cuenta por línea: <b>usuario y empresa</b> (ej. <code>"@vendedora.x" "ARTEFACTA KIA"</code>). Se agrupan solas por empresa: Artefacta, Marcimex, Almacenes España, Comandato, Jaher, Almacenes Al Precio, La Ganga… Cualquier otra empresa también funciona. Sirve con comillas, comas, @usuario, el link del perfil o columnas de Excel.'
+    : 'Pega uno por línea: <b>usuario y agencia</b> (el nombre del vendedor es opcional, al final). La cadena se toma de la 1.ª palabra de la agencia: <b>CRECOS, ORVE HOGAR, JAPON, MOTOZONE o PAGAMENOS</b>. Si la agencia es de un competidor conocido (ej. ARTEFACTA…), la cuenta se marca sola como competencia.';
   $('#nuevos').placeholder = comp
     ? '"@comandato.ofertas" "COMANDATO"\n@artefacta.ec, ARTEFACTA\nhttps://www.tiktok.com/@marcimex.ec, MARCIMEX'
-    : '"@pepito" "JAPON PARQUE CALIFORNIA"\n@andrea.ventas, CRECOS MALL DEL SOL, Andrea Mora\nhttps://www.tiktok.com/@dani.tecno, ORVE QUITO NORTE';
+    : '"@pepito" "JAPON PARQUE CALIFORNIA"\n@andrea.ventas, CRECOS MALL DEL SOL, Andrea Mora\nhttps://www.tiktok.com/@dani.tecno, ORVE HOGAR QUITO NORTE';
   actualizarInfo();
 }
 document.querySelectorAll('input[name=ptipo]').forEach(r => r.addEventListener('change', ayudaPanel));
@@ -909,7 +1051,7 @@ function demoSocial(vendedores) {
 }
 
 function demo() {
-  const nombres = [['andrea.ventas','Andrea Mora','JAPON PARQUE CALIFORNIA'],['carlos.crecos','Carlos Vera','CRECOS MALL DEL SOL'],['dani.tecno','Daniela Ruiz','ORVE QUITO NORTE'],['jose.motos','José Castro','JAPON MANTA'],['mafer.hogar','María Fernanda León','CRECOS CUENCA'],['luisvende','Luis Paredes','JAPON PARQUE CALIFORNIA'],['kathy.ofertas','Katherine Solís','ORVE QUITO NORTE'],['bryan.ec','Bryan Zambrano','CRECOS MALL DEL SOL'],['vale.promos','Valeria Cedeño','JAPON MANTA'],['jorge.ofertas','Jorge Alvarado','CRECOS CUENCA'],['nati.vende','Natalia Ponce','JAPON PARQUE CALIFORNIA'],['pablo.hogar','Pablo Intriago','ORVE QUITO NORTE']];
+  const nombres = [['andrea.ventas','Andrea Mora','JAPON PARQUE CALIFORNIA'],['carlos.crecos','Carlos Vera','CRECOS MALL DEL SOL'],['dani.tecno','Daniela Ruiz','ORVE HOGAR QUITO NORTE'],['jose.motos','José Castro','MOTOZONE MANTA'],['mafer.hogar','María Fernanda León','CRECOS CUENCA'],['luisvende','Luis Paredes','JAPON PARQUE CALIFORNIA'],['kathy.ofertas','Katherine Solís','ORVE HOGAR QUITO NORTE'],['bryan.ec','Bryan Zambrano','CRECOS MALL DEL SOL'],['vale.promos','Valeria Cedeño','PAGAMENOS DURAN'],['jorge.ofertas','Jorge Alvarado','CRECOS CUENCA'],['nati.vende','Natalia Ponce','JAPON PARQUE CALIFORNIA'],['pablo.hogar','Pablo Intriago','ORVE HOGAR QUITO NORTE']];
   const vendedores = nombres.map(([usuario, nombre, agencia]) => ({usuario, nombre, agencia, cadena: cadenaDe(agencia), tipo: 'propio', activo: true}));
   [['comandato.ofertas','COMANDATO'],['comandato.gye','COMANDATO'],['artefacta.ec','ARTEFACTA'],['artefacta.quito','ARTEFACTA'],['marcimex.ec','MARCIMEX'],['lagangaec','LA GANGA']]
     .forEach(([usuario, emp]) => vendedores.push({usuario, nombre: '@' + usuario, agencia: emp, cadena: emp.charAt(0) + emp.slice(1).toLowerCase(), tipo: 'competencia', activo: true}));
@@ -942,7 +1084,7 @@ $('#buscar').addEventListener('input', pagina);
 $('#exportar').addEventListener('click', exportarCSV);
 pagina();
 cargar();
-setInterval(cargar, 2 * 60 * 1000);
+setInterval(cargar, 70 * 1000);
 </script>
 </body>
 </html>
