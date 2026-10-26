@@ -117,21 +117,21 @@
     <div>
       <h1><span class="logo">🐸</span> SAPO <span class="marca">Sistema de Análisis de Presencia Online</span></h1>
       <div class="sub" id="actualizado">Cargando…</div>
-      <nav class="tabs"><a href="#" id="t-resumen" class="on">Resumen</a><a href="#competencia" id="t-comp">Nosotros vs Competencia</a><a href="#contenido" id="t-cont">Contenido (posts y seguidores)</a></nav>
+      <nav class="tabs"><a href="#" id="t-resumen" class="on">Resumen</a><a href="#competencia" id="t-comp">Nosotros vs Competencia</a><a href="#contenido" id="t-cont">Contenido (posts y seguidores)</a><a href="#encuesta" id="t-enc">Encuesta</a></nav>
     </div>
     <div class="filters">
-      <select id="periodo">
+      <select id="periodo" class="no-enc">
         <option value="1">Hoy</option>
         <option value="7" selected>Últimos 7 días</option>
         <option value="30">Últimos 30 días</option>
         <option value="90">Últimos 90 días</option>
       </select>
-      <select id="red" title="Red social">
+      <select id="red" class="no-enc" title="Red social">
         <option value="">TikTok + Instagram</option>
         <option value="tiktok">Solo TikTok</option>
         <option value="instagram">Solo Instagram</option>
       </select>
-      <select id="rol" title="Tipo de cuenta">
+      <select id="rol" class="no-enc" title="Tipo de cuenta">
         <option value="">Vendedores + oficiales</option>
         <option value="vendedor">Solo vendedores</option>
         <option value="oficial">Solo cuentas oficiales</option>
@@ -273,6 +273,50 @@
     <div class="card section">
       <h2>Contenido por cadena / empresa <small>suma de todas sus cuentas</small></h2>
       <div class="tablewrap"><table id="c-cont-cad-t"><tbody id="c-cont-cad"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="p-enc" hidden>
+    <div class="encuesta-box" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between">
+      <div><b>📋 Encuesta para vendedores</b> <span class="hint">· se actualiza sola 1–2 min después de cada respuesta</span><br>
+        <span style="font:13px ui-monospace,monospace" id="e-link"></span></div>
+      <div class="row" style="margin:0">
+        <button type="button" id="e-copiar">Copiar link</button>
+        <a class="u" id="e-abrir" target="_blank" rel="noopener">Abrir encuesta ↗</a>
+        <a class="u" id="e-excel" href="https://github.com/cdizquierdoc-hub/monitor-lives-tiktok/raw/data/data/encuesta/Encuesta_TikTok_Cresa.xlsx">⬇ Descargar Excel</a>
+      </div>
+    </div>
+    <div class="kpis">
+      <div class="card kpi"><div class="l">Respuestas</div><div class="v" id="e-resp">–</div><div class="s" id="e-resp-s"></div></div>
+      <div class="card kpi"><div class="l">Vendedores únicos</div><div class="v" id="e-vend">–</div><div class="s">cada cuenta cuenta una vez</div></div>
+      <div class="card kpi"><div class="l">Cuentas de competencia</div><div class="v" id="e-comp">–</div><div class="s">sin repetir</div></div>
+      <div class="card kpi"><div class="l">Agencias que respondieron</div><div class="v" id="e-ag">–</div><div class="s" id="e-ag-s"></div></div>
+      <div class="card kpi"><div class="l">Agregadas a SAPO</div><div class="v" id="e-sapo">–</div><div class="s">verificadas y sin duplicar</div></div>
+    </div>
+    <div class="row" style="margin:0 0 12px"><input id="e-buscar" placeholder="Buscar nombre, usuario o agencia…" style="flex:1;min-width:220px"><span class="hint" id="e-act"></span></div>
+
+    <div class="card section">
+      <h2>Cuentas Cresa <small id="e-cresa-sub"></small></h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Última respuesta</th><th>Nombre</th><th>Cadena</th><th>Agencia</th><th>Usuario TikTok</th><th>¿Existe?</th><th class="num">Seguidores</th><th>¿Hace lives?</th><th>Instagram</th><th>En SAPO</th><th class="num">Respondió</th><th></th></tr></thead>
+        <tbody id="e-cresa"></tbody>
+      </table></div>
+    </div>
+    <div class="card section">
+      <h2>Competencia reportada <small id="e-comp-sub"></small></h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Usuario TikTok</th><th>Empresa</th><th>Qué publica</th><th>¿Existe?</th><th class="num">Seguidores</th><th class="num">Vendedores que la reportaron</th><th>Reportada por</th><th>Agencias</th><th>En SAPO</th><th></th></tr></thead>
+        <tbody id="e-competencia"></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <h2>Avance por agencia <label class="hint" style="font-weight:500"><input type="checkbox" id="e-faltan"> solo las que faltan</label></h2>
+      <div class="dk" id="e-cadenas"></div>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Cadena</th><th>Agencia</th><th class="num">Vendedores que respondieron</th><th>Estado</th></tr></thead>
+        <tbody id="e-avance"></tbody>
+      </table></div>
+      <p class="hint" style="margin-top:10px"><b>Eliminar</b> abre GitHub con todo listo: pulsa <b>Commit changes</b> y en 1–2 minutos la cuenta desaparece de esta vista, del Excel y del monitoreo.</p>
     </div>
   </section>
 
@@ -419,6 +463,7 @@ const GH = 'https://github.com/' + REPO;
 const VACIO = {generado: 0, intervalo: 2, vendedores: [], lives: [], estado: []};
 const SOCIAL_URL = 'https://raw.githubusercontent.com/' + REPO + '/data/data/social.json';
 let SOC = {cuentas: {}, posts: {}};
+let ENC = null;
 
 let SHA = null, apiPausaHasta = 0;
 async function ultimoSha() {
@@ -433,7 +478,7 @@ const urlDatos = (sha, archivo) => 'https://raw.githubusercontent.com/' + REPO +
 
 async function cargar() {
   if (new URLSearchParams(location.search).has('demo')) {
-    RAW = demo(); SOC = demoSocial(RAW.vendedores); $('#modo').hidden = false; prepararFiltros(); pagina(); return;
+    RAW = demo(); SOC = demoSocial(RAW.vendedores); ENC = demoEnc(); $('#modo').hidden = false; prepararFiltros(); pagina(); return;
   }
   try {
     const sha = await ultimoSha();
@@ -442,6 +487,7 @@ async function cargar() {
     RAW = r.status === 404 ? VACIO : await r.json();
     if (!r.ok && r.status !== 404) throw new Error('HTTP ' + r.status);
     try { const rs = await fetch(urlDatos(sha, 'social.json'), {cache: 'no-store'}); if (rs.ok) SOC = await rs.json(); } catch (e) {}
+    try { const re_ = await fetch(urlDatos(sha, 'encuesta/datos.json'), {cache: 'no-store'}); if (re_.ok) ENC = await re_.json(); } catch (e) {}
     SHA = sha;
   } catch (e) {
     if (!RAW) RAW = VACIO;
@@ -759,13 +805,69 @@ let chart4 = null;
 
 /* ---------- Navegación entre páginas ---------- */
 function pagina() {
-  const p = location.hash === '#competencia' ? 'comp' : location.hash === '#contenido' ? 'cont' : 'resumen';
-  $('#p-resumen').hidden = p !== 'resumen'; $('#p-comp').hidden = p !== 'comp'; $('#p-cont').hidden = p !== 'cont';
-  $('#t-resumen').classList.toggle('on', p === 'resumen'); $('#t-comp').classList.toggle('on', p === 'comp'); $('#t-cont').classList.toggle('on', p === 'cont');
+  const p = {'#competencia': 'comp', '#contenido': 'cont', '#encuesta': 'enc'}[location.hash] || 'resumen';
+  [['resumen', 'resumen'], ['comp', 'comp'], ['cont', 'cont'], ['enc', 'enc']].forEach(([k]) => { $('#p-' + k).hidden = p !== k; $('#t-' + k).classList.toggle('on', p === k); });
   document.querySelectorAll('.solo-resumen').forEach(el => el.style.display = p === 'resumen' ? '' : 'none');
-  document.querySelectorAll('.f-cuentas').forEach(el => el.style.display = p === 'comp' ? 'none' : '');
-  if (RAW) p === 'comp' ? renderComp() : p === 'cont' ? renderContenido() : render();
+  document.querySelectorAll('.f-cuentas').forEach(el => el.style.display = p === 'comp' || p === 'enc' ? 'none' : '');
+  document.querySelectorAll('.no-enc').forEach(el => el.style.display = p === 'enc' ? 'none' : '');
+  if (RAW) p === 'comp' ? renderComp() : p === 'cont' ? renderContenido() : p === 'enc' ? renderEncuesta() : render();
 }
+
+/* ---------- Página: Encuesta (en vivo) ---------- */
+const ENC_LINK = 'https://cdizquierdoc-hub.github.io/monitor-lives-tiktok/encuesta/';
+$('#e-link').textContent = ENC_LINK; $('#e-abrir').href = ENC_LINK;
+$('#e-copiar').addEventListener('click', () => { navigator.clipboard?.writeText(ENC_LINK).then(() => $('#e-copiar').textContent = '¡Copiado!', () => {}); });
+const existePill = x => x === true ? '<span class="ok">✓ sí</span>' : x === false ? '<span class="err" title="No existe en TikTok: revisa cómo lo escribió">✗ no existe</span>' : '<span class="hint">verificando</span>';
+function linkEliminar(nombreArchivo, contenido, texto) {
+  const url = GH + '/new/main/encuesta/excluir?filename=' + encodeURIComponent(nombreArchivo) + '&value=' + encodeURIComponent(contenido + '\n# eliminado desde SAPO el ' + new Date().toLocaleString('es-EC') + '\n');
+  return `<a class="u eliminar" href="${url}" target="_blank" rel="noopener" style="color:var(--accent)">${texto}</a>`;
+}
+function renderEncuesta() {
+  if (SHA) $('#e-excel').href = urlDatos(SHA, 'encuesta/Encuesta_TikTok_Cresa.xlsx');
+  const d = ENC || {resumen: {}, cresa: [], competencia: [], avance: []}, r = d.resumen || {};
+  const q = norm($('#e-buscar').value.trim());
+  const pasa = (...campos) => !q || campos.some(c => norm(c || '').includes(q));
+  $('#e-resp').textContent = fmtN(r.respuestas || 0);
+  $('#e-resp-s').textContent = r.respuestas ? 'incluye repeticiones' : 'aún no hay respuestas';
+  $('#e-vend').textContent = fmtN(r.vendedores || 0);
+  $('#e-comp').textContent = fmtN(r.competencia || 0);
+  $('#e-ag').textContent = (r.agencias_con_respuesta || 0) + ' / ' + (r.agencias_total || 191);
+  $('#e-ag-s').textContent = '+ ' + (r.multinivel || 0) + ' de Multinivel';
+  $('#e-sapo').textContent = fmtN(r.agregadas_a_sapo || 0);
+  $('#e-act').textContent = r.actualizado ? 'Actualizado ' + fmtF(r.actualizado) : '';
+  $('#actualizado').textContent = 'Encuesta en vivo · se refresca sola cada minuto';
+  const cr = d.cresa.filter(f => pasa(f.nombre, f.tiktok, f.agencia, f.cadena, f.instagram));
+  $('#e-cresa-sub').textContent = cr.length + ' cuentas';
+  $('#e-cresa').innerHTML = cr.map(f => `
+    <tr>
+      <td style="white-space:nowrap">${esc(f.fecha.slice(5).replace('-', '/'))}</td><td><b>${esc(f.nombre)}</b></td><td>${esc(f.cadena)}</td><td>${esc(f.agencia)}</td>
+      <td>${f.tiktok ? `<a class="u" href="https://www.tiktok.com/@${encodeURIComponent(f.tiktok)}" target="_blank" rel="noopener">@${esc(f.tiktok)}</a>` : '<span class="hint">no tiene</span>'}</td>
+      <td>${f.tiktok ? existePill(f.existe) : ''}</td><td class="num">${fmtN(f.seguidores)}</td><td>${esc(f.lives)}</td>
+      <td>${f.instagram ? `<a class="u" href="https://www.instagram.com/${encodeURIComponent(f.instagram)}/" target="_blank" rel="noopener">@${esc(f.instagram)}</a>` : ''}</td>
+      <td>${f.ya_en_sapo ? '<span class="hint">ya estaba</span>' : f.existe ? '<span class="ok">agregada</span>' : '—'}</td>
+      <td class="num">${f.veces > 1 ? f.veces + ' veces' : '1'}</td>
+      <td>${f.tiktok ? linkEliminar(f.tiktok + '.txt', '@' + f.tiktok, 'Eliminar') : linkEliminar('resp-' + f.ids[0] + '.txt', f.ids.map(i => 'id:' + i).join('\n'), 'Eliminar')}</td>
+    </tr>`).join('') || '<tr><td colspan="12" class="empty">Aún no hay respuestas. Comparte el link de la encuesta.</td></tr>';
+  const co = d.competencia.filter(f => pasa(f.tiktok, f.empresa, ...(f.por || []), ...(f.agencias || [])));
+  $('#e-comp-sub').textContent = co.length + ' cuentas';
+  $('#e-competencia').innerHTML = co.map(f => `
+    <tr>
+      <td><a class="u" href="https://www.tiktok.com/@${encodeURIComponent(f.tiktok)}" target="_blank" rel="noopener">@${esc(f.tiktok)}</a></td>
+      <td>${esc(f.empresa)}</td><td>${esc(f.contenido)}</td><td>${existePill(f.existe)}</td><td class="num">${fmtN(f.seguidores)}</td>
+      <td class="num">${f.veces}</td><td style="max-width:240px;white-space:normal">${esc((f.por || []).join(', '))}</td>
+      <td style="max-width:260px;white-space:normal">${esc((f.agencias || []).join(', '))}</td>
+      <td>${f.ya_en_sapo ? '<span class="hint">ya estaba</span>' : f.existe ? '<span class="ok">agregada</span>' : '—'}</td>
+      <td>${linkEliminar(f.tiktok + '.txt', '@' + f.tiktok, 'Eliminar')}</td>
+    </tr>`).join('') || '<tr><td colspan="10" class="empty">Nadie ha reportado cuentas de la competencia todavía.</td></tr>';
+  const cads = {};
+  d.avance.forEach(a => { const c = cads[a.cadena] ||= {t: 0, r: 0}; c.t++; if (a.n) c.r++; });
+  $('#e-cadenas').innerHTML = Object.entries(cads).map(([c, x]) => `<div><span>${esc(c)}</span><b>${c === 'Multinivel' ? (d.avance.find(a => a.cadena === 'Multinivel')?.n || 0) + ' vend.' : x.r + ' / ' + x.t}</b></div>`).join('');
+  const av = d.avance.filter(a => (!$('#e-faltan').checked || !a.n) && pasa(a.agencia, a.cadena)).sort((a, b) => (a.n > 0) - (b.n > 0) || a.cadena.localeCompare(b.cadena) || a.agencia.localeCompare(b.agencia));
+  $('#e-avance').innerHTML = av.map(a => `<tr class="${a.n ? '' : 'zero'}"><td>${esc(a.cadena)}</td><td>${esc(a.agencia)}</td><td class="num">${a.n}</td><td>${a.n ? '<span class="ok">✓ respondió</span>' : '<span class="err">sin respuestas</span>'}</td></tr>`).join('');
+}
+const norm = s => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+$('#e-buscar').addEventListener('input', renderEncuesta);
+$('#e-faltan').addEventListener('change', renderEncuesta);
 
 /* ---------- Página: Contenido (posts y seguidores) ---------- */
 let chart3 = null;
@@ -1094,7 +1196,7 @@ function renderPanel() {
       : e.error ? '<span class="err" title="' + esc(e.error) + '">⚠ no se pudo revisar</span>'
       : e.enVivo ? '<span class="pill live">EN VIVO</span>' : '<span class="ok">✓ ok</span>';
     return `<tr class="click" data-u="${esc(v.usuario)}"><td>${cuentaHtml(v, false)}</td><td>${v.tipo === 'competencia' ? '<span class="pill them">competencia</span>' : '<span class="pill us">nuestro</span>'}</td><td>${esc(v.agencia || '—')}</td><td>${st}</td>
-      <td>${v.archivo ? `<a class="u" href="${GH}/edit/main/vendedores/${encodeURIComponent(v.archivo)}" target="_blank" rel="noopener">editar</a>` : ''}</td></tr>`;
+      <td>${v.archivo === 'encuesta' ? '<a class="u" href="#encuesta" onclick="cerrarPanel()">de la encuesta</a>' : v.archivo ? `<a class="u" href="${GH}/edit/main/vendedores/${encodeURIComponent(v.archivo)}" target="_blank" rel="noopener">editar</a>` : ''}</td></tr>`;
   }).join('') || '<tr><td colspan="5" class="empty">Aún no hay cuentas.</td></tr>';
 }
 $('#gestionar').addEventListener('click', abrirPanel);
@@ -1102,6 +1204,16 @@ $('#nuevos').addEventListener('input', actualizarInfo);
 $('#guardar').addEventListener('click', guardarNuevos);
 
 /* Datos ficticios para la vista previa (?demo) */
+function demoEnc() {
+  const cresa = [['María León', 'Crecos', 'CRECOS MALL DEL SOL', 'mafer.hogar', true, 1830, 'Sí, seguido', '', false, 2], ['José Castro', 'Motozone', 'MOTOZONE MILAGRO', 'jose.motos', true, 940, 'A veces', 'jose.ig', false, 1],
+    ['Kevin R.', 'Crecos', 'CRECOS MACHALA', 'kevinasesor', true, 610, 'Sí, seguido', '', true, 1], ['Pedro M.', 'Multinivel', '(sin agencia)', 'pedro.vende', true, 220, 'No', '', false, 1], ['Ana T.', 'Japón', 'JAPON CUENCA', 'ana.tiendaa', false, null, 'A veces', '', false, 1]]
+    .map(([nombre, cadena, agencia, tiktok, existe, seguidores, lives, instagram, ya, veces], i) => ({fecha: '2026-10-26 1' + (6 + i % 3) + ':0' + i, nombre, cadena, agencia, tiktok, existe, seguidores, lives, instagram, ya_en_sapo: ya, veces, ids: ['x' + i]}));
+  const competencia = [['vende.artefacta', 'Artefacta', 'Lives', 3], ['comandato.gye', 'Comandato', 'Ambos', 2], ['jaher.sto', 'Jaher', 'Videos', 1]]
+    .map(([tiktok, empresa, contenido, veces]) => ({tiktok, empresa, contenido, existe: true, seguidores: 4000 * veces, veces, por: ['María León', 'José Castro', 'Kevin R.'].slice(0, veces), agencias: ['CRECOS MALL DEL SOL', 'MOTOZONE MILAGRO'], ya_en_sapo: false}));
+  const avance = ['CRECOS MALL DEL SOL', 'MOTOZONE MILAGRO', 'CRECOS MACHALA', 'JAPON CUENCA', 'ORVE PORTETE', 'PAGA MENOS DAULE', 'SAMSUNG CITY MALL'].map((a, i) => ({cadena: cadenaDe(a), agencia: a, n: i < 4 ? 1 : 0}));
+  avance.push({cadena: 'Multinivel', agencia: 'MULTINIVEL (sin agencia)', n: 1});
+  return {resumen: {respuestas: 6, vendedores: 5, competencia: 3, agencias_con_respuesta: 4, agencias_total: 191, multinivel: 1, agregadas_a_sapo: 6, actualizado: Date.now()}, cresa, competencia, avance};
+}
 function demoSocial(vendedores) {
   let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const ahora = Date.now(), cuentas = {}, posts = {};

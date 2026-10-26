@@ -2,11 +2,19 @@
 """
 Recolector de la encuesta de vendedores (encuesta/index.html).
 
-- Las respuestas llegan a un buzón ntfy.sh (guarda 12 h); este script las copia a
-  DATA_DIR/encuesta/respuestas.jsonl, verifica en TikTok que cada usuario exista
-  y genera DATA_DIR/encuesta/Encuesta_TikTok_Cresa.xlsx con:
-    · "Cuentas Cresa"  · "Competencia"  · "Avance por agencia"
+- Las respuestas llegan a un buzón ntfy.sh (guarda 12 h); se copian a DATA_DIR/encuesta/respuestas.jsonl.
+- Cada cuenta cuenta UNA sola vez: si un vendedor responde varias veces gana su última respuesta, y una
+  cuenta de competencia reportada por varios vendedores es una sola fila.
+- Eliminar: archivos en encuesta/excluir/*.txt (rama main) con una línea por cuenta (@usuario) o
+  respuesta (id:XXXX). Se crean desde la pestaña Encuesta de SAPO.
+- Genera en DATA_DIR/encuesta/:
+    Encuesta_TikTok_Cresa.xlsx  (Cuentas Cresa · Competencia · Avance por agencia)
+    datos.json                  (vista en vivo de SAPO)
+    resumen.json
+    cuentas_sapo.csv            (cuentas verificadas que SAPO monitorea, sin duplicar las puestas a mano)
 """
+import csv
+import glob
 import json
 import os
 import time
@@ -23,8 +31,13 @@ CARPETA = os.path.join(DATA_DIR, "encuesta")
 RESP = os.path.join(CARPETA, "respuestas.jsonl")
 VALID = os.path.join(CARPETA, "validacion.json")
 EXCEL = os.path.join(CARPETA, "Encuesta_TikTok_Cresa.xlsx")
-AGENCIAS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "encuesta", "agencias.json")
+RAIZ = os.path.dirname(os.path.abspath(__file__))
+AGENCIAS = os.path.join(RAIZ, "encuesta", "agencias.json")
+EXCLUIR = os.path.join(RAIZ, "encuesta", "excluir")
 EC = timezone(timedelta(hours=-5))
+MULTI = "MULTINIVEL (sin agencia)"
+CADENAS = [("PAGA MENOS", "Pagamenos"), ("MOTOZONE", "Motozone"), ("SAMSUNG", "Samsung"),
+           ("CRECOS", "Crecos"), ("ORVE", "Orve Hogar"), ("JAPON", "Japón")]
 
 
 def leer_json(ruta, defecto):
@@ -36,7 +49,6 @@ def leer_json(ruta, defecto):
 
 
 def traer_respuestas():
-    vistas = set()
     previas = []
     if os.path.exists(RESP):
         with open(RESP, encoding="utf-8") as f:
@@ -65,11 +77,27 @@ def traer_respuestas():
     return previas + nuevas, len(nuevas)
 
 
+def leer_exclusiones():
+    """(@usuarios, ids de respuesta) eliminados desde SAPO."""
+    usuarios, ids = set(), set()
+    for ruta in glob.glob(os.path.join(EXCLUIR, "*.txt")):
+        with open(ruta, encoding="utf-8") as f:
+            for l in f:
+                l = l.strip()
+                if not l or l.startswith("#"):
+                    continue
+                if l.lower().startswith("id:"):
+                    ids.add(l[3:].strip())
+                else:
+                    usuarios.add(l.lstrip("@").lower())
+    return usuarios, ids
+
+
 def verificar(usuario, cache):
     """Comprueba en TikTok que el usuario exista; guarda nombre visible y seguidores."""
     c = cache.get(usuario)
     ahora = time.time()
-    if c and (c["existe"] and ahora - c["t"] < 7 * 86400 or not c["existe"] and ahora - c["t"] < 6 * 3600):
+    if c and (c["existe"] and ahora - c["t"] < 7 * 86400 or c["existe"] is False and ahora - c["t"] < 6 * 3600):
         return c
     q = urllib.parse.urlencode({"aid": "1988", "sourceType": "54", "uniqueId": usuario})
     try:
@@ -86,23 +114,89 @@ def verificar(usuario, cache):
     return c
 
 
-def fecha(r):
-    return datetime.fromtimestamp(r["_t"], EC).strftime("%Y-%m-%d %H:%M")
+def fecha(t):
+    return datetime.fromtimestamp(t, EC).strftime("%Y-%m-%d %H:%M")
 
 
 def existe_txt(v):
     return {True: "Sí", False: "NO EXISTE – revisar", None: "Sin verificar"}[v.get("existe")]
 
 
-def main(solo_si_hay_nuevas=False):
-    """Genera el Excel. Con solo_si_hay_nuevas=True (uso desde el monitor, cada minuto) no hace nada si no llegó nada."""
-    respuestas, n_nuevas = traer_respuestas()
-    if solo_si_hay_nuevas and n_nuevas == 0 and os.path.exists(EXCEL):
-        return 0
-    cache = leer_json(VALID, {})
-    en_sapo = {v["handle"] for v in leer_vendedores() if v["plataforma"] == "tiktok"}
-    agencias = leer_json(AGENCIAS, [])
+def cadena_de(a):
+    return next((n for p, n in CADENAS if a.startswith(p)), "")
 
+
+def procesar(respuestas, cache):
+    excl_u, excl_ids = leer_exclusiones()
+    validas = [r for r in respuestas if r["_id"] not in excl_ids]
+    manuales = {(v["plataforma"], v["handle"]): v for v in leer_vendedores(incluir_encuesta=False)}
+
+    # ---- Cuentas Cresa: una fila por usuario de TikTok (gana la última respuesta)
+    cresa = {}
+    for r in sorted(validas, key=lambda x: x["_t"]):
+        tt = (r.get("tiktok") or "").lower()
+        if tt and tt in excl_u:
+            continue
+        clave = tt or "sin-tiktok:" + (r.get("nombre") or "").strip().lower() + "|" + (r.get("agencia") or "")
+        prev = cresa.get(clave)
+        x = dict(r)
+        x["_veces"] = (prev["_veces"] + 1) if prev else 1
+        x["_ids"] = (prev["_ids"] if prev else []) + [r["_id"]]
+        x["_primera"] = prev["_primera"] if prev else r["_t"]
+        cresa[clave] = x
+    filas_cresa = []
+    for x in sorted(cresa.values(), key=lambda x: -x["_t"]):
+        tt = (x.get("tiktok") or "").lower()
+        v = verificar(tt, cache) if tt else {}
+        man = manuales.get(("tiktok", tt))
+        filas_cresa.append({
+            "fecha": fecha(x["_t"]), "nombre": x.get("nombre", ""), "cadena": x.get("cadena", ""),
+            "agencia": x.get("agencia") or ("(sin agencia)" if x.get("cadena") == "Multinivel" else ""),
+            "tiktok": tt, "existe": v.get("existe") if tt else None, "nick": v.get("nick", ""),
+            "seguidores": v.get("seguidores"), "lives": x.get("lives", ""),
+            "instagram": (x.get("instagram") or "").lower(), "veces": x["_veces"], "ids": x["_ids"],
+            "ya_en_sapo": bool(man)})
+
+    # ---- Competencia: una fila por cuenta (aunque la reporten varios)
+    comp = {}
+    for r in sorted(validas, key=lambda x: x["_t"]):
+        for c in r.get("competencia") or []:
+            u = (c.get("usuario") or "").lower()
+            if not u or u in excl_u or u in cresa:
+                continue
+            x = comp.setdefault(u, {"empresas": defaultdict(int), "contenido": defaultdict(int), "por": [],
+                                    "agencias": set(), "primera": r["_t"], "ultima": r["_t"]})
+            if c.get("empresa"):
+                x["empresas"][c["empresa"]] += 1
+            if c.get("contenido"):
+                x["contenido"][c["contenido"]] += 1
+            quien = (r.get("nombre") or "").strip()
+            if quien and quien not in x["por"]:
+                x["por"].append(quien)
+            x["agencias"].add(r.get("agencia") or r.get("cadena", ""))
+            x["ultima"] = r["_t"]
+    filas_comp = []
+    for u, x in sorted(comp.items(), key=lambda kv: (-len(kv[1]["por"]), -kv[1]["ultima"])):
+        v = verificar(u, cache)
+        filas_comp.append({
+            "tiktok": u, "empresa": max(x["empresas"], key=x["empresas"].get) if x["empresas"] else "",
+            "contenido": max(x["contenido"], key=x["contenido"].get) if x["contenido"] else "",
+            "existe": v.get("existe"), "nick": v.get("nick", ""), "seguidores": v.get("seguidores"),
+            "veces": max(1, len(x["por"])), "por": x["por"], "agencias": sorted(a for a in x["agencias"] if a),
+            "primera": fecha(x["primera"]), "ya_en_sapo": bool(manuales.get(("tiktok", u)))})
+
+    # ---- Avance por agencia (vendedores únicos)
+    agencias = leer_json(AGENCIAS, [])
+    por_ag = defaultdict(set)
+    for f in filas_cresa:
+        clave = MULTI if f["cadena"] == "Multinivel" else f["agencia"]
+        por_ag[clave].add(f["tiktok"] or f["nombre"].lower())
+    avance = [{"cadena": cadena_de(a), "agencia": a, "n": len(por_ag.get(a, ()))} for a in agencias]
+    avance.append({"cadena": "Multinivel", "agencia": MULTI, "n": len(por_ag.get(MULTI, ()))})
+    return filas_cresa, filas_comp, avance, len(validas), len(respuestas) - len(validas)
+
+
+def escribir_excel(filas_cresa, filas_comp, avance):
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Font, PatternFill
     from openpyxl.utils import get_column_letter
@@ -111,109 +205,96 @@ def main(solo_si_hay_nuevas=False):
     cab_fill = PatternFill("solid", fgColor="16A34A")
     rojo = PatternFill("solid", fgColor="FDE2E2")
 
-    def hoja(ws, cab, filas, anchos, col_alerta=None):
+    def hoja(ws, cab, filas, anchos, col_alerta=None, links=()):
         ws.append(cab)
         for c in ws[1]:
             c.font, c.fill = Font(bold=True, color="FFFFFF"), cab_fill
             c.alignment = Alignment(vertical="center", wrap_text=True)
         for f in filas:
-            ws.append([x for x, _ in f] if isinstance(f[0], tuple) else f)
+            ws.append(f)
         for i, w in enumerate(anchos, 1):
             ws.column_dimensions[get_column_letter(i)].width = w
         ws.freeze_panes = "A2"
         ws.auto_filter.ref = ws.dimensions
         ws.row_dimensions[1].height = 30
-        if col_alerta:
-            for row in ws.iter_rows(min_row=2):
-                if str(row[col_alerta - 1].value).startswith("NO"):
-                    for c in row:
-                        c.fill = rojo
-
-    def link(ws, col, url_fn):
         for row in ws.iter_rows(min_row=2):
-            c = row[col - 1]
-            if c.value:
-                c.hyperlink, c.style = url_fn(c.value), "Hyperlink"
+            if col_alerta and (str(row[col_alerta - 1].value).startswith(("NO", "Sin r"))):
+                for c in row:
+                    c.fill = rojo
+            for col, url in links:
+                c = row[col - 1]
+                if c.value and str(c.value).startswith("@"):
+                    c.hyperlink, c.style = url(str(c.value)[1:]), "Hyperlink"
 
-    # ---- Cuentas Cresa (la última respuesta de cada vendedor gana; se marcan repetidos)
-    conteo = defaultdict(int)
-    for r in respuestas:
-        if r.get("tiktok"):
-            conteo[r["tiktok"]] += 1
-    filas = []
-    for r in sorted(respuestas, key=lambda x: x["_t"]):
-        tt = r.get("tiktok") or ""
-        v = verificar(tt, cache) if tt else {}
-        filas.append([fecha(r), r.get("nombre", ""), r.get("cadena", ""), r.get("agencia", "") or ("(sin agencia)" if r.get("cadena") == "Multinivel" else ""),
-                      ("@" + tt) if tt else "(no tiene TikTok)", existe_txt(v) if tt else "",
-                      v.get("nick", ""), v.get("seguidores"), r.get("lives", ""),
-                      ("@" + r["instagram"]) if r.get("instagram") else "",
-                      "Sí" if tt in en_sapo else ("No" if tt else ""),
-                      ("Repetido x%d" % conteo[tt]) if tt and conteo[tt] > 1 else ""])
     ws = wb.active
     ws.title = "Cuentas Cresa"
-    hoja(ws, ["Fecha", "Nombre", "Cadena", "Agencia", "Usuario TikTok", "¿Existe en TikTok?", "Nombre en TikTok",
-              "Seguidores", "¿Hace lives?", "Instagram", "¿Ya está en SAPO?", "Observación"],
-         filas, [17, 26, 12, 30, 24, 20, 24, 12, 13, 20, 14, 14], col_alerta=6)
-    link(ws, 5, lambda u: "https://www.tiktok.com/" + u if u.startswith("@") else None)
-    link(ws, 10, lambda u: "https://www.instagram.com/" + u.lstrip("@") + "/")
-
-    # ---- Competencia (una fila por cuenta, con quién la reportó)
-    comp = {}
-    for r in sorted(respuestas, key=lambda x: x["_t"]):
-        for c in r.get("competencia") or []:
-            u = (c.get("usuario") or "").lower()
-            if not u:
-                continue
-            x = comp.setdefault(u, {"empresas": defaultdict(int), "contenido": defaultdict(int), "por": [], "agencias": set(), "primera": fecha(r)})
-            if c.get("empresa"):
-                x["empresas"][c["empresa"]] += 1
-            if c.get("contenido"):
-                x["contenido"][c["contenido"]] += 1
-            x["por"].append(r.get("nombre", ""))
-            x["agencias"].add(r.get("agencia") or r.get("cadena", ""))
-    filas = []
-    for u, x in sorted(comp.items(), key=lambda kv: -len(kv[1]["por"])):
-        v = verificar(u, cache)
-        emp = max(x["empresas"], key=x["empresas"].get) if x["empresas"] else ""
-        cont = max(x["contenido"], key=x["contenido"].get) if x["contenido"] else ""
-        filas.append(["@" + u, emp, cont, existe_txt(v), v.get("nick", ""), v.get("seguidores"), len(x["por"]),
-                      ", ".join(dict.fromkeys(p for p in x["por"] if p)), ", ".join(sorted(a for a in x["agencias"] if a)),
-                      x["primera"], "Sí" if u in en_sapo else "No"])
+    hoja(ws, ["Última respuesta", "Nombre", "Cadena", "Agencia", "Usuario TikTok", "¿Existe en TikTok?", "Nombre en TikTok",
+              "Seguidores", "¿Hace lives?", "Instagram", "¿Ya estaba en SAPO?", "Veces que respondió"],
+         [[f["fecha"], f["nombre"], f["cadena"], f["agencia"], ("@" + f["tiktok"]) if f["tiktok"] else "(no tiene TikTok)",
+           existe_txt(f) if f["tiktok"] else "", f["nick"], f["seguidores"], f["lives"],
+           ("@" + f["instagram"]) if f["instagram"] else "", "Sí" if f["ya_en_sapo"] else "No", f["veces"]] for f in filas_cresa],
+         [17, 26, 12, 30, 24, 20, 24, 12, 13, 20, 14, 12], col_alerta=6,
+         links=[(5, lambda u: "https://www.tiktok.com/@" + u), (10, lambda u: "https://www.instagram.com/" + u + "/")])
     ws2 = wb.create_sheet("Competencia")
     hoja(ws2, ["Usuario TikTok", "Empresa", "Qué publica", "¿Existe en TikTok?", "Nombre en TikTok", "Seguidores",
-               "Veces reportada", "Reportada por", "Agencias que la reportan", "Primer reporte", "¿Ya está en SAPO?"],
-         filas, [24, 20, 13, 20, 24, 12, 10, 36, 40, 17, 14], col_alerta=4)
-    link(ws2, 1, lambda u: "https://www.tiktok.com/" + u)
-
-    # ---- Avance por agencia (para saber a quién insistir)
-    por_ag = defaultdict(set)
-    for r in respuestas:
-        clave = "MULTINIVEL (sin agencia)" if r.get("cadena") == "Multinivel" else r.get("agencia", "")
-        por_ag[clave].add((r.get("nombre") or "").strip().lower() or r["_id"])
-    cad = lambda a: next((n for p, n in [("PAGA MENOS", "Pagamenos"), ("MOTOZONE", "Motozone"), ("SAMSUNG", "Samsung"),
-                                          ("CRECOS", "Crecos"), ("ORVE", "Orve Hogar"), ("JAPON", "Japón")] if a.startswith(p)), "")
-    filas = [[cad(a), a, len(por_ag.get(a, ())), "Sí" if por_ag.get(a) else "Sin respuestas"] for a in agencias]
-    m = "MULTINIVEL (sin agencia)"
-    filas.append(["Multinivel", m, len(por_ag.get(m, ())), "Sí" if por_ag.get(m) else "Sin respuestas"])
-    filas.sort(key=lambda f: (f[2] > 0, f[0], f[1]))
+               "Vendedores que la reportaron", "Reportada por", "Agencias que la reportan", "Primer reporte", "¿Ya estaba en SAPO?"],
+         [["@" + f["tiktok"], f["empresa"], f["contenido"], existe_txt(f), f["nick"], f["seguidores"], f["veces"],
+           ", ".join(f["por"]), ", ".join(f["agencias"]), f["primera"], "Sí" if f["ya_en_sapo"] else "No"] for f in filas_comp],
+         [24, 20, 13, 20, 24, 12, 12, 36, 40, 17, 14], col_alerta=4, links=[(1, lambda u: "https://www.tiktok.com/@" + u)])
     ws3 = wb.create_sheet("Avance por agencia")
-    hoja(ws3, ["Cadena", "Agencia", "Vendedores que respondieron", "¿Respondió?"], filas, [12, 32, 14, 16])
-    for row in ws3.iter_rows(min_row=2):
-        if row[3].value == "Sin respuestas":
-            row[3].fill = rojo
-
-    os.makedirs(CARPETA, exist_ok=True)
+    orden = sorted(avance, key=lambda a: (a["n"] > 0, a["cadena"], a["agencia"]))
+    hoja(ws3, ["Cadena", "Agencia", "Vendedores que respondieron", "¿Respondió?"],
+         [[a["cadena"], a["agencia"], a["n"], "Sí" if a["n"] else "Sin respuestas"] for a in orden], [12, 32, 14, 16], col_alerta=4)
     wb.save(EXCEL)
+
+
+def escribir_cuentas_sapo(filas_cresa, filas_comp):
+    """Cuentas verificadas para que SAPO las monitoree. Las que ya están puestas a mano se omiten (no se duplican)."""
+    filas = []
+    for f in filas_cresa:
+        if f["tiktok"] and f["existe"] and not f["ya_en_sapo"]:
+            agencia = "MULTINIVEL" if f["cadena"] == "Multinivel" else f["agencia"]
+            filas.append([f["tiktok"], agencia, f["nombre"], "SI", "propio", "vendedor", "tiktok"])
+        if f["instagram"]:
+            agencia = "MULTINIVEL" if f["cadena"] == "Multinivel" else f["agencia"]
+            filas.append([f["instagram"], agencia, f["nombre"], "SI", "propio", "vendedor", "instagram"])
+    for f in filas_comp:
+        if f["existe"] and not f["ya_en_sapo"]:
+            filas.append([f["tiktok"], (f["empresa"] or "COMPETENCIA").upper(), "", "SI", "competencia", "vendedor", "tiktok"])
+    with open(os.path.join(CARPETA, "cuentas_sapo.csv"), "w", encoding="utf-8", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["usuario", "agencia", "nombre", "activo", "tipo", "rol", "plataforma"])
+        w.writerows(filas)
+    return len(filas)
+
+
+def main(solo_si_hay_nuevas=False):
+    """Con solo_si_hay_nuevas=True (desde el monitor, cada minuto) regenera solo si llegó algo o cambiaron las eliminaciones."""
+    respuestas, n_nuevas = traer_respuestas()
+    firma = json.dumps(sorted(leer_exclusiones()[0]) + sorted(leer_exclusiones()[1]))
+    previo = leer_json(os.path.join(CARPETA, "resumen.json"), {})
+    if solo_si_hay_nuevas and n_nuevas == 0 and os.path.exists(EXCEL) and previo.get("firma") == firma \
+            and time.time() * 1000 - previo.get("actualizado", 0) < 3600 * 1000:
+        return 0
+    cache = leer_json(VALID, {})
+    filas_cresa, filas_comp, avance, n_validas, n_eliminadas = procesar(respuestas, cache)
+    os.makedirs(CARPETA, exist_ok=True)
+    escribir_excel(filas_cresa, filas_comp, avance)
+    n_sapo = escribir_cuentas_sapo(filas_cresa, filas_comp)
     with open(VALID, "w", encoding="utf-8") as f:
         json.dump(cache, f, ensure_ascii=False)
-    resumen = {"actualizado": int(time.time() * 1000), "respuestas": len(respuestas),
-               "vendedores": len({r.get("tiktok") for r in respuestas if r.get("tiktok")}),
-               "competencia": len(comp), "agencias_con_respuesta": sum(1 for a in agencias if por_ag.get(a)),
-               "agencias_total": len(agencias)}
+    resumen = {"actualizado": int(time.time() * 1000), "respuestas": n_validas, "eliminadas": n_eliminadas,
+               "vendedores": sum(1 for f in filas_cresa if f["tiktok"]), "competencia": len(filas_comp),
+               "agencias_con_respuesta": sum(1 for a in avance if a["n"] and a["agencia"] != MULTI),
+               "agencias_total": len(avance) - 1, "multinivel": next(a["n"] for a in avance if a["agencia"] == MULTI),
+               "agregadas_a_sapo": n_sapo, "firma": firma}
     with open(os.path.join(CARPETA, "resumen.json"), "w", encoding="utf-8") as f:
         json.dump(resumen, f)
-    log("Encuesta: %d respuestas (%d nuevas) · %d cuentas de competencia" % (len(respuestas), n_nuevas, len(comp)))
+    with open(os.path.join(CARPETA, "datos.json"), "w", encoding="utf-8") as f:
+        json.dump({"resumen": resumen, "cresa": filas_cresa, "competencia": filas_comp, "avance": avance},
+                  f, ensure_ascii=False, separators=(",", ":"))
+    log("Encuesta: %d respuestas (%d nuevas) · %d vendedores únicos · %d de competencia · %d a SAPO" %
+        (n_validas, n_nuevas, resumen["vendedores"], len(filas_comp), n_sapo))
     return max(n_nuevas, 1)
 
 

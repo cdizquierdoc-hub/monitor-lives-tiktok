@@ -1,0 +1,3 @@
+# Cuentas o respuestas eliminadas de la encuesta.
+# Cada archivo .txt tiene una línea por cuenta (@usuario) o respuesta (id:XXXX).
+# Se crean desde SAPO → pestaña Encuesta → Eliminar. Para "deshacer", borra el archivo.

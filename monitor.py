@@ -163,10 +163,19 @@ def cadena_de(agencia, tipo="propio"):
     return _prefijo(agencia, CADENAS_CRESA)[0] or "Otra"
 
 
-def leer_vendedores():
+ENCUESTA_CSV = os.path.join(DATA_DIR, "encuesta", "cuentas_sapo.csv")
+
+
+def leer_vendedores(incluir_encuesta=True):
+    """Cuentas a monitorear: primero las que llegaron por la encuesta (verificadas) y luego las
+    agregadas a mano en vendedores/*.csv. Si una cuenta está en ambos lados cuenta una sola vez
+    y ganan los datos puestos a mano."""
     vistos, salida = {}, []
-    for ruta in sorted(glob.glob(os.path.join(VENDEDORES_DIR, "*.csv"))):
-        archivo = os.path.basename(ruta)
+    rutas = sorted(glob.glob(os.path.join(VENDEDORES_DIR, "*.csv")))
+    if incluir_encuesta and os.path.exists(ENCUESTA_CSV):
+        rutas = [ENCUESTA_CSV] + rutas
+    for ruta in rutas:
+        archivo = "encuesta" if ruta == ENCUESTA_CSV else os.path.basename(ruta)
         with open(ruta, encoding="utf-8-sig", newline="") as f:
             texto = f.read()
         if not texto.strip():
