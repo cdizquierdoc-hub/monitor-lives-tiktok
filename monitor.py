@@ -71,11 +71,20 @@ COLUMNAS = {
     "agencia": ("agencia", "zona", "zona / agencia", "tienda", "almacen", "almacén"),
     "nombre": ("nombre", "vendedor", "name"),
     "activo": ("activo", "activo (si/no)", "estado"),
+    "tipo": ("tipo", "cuenta", "tipo de cuenta"),
 }
-ORDEN_POR_DEFECTO = ["usuario", "agencia", "nombre", "activo"]
+ORDEN_POR_DEFECTO = ["usuario", "agencia", "nombre", "activo", "tipo"]
 
 
-def cadena_de(agencia):
+def tipo_de(txt):
+    t = str(txt or "").strip().upper()
+    return "competencia" if t == "C" or t.startswith("COMP") else "propio"
+
+
+def cadena_de(agencia, tipo="propio"):
+    """Nuestras: Japón / Crecos / Orve según la 1.ª palabra. Competencia: la empresa completa."""
+    if tipo == "competencia":
+        return agencia.title() if agencia != "SIN AGENCIA" else "Competencia"
     primera = (agencia.split() or [""])[0].upper()
     return CADENAS.get(primera, "Otra")
 
@@ -102,11 +111,13 @@ def leer_vendedores():
             if not usuario:
                 continue
             agencia = re.sub(r"\s+", " ", datos.get("agencia", "")).strip().upper() or "SIN AGENCIA"
+            tipo = tipo_de(datos.get("tipo"))
             v = {
                 "usuario": usuario,
                 "nombre": datos.get("nombre") or "@" + usuario,
                 "agencia": agencia,
-                "cadena": cadena_de(agencia),
+                "cadena": cadena_de(agencia, tipo),
+                "tipo": tipo,
                 "activo": datos.get("activo", "").upper() not in ("NO", "N", "0", "FALSE", "INACTIVO"),
                 "archivo": archivo,
             }
