@@ -8,9 +8,9 @@
 - El dashboard (`index.html`, GitHub Pages) lee esos datos y se actualiza solo.
 
 ## Agregar vendedores
-Desde el dashboard: botón **＋ Vendedores** → pega la lista → **Guardar en GitHub** → **Commit changes**.
+Desde el dashboard: botón **＋ Vendedores** → pega la lista (usuario y agencia, ej. `"@pepito" "JAPON PARQUE CALIFORNIA"`) → **Guardar en GitHub** → **Commit changes**.
 
-También puedes editar directamente cualquier archivo de la carpeta `vendedores/` (CSV: `usuario,nombre,zona,activo`).
+También puedes editar directamente cualquier archivo de la carpeta `vendedores/` (CSV: `usuario,agencia,nombre,activo`, ej. `@pepito,JAPON PARQUE CALIFORNIA,Pepito Pérez,SI`).
 Pon `NO` en la columna `activo` para dejar de monitorear a alguien.
 
 ## Probar una cuenta

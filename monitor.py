@@ -2,7 +2,7 @@
 """
 Monitor de lives de TikTok de vendedores.
 
-- Lee los vendedores de vendedores/*.csv (usuario,nombre,zona,activo)
+- Lee los vendedores de vendedores/*.csv (usuario,agencia,nombre,activo)
 - Revisa cada INTERVALO segundos si cada uno está en LIVE
 - Registra inicio, fin y duración de cada live en data/data.json
 - Lo corre GitHub Actions; el dashboard (index.html) lee data/data.json
@@ -65,6 +65,21 @@ def limpiar_usuario(txt):
     return re.sub(r"\s+", "", u.lstrip("@")).lower()
 
 
+CADENAS = {"JAPON": "Japón", "JAPÓN": "Japón", "CRECOS": "Crecos", "ORVE": "Orve"}
+COLUMNAS = {
+    "usuario": ("usuario", "usuario tiktok", "user", "username", "tiktok"),
+    "agencia": ("agencia", "zona", "zona / agencia", "tienda", "almacen", "almacén"),
+    "nombre": ("nombre", "vendedor", "name"),
+    "activo": ("activo", "activo (si/no)", "estado"),
+}
+ORDEN_POR_DEFECTO = ["usuario", "agencia", "nombre", "activo"]
+
+
+def cadena_de(agencia):
+    primera = (agencia.split() or [""])[0].upper()
+    return CADENAS.get(primera, "Otra")
+
+
 def leer_vendedores():
     vistos, salida = {}, []
     for ruta in sorted(glob.glob(os.path.join(VENDEDORES_DIR, "*.csv"))):
@@ -73,22 +88,26 @@ def leer_vendedores():
             texto = f.read()
         if not texto.strip():
             continue
-        sep = ";" if texto.count(";") > texto.count(",") else ","
+        sep = ";" if texto.count(";") > texto.count(",") else ("\t" if "\t" in texto else ",")
+        orden = ORDEN_POR_DEFECTO
         for i, fila in enumerate(csv.reader(texto.splitlines(), delimiter=sep)):
             if not fila or not fila[0].strip() or fila[0].strip().startswith("#"):
                 continue
-            if i == 0 and fila[0].strip().lower() in ("usuario", "usuario tiktok", "user", "username"):
+            cab = [c.strip().lower() for c in fila]
+            if i == 0 and cab[0] in COLUMNAS["usuario"]:
+                orden = [next((k for k, alias in COLUMNAS.items() if c in alias), "") for c in cab]
                 continue
-            fila += [""] * (4 - len(fila))
-            usuario = limpiar_usuario(fila[0])
+            datos = {k: (fila[j].strip() if j < len(fila) else "") for j, k in enumerate(orden) if k}
+            usuario = limpiar_usuario(datos.get("usuario"))
             if not usuario:
                 continue
-            activo = fila[3].strip().upper() not in ("NO", "N", "0", "FALSE", "INACTIVO")
+            agencia = re.sub(r"\s+", " ", datos.get("agencia", "")).strip().upper() or "SIN AGENCIA"
             v = {
                 "usuario": usuario,
-                "nombre": fila[1].strip() or "@" + usuario,
-                "zona": fila[2].strip() or "Sin zona",
-                "activo": activo,
+                "nombre": datos.get("nombre") or "@" + usuario,
+                "agencia": agencia,
+                "cadena": cadena_de(agencia),
+                "activo": datos.get("activo", "").upper() not in ("NO", "N", "0", "FALSE", "INACTIVO"),
                 "archivo": archivo,
             }
             # si el mismo usuario aparece varias veces, gana la última aparición
@@ -191,10 +210,10 @@ def guardar_datos(d, vendedores):
         with open(archivo_hist, "a", encoding="utf-8", newline="") as f:
             w = csv.writer(f)
             if nuevo:
-                w.writerow(["id", "usuario", "nombre", "zona", "inicio_utc", "fin_utc", "min", "titulo"])
+                w.writerow(["id", "usuario", "nombre", "agencia", "inicio_utc", "fin_utc", "min", "titulo"])
             for l in viejos:
                 iso = lambda ms: datetime.fromtimestamp(ms / 1000, timezone.utc).isoformat() if ms else ""
-                w.writerow([l["id"], l["usuario"], l["nombre"], l["zona"], iso(l["inicio"]), iso(l.get("fin")), l.get("min"), l.get("titulo", "")])
+                w.writerow([l["id"], l["usuario"], l["nombre"], l.get("agencia", ""), iso(l["inicio"]), iso(l.get("fin")), l.get("min"), l.get("titulo", "")])
         d["lives"] = [l for l in d["lives"] if l not in viejos]
 
     salida = {
@@ -263,7 +282,7 @@ def revisar(d):
                 lid = "%s-%s" % (v["usuario"], datetime.fromtimestamp(inicio / 1000, timezone.utc).strftime("%Y%m%d%H%M"))
                 live = por_id.get(lid)
                 if not live:
-                    live = {"id": lid, "usuario": v["usuario"], "nombre": v["nombre"], "zona": v["zona"],
+                    live = {"id": lid, "usuario": v["usuario"], "nombre": v["nombre"], "agencia": v["agencia"], "cadena": v["cadena"],
                             "inicio": inicio, "fin": None, "min": None, "titulo": r["titulo"],
                             "estado": "EN VIVO", "visto": t}
                     d["lives"].append(live)

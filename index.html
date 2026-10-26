@@ -48,7 +48,7 @@
   .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600}
   .pill.live{background:var(--accent);color:#fff}.pill.off{background:var(--line);color:var(--mute)}
   .heat{display:grid;grid-template-columns:34px repeat(24,minmax(10px,1fr));gap:2px;font-size:10px;color:var(--mute)}
-  .heat .c{aspect-ratio:1;border-radius:3px;background:var(--line)}
+  .heat .c{height:22px;border-radius:3px;background:var(--line)}
   .heat .h{text-align:center}
   .chartbox{position:relative;height:260px}
   .section{margin-bottom:14px}
@@ -68,6 +68,16 @@
   .vlist{max-height:300px;overflow:auto;margin-top:8px}
   .empty-cta{text-align:center;padding:30px 10px}
   .empty-cta p{color:var(--mute);margin:6px 0 14px}
+  tr.click{cursor:pointer} tr.click:hover td{background:var(--soft)}
+  .ver{color:var(--accent2);font-size:12px;font-weight:600}
+  .dk{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:12px 0}
+  .dk div{background:var(--bg);border-radius:10px;padding:10px 12px}
+  .dk b{display:block;font-size:20px;margin-top:2px}
+  .dk span{color:var(--mute);font-size:12px}
+  .tl{position:relative;height:10px;background:var(--line);border-radius:5px;min-width:140px}
+  .tl i{position:absolute;top:0;height:100%;background:var(--accent);border-radius:5px;min-width:3px}
+  .panel.ancho{max-width:960px}
+  #detalle{z-index:30}
 </style>
 </head>
 <body>
@@ -84,7 +94,8 @@
         <option value="30">Últimos 30 días</option>
         <option value="90">Últimos 90 días</option>
       </select>
-      <select id="zona"><option value="">Todas las zonas</option></select>
+      <select id="cadena"><option value="">Todas las cadenas</option></select>
+      <select id="agencia"><option value="">Todas las agencias</option></select>
       <input id="buscar" placeholder="Buscar vendedor…" size="16">
       <button id="exportar" title="Descargar los lives filtrados">⬇ CSV</button>
       <button id="gestionar" class="primary">＋ Vendedores</button>
@@ -109,8 +120,16 @@
   <div class="card section">
     <h2>Ranking de vendedores <small>ordenado por horas en live</small></h2>
     <div class="tablewrap"><table>
-      <thead><tr><th>#</th><th>Vendedor</th><th>Zona</th><th class="num">Lives</th><th class="num">Horas</th><th></th><th class="num">Promedio</th><th>Último live</th><th>Estado</th></tr></thead>
+      <thead><tr><th>#</th><th>Vendedor</th><th>Agencia</th><th class="num">Lives</th><th class="num">Horas</th><th></th><th class="num">Promedio</th><th>Último live</th><th>Estado</th></tr></thead>
       <tbody id="ranking"></tbody>
+    </table></div>
+  </div>
+
+  <div class="card section">
+    <h2>Resumen por agencia <small>ordenado por horas en live</small></h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Agencia</th><th>Cadena</th><th class="num">Vendedores</th><th class="num">Hicieron live</th><th class="num">Lives</th><th class="num">Horas</th><th></th><th class="num">Horas por vendedor</th></tr></thead>
+      <tbody id="agencias"></tbody>
     </table></div>
   </div>
 
@@ -122,7 +141,7 @@
   <div class="card">
     <h2>Historial de lives <small id="hist-sub"></small></h2>
     <div class="tablewrap"><table>
-      <thead><tr><th>Vendedor</th><th>Zona</th><th>Inicio</th><th>Fin</th><th class="num">Duración</th><th>Título</th></tr></thead>
+      <thead><tr><th>Vendedor</th><th>Agencia</th><th>Inicio</th><th>Fin</th><th class="num">Duración</th><th>Título</th></tr></thead>
       <tbody id="historial"></tbody>
     </table></div>
   </div>
@@ -135,11 +154,24 @@
   </div>
 </div>
 
+<div class="modal" id="detalle" onclick="if(event.target===this)cerrarDetalle()">
+  <div class="panel ancho">
+    <div class="row" style="margin-top:0"><h3 id="d-titulo"></h3><button class="close" onclick="cerrarDetalle()" aria-label="Cerrar">×</button></div>
+    <p id="d-sub"></p>
+    <div class="dk" id="d-kpis"></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Fecha</th><th>Comenzó</th><th>Terminó</th><th class="num">Duración</th><th>Horario</th><th>Título del live</th></tr></thead>
+      <tbody id="d-tabla"></tbody>
+    </table></div>
+    <p class="hint" style="margin-top:10px">Horas en hora de Ecuador. Las duraciones tienen un margen de ±2 min porque el monitor revisa cada 2 minutos.</p>
+  </div>
+</div>
+
 <div class="modal" id="modal" onclick="if(event.target===this)cerrarPanel()">
   <div class="panel">
     <div class="row" style="margin-top:0"><h3>Agregar vendedores</h3><button class="close" onclick="cerrarPanel()" aria-label="Cerrar">×</button></div>
-    <p>Pega uno por línea: <b>usuario, nombre, zona</b>. Solo el usuario es obligatorio. Sirve con @usuario, con el link del perfil o copiando columnas desde Excel. Puedes agregar todos los que quieras.</p>
-    <textarea id="nuevos" placeholder="andrea.ventas, Andrea Mora, Guayaquil Norte&#10;@carlos.crecos, Carlos Vera, Guayaquil Sur&#10;https://www.tiktok.com/@dani.tecno"></textarea>
+    <p>Pega uno por línea: <b>usuario y agencia</b> (el nombre del vendedor es opcional, al final). Sirve con comillas, comas, @usuario, el link del perfil o copiando columnas desde Excel. Puedes agregar todos los que quieras.</p>
+    <textarea id="nuevos" placeholder="&quot;@pepito&quot; &quot;JAPON PARQUE CALIFORNIA&quot;&#10;@andrea.ventas, CRECOS MALL DEL SOL, Andrea Mora&#10;https://www.tiktok.com/@dani.tecno, ORVE QUITO NORTE"></textarea>
     <div class="row">
       <span class="hint" id="nuevos-info">0 vendedores listos</span>
       <span style="flex:1"></span>
@@ -150,7 +182,7 @@
     <h3 style="margin-top:18px">Vendedores monitoreados <small class="hint" id="vcount"></small></h3>
     <p>Para editar, desactivar (pon <b>NO</b> en la 4.ª columna) o eliminar, abre el archivo donde está cada uno.</p>
     <div class="vlist tablewrap"><table>
-      <thead><tr><th>Vendedor</th><th>Zona</th><th>Revisión</th><th></th></tr></thead>
+      <thead><tr><th>Vendedor</th><th>Agencia</th><th>Revisión</th><th></th></tr></thead>
       <tbody id="vtabla"></tbody>
     </table></div>
   </div>
@@ -186,12 +218,21 @@ async function cargar() {
   }
   prepararFiltros(); render();
   if ($('#modal').classList.contains('open')) renderPanel();
+  if ($('#detalle').classList.contains('open') && DETALLE) abrirDetalle(DETALLE);
 }
 
+const CADENAS = {JAPON: 'Japón', 'JAPÓN': 'Japón', CRECOS: 'Crecos', ORVE: 'Orve'};
+const cadenaDe = a => CADENAS[String(a || '').trim().split(/\s+/)[0].toUpperCase()] || 'Otra';
+function opciones(sel, todos, valores) {
+  const actual = sel.value;
+  sel.innerHTML = `<option value="">${todos}</option>` + valores.map(z => `<option${z === actual ? ' selected' : ''}>${esc(z)}</option>`).join('');
+  if (actual && !valores.includes(actual)) sel.value = '';
+}
 function prepararFiltros() {
-  const sel = $('#zona'), actual = sel.value;
-  const zonas = [...new Set(RAW.vendedores.map(v => v.zona))].sort();
-  sel.innerHTML = '<option value="">Todas las zonas</option>' + zonas.map(z => `<option${z === actual ? ' selected' : ''}>${esc(z)}</option>`).join('');
+  RAW.vendedores.forEach(v => { v.agencia = v.agencia || v.zona || 'SIN AGENCIA'; v.cadena = v.cadena || cadenaDe(v.agencia); });
+  opciones($('#cadena'), 'Todas las cadenas', [...new Set(RAW.vendedores.map(v => v.cadena))].sort());
+  const cad = $('#cadena').value;
+  opciones($('#agencia'), 'Todas las agencias', [...new Set(RAW.vendedores.filter(v => !cad || v.cadena === cad).map(v => v.agencia))].sort());
 }
 
 function render() {
@@ -199,18 +240,20 @@ function render() {
   const dias = +$('#periodo').value;
   const hoy0 = new Date(); hoy0.setHours(0, 0, 0, 0);
   const desde = hoy0.getTime() - (dias - 1) * 86400000;
-  const zona = $('#zona').value, q = $('#buscar').value.trim().toLowerCase();
+  const cad = $('#cadena').value, agencia = $('#agencia').value, q = $('#buscar').value.trim().toLowerCase();
 
-  const vend = RAW.vendedores.filter(v => v.activo !== false && (!zona || v.zona === zona) &&
-    (!q || v.nombre.toLowerCase().includes(q) || v.usuario.includes(q)));
+  const vend = RAW.vendedores.filter(v => v.activo !== false && (!cad || v.cadena === cad) && (!agencia || v.agencia === agencia) &&
+    (!q || v.nombre.toLowerCase().includes(q) || v.usuario.includes(q) || v.agencia.toLowerCase().includes(q)));
   const permit = new Set(vend.map(v => v.usuario));
+  const porUsuario = Object.fromEntries(RAW.vendedores.map(v => [v.usuario, v]));
+  const conDatos = l => { const v = porUsuario[l.usuario] || {}; return {...l, nombre: v.nombre || l.nombre, agencia: v.agencia || l.agencia || l.zona || '', d: dur(l)}; };
 
   const dur = l => l.estado === 'EN VIVO' ? Math.max(1, (ahora - l.inicio) / 60000) : (l.min || (l.fin ? (l.fin - l.inicio) / 60000 : 0));
-  const lives = RAW.lives.filter(l => permit.has(l.usuario) && l.inicio >= desde).map(l => ({...l, d: dur(l)}));
+  const lives = RAW.lives.filter(l => permit.has(l.usuario) && l.inicio >= desde).map(conDatos);
   ULTIMOS = lives;
 
   // En vivo ahora
-  const enVivo = RAW.lives.filter(l => l.estado === 'EN VIVO' && permit.has(l.usuario)).map(l => ({...l, d: dur(l)})).sort((a, b) => b.d - a.d);
+  const enVivo = RAW.lives.filter(l => l.estado === 'EN VIVO' && permit.has(l.usuario)).map(conDatos).sort((a, b) => b.d - a.d);
 
   // KPIs
   const totMin = lives.reduce((s, l) => s + l.d, 0);
@@ -230,8 +273,8 @@ function render() {
   $('#vivos').innerHTML = enVivo.length ? enVivo.map(l => `
     <a class="live-item" href="https://www.tiktok.com/@${encodeURIComponent(l.usuario)}/live" target="_blank" rel="noopener">
       <span class="dot"></span>
-      <div><div class="n">${esc(l.nombre)}</div><div class="m">@${esc(l.usuario)} · ${esc(l.zona)}</div></div>
-      <span class="t">${fmtDur(l.d)}</span>
+      <div><div class="n">${esc(l.nombre)}</div><div class="m">@${esc(l.usuario)} · ${esc(l.agencia)}</div></div>
+      <span class="t">${fmtDur(l.d)} · desde ${new Date(l.inicio).toLocaleTimeString('es-EC', {hour: '2-digit', minute: '2-digit'})}</span>
     </a>`).join('') : '<div class="empty">Nadie está en vivo en este momento.</div>';
 
   // Gráfico por día
@@ -250,17 +293,34 @@ function render() {
   const filas = Object.values(agg).sort((a, b) => b.min - a.min || a.v.nombre.localeCompare(b.v.nombre));
   const maxMin = Math.max(1, ...filas.map(f => f.min));
   $('#ranking').innerHTML = filas.map((f, i) => `
-    <tr class="${f.n ? '' : 'zero'}">
+    <tr class="click ${f.n ? '' : 'zero'}" data-u="${esc(f.v.usuario)}" title="Ver detalle de sus lives">
       <td>${f.n ? i + 1 : '–'}</td>
       <td><b>${esc(f.v.nombre)}</b> <a class="u" href="https://www.tiktok.com/@${encodeURIComponent(f.v.usuario)}" target="_blank" rel="noopener">@${esc(f.v.usuario)}</a></td>
-      <td>${esc(f.v.zona)}</td>
+      <td>${esc(f.v.agencia)}</td>
       <td class="num">${f.n}</td>
       <td class="num">${fmtH(f.min)}</td>
       <td><span class="bar"><i style="width:${(f.min / maxMin * 100).toFixed(1)}%"></i></span></td>
       <td class="num">${f.n ? fmtDur(f.min / f.n) : '—'}</td>
-      <td>${f.ult ? fmtF(f.ult) : 'Sin lives en el periodo'}</td>
+      <td>${f.ult ? fmtF(f.ult) + ' <span class="ver">ver detalle ›</span>' : 'Sin lives en el periodo'}</td>
       <td>${vivoSet.has(f.v.usuario) ? '<span class="pill live">EN VIVO</span>' : '<span class="pill off">offline</span>'}</td>
     </tr>`).join('') || '<tr><td colspan="9" class="empty">No hay vendedores con esos filtros.</td></tr>';
+
+  // Resumen por agencia
+  const ag = {};
+  filas.forEach(f => {
+    const a = ag[f.v.agencia] ||= {agencia: f.v.agencia, cadena: f.v.cadena, vend: 0, act: 0, n: 0, min: 0};
+    a.vend++; a.n += f.n; a.min += f.min; if (f.n) a.act++;
+  });
+  const ags = Object.values(ag).sort((a, b) => b.min - a.min || a.agencia.localeCompare(b.agencia));
+  const maxAg = Math.max(1, ...ags.map(a => a.min));
+  $('#agencias').innerHTML = ags.map(a => `
+    <tr class="${a.n ? '' : 'zero'}">
+      <td><b>${esc(a.agencia)}</b></td><td>${esc(a.cadena)}</td>
+      <td class="num">${a.vend}</td><td class="num">${a.act} <span class="hint">(${Math.round(a.act / a.vend * 100)}%)</span></td>
+      <td class="num">${a.n}</td><td class="num">${fmtH(a.min)}</td>
+      <td><span class="bar"><i style="width:${(a.min / maxAg * 100).toFixed(1)}%"></i></span></td>
+      <td class="num">${fmtH(a.min / a.vend)}</td>
+    </tr>`).join('') || '<tr><td colspan="8" class="empty">Sin agencias con esos filtros.</td></tr>';
 
   // Mapa de calor día × hora (minutos)
   const H = Array.from({length: 7}, () => Array(24).fill(0));
@@ -282,8 +342,8 @@ function render() {
   const hist = [...lives].sort((a, b) => b.inicio - a.inicio);
   $('#hist-sub').textContent = hist.length > 200 ? 'mostrando los 200 más recientes de ' + hist.length : hist.length + ' lives';
   $('#historial').innerHTML = hist.slice(0, 200).map(l => `
-    <tr>
-      <td><b>${esc(l.nombre)}</b></td><td>${esc(l.zona)}</td>
+    <tr class="click" data-u="${esc(l.usuario)}" title="Ver detalle del vendedor">
+      <td><b>${esc(l.nombre)}</b></td><td>${esc(l.agencia)}</td>
       <td>${fmtF(l.inicio)}</td>
       <td>${l.estado === 'EN VIVO' ? '<span class="pill live">EN VIVO</span>' : fmtF(l.fin)}</td>
       <td class="num">${fmtDur(l.d)}</td>
@@ -313,14 +373,60 @@ function dibujarGrafico(labels, data) {
 }
 
 function exportarCSV() {
-  const enc = ['Usuario', 'Nombre', 'Zona', 'Inicio', 'Fin', 'Duracion_min', 'Estado', 'Titulo'];
+  const enc = ['Usuario', 'Nombre', 'Agencia', 'Inicio', 'Fin', 'Duracion_min', 'Estado', 'Titulo'];
   const f = ms => ms ? new Date(ms).toLocaleString('es-EC') : '';
-  const rows = ULTIMOS.map(l => [l.usuario, l.nombre, l.zona, f(l.inicio), f(l.fin), Math.round(l.d), l.estado, l.titulo]);
+  const rows = ULTIMOS.map(l => [l.usuario, l.nombre, l.agencia, f(l.inicio), f(l.fin), Math.round(l.d), l.estado, l.titulo]);
   const csv = [enc, ...rows].map(r => r.map(c => '"' + String(c ?? '').replace(/"/g, '""') + '"').join(';')).join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], {type: 'text/csv;charset=utf-8'}));
   a.download = 'lives_tiktok.csv'; a.click();
 }
+
+/* Detalle por vendedor */
+let DETALLE = null;
+function abrirDetalle(usuario) {
+  DETALLE = usuario;
+  const v = RAW.vendedores.find(x => x.usuario === usuario) || {usuario, nombre: '@' + usuario, agencia: ''};
+  const ahora = Date.now(), dias = +$('#periodo').value;
+  const hoy0 = new Date(); hoy0.setHours(0, 0, 0, 0);
+  const desde = hoy0.getTime() - (dias - 1) * 86400000;
+  const dur = l => l.estado === 'EN VIVO' ? Math.max(1, (ahora - l.inicio) / 60000) : (l.min || (l.fin ? (l.fin - l.inicio) / 60000 : 0));
+  const ls = RAW.lives.filter(l => l.usuario === usuario && l.inicio >= desde).map(l => ({...l, d: dur(l)})).sort((a, b) => b.inicio - a.inicio);
+  const tot = ls.reduce((s, l) => s + l.d, 0);
+  const largo = ls.reduce((m, l) => Math.max(m, l.d), 0);
+  const diasConLive = new Set(ls.map(l => diaKey(new Date(l.inicio)))).size;
+  const per = $('#periodo').selectedOptions[0].textContent.toLowerCase();
+  $('#d-titulo').innerHTML = esc(v.nombre) + (ls.some(l => l.estado === 'EN VIVO') ? ' <span class="pill live">EN VIVO</span>' : '');
+  $('#d-sub').innerHTML = `<a class="u" href="https://www.tiktok.com/@${encodeURIComponent(usuario)}" target="_blank" rel="noopener">@${esc(usuario)}</a> · ${esc(v.agencia || '')} · ${esc(per)}`;
+  $('#d-kpis').innerHTML = [
+    ['Lives', ls.length], ['Tiempo total', fmtDur(tot)], ['Promedio por live', ls.length ? fmtDur(tot / ls.length) : '—'],
+    ['Live más largo', ls.length ? fmtDur(largo) : '—'], ['Días con live', diasConLive + ' de ' + dias]
+  ].map(([k, val]) => `<div><span>${k}</span><b>${val}</b></div>`).join('');
+  const hora = ms => new Date(ms).toLocaleTimeString('es-EC', {hour: '2-digit', minute: '2-digit'});
+  const fecha = ms => new Date(ms).toLocaleDateString('es-EC', {weekday: 'short', day: '2-digit', month: 'short', year: 'numeric'});
+  $('#d-tabla').innerHTML = ls.map(l => {
+    const ini = new Date(l.inicio), m0 = ini.getHours() * 60 + ini.getMinutes();
+    const izq = m0 / 1440 * 100, ancho = Math.min(100 - izq, l.d / 1440 * 100);
+    const fin = l.estado === 'EN VIVO' ? null : (l.fin || l.inicio + l.d * 60000);
+    const otroDia = fin && new Date(fin).toDateString() !== ini.toDateString();
+    return `<tr>
+      <td>${fecha(l.inicio)}</td>
+      <td><b>${hora(l.inicio)}</b></td>
+      <td>${fin ? '<b>' + hora(fin) + '</b>' + (otroDia ? ' <span class="hint">(+1 día)</span>' : '') : '<span class="pill live">EN VIVO</span>'}</td>
+      <td class="num"><b>${fmtDur(l.d)}</b></td>
+      <td><div class="tl" title="${hora(l.inicio)} – ${fin ? hora(fin) : 'ahora'}"><i style="left:${izq.toFixed(2)}%;width:${ancho.toFixed(2)}%"></i></div></td>
+      <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis">${esc(l.titulo || '')}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" class="empty">No hizo lives en este periodo. Cambia el periodo arriba para ver más.</td></tr>';
+  $('#detalle').classList.add('open');
+}
+function cerrarDetalle() { $('#detalle').classList.remove('open'); DETALLE = null; }
+document.addEventListener('click', e => {
+  if (e.target.closest('a')) return;
+  const tr = e.target.closest('tr[data-u]');
+  if (tr && !e.target.closest('#detalle')) abrirDetalle(tr.dataset.u);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarDetalle(); });
 
 /* Panel de vendedores */
 function abrirPanel() { $('#modal').classList.add('open'); renderPanel(); setTimeout(() => $('#nuevos').focus(), 50); }
@@ -332,17 +438,31 @@ function limpiarUsuario(t) {
   const m = u.match(/tiktok\.com\/@([^/?#\s]+)/i); if (m) u = m[1];
   return u.replace(/^@/, '').replace(/\s+/g, '').toLowerCase();
 }
+// "@pepito" "JAPON PARQUE CALIFORNIA" · @pepito, JAPON PARQUE CALIFORNIA · @pepito JAPON PARQUE CALIFORNIA · columnas de Excel
+function partir(l) {
+  l = l.trim();
+  let p;
+  if (l.includes('"')) {
+    p = [...l.matchAll(/"([^"]*)"|([^"\t,;]+)/g)].map(m => (m[1] ?? m[2]).trim()).filter(Boolean);
+  } else if (/[\t;,]/.test(l)) {
+    p = l.split(l.includes('\t') ? '\t' : l.includes(';') ? ';' : ',').map(x => x.trim());
+  } else {
+    p = l.split(/\s+/);
+    p = [p[0], p.slice(1).join(' ')];
+  }
+  return p;
+}
 function leerNuevos() {
   const existentes = new Set((RAW?.vendedores || []).map(v => v.usuario));
   const vistos = new Set(), filas = [], repetidos = [];
   $('#nuevos').value.split(/\r?\n/).forEach(l => {
     if (!l.trim()) return;
-    const p = l.includes('\t') ? l.split('\t') : l.includes(';') ? l.split(';') : l.split(',');
+    const p = partir(l);
     const u = limpiarUsuario(p[0]);
     if (!u || ['usuario', 'user', 'username'].includes(u) || vistos.has(u)) return;
     vistos.add(u);
     if (existentes.has(u)) repetidos.push(u);
-    filas.push([u, (p[1] || '').trim(), (p[2] || '').trim(), 'SI']);
+    filas.push([u, (p[1] || '').replace(/\\s+/g, ' ').trim().toUpperCase(), (p[2] || '').trim(), 'SI']);
   });
   return {filas, repetidos};
 }
@@ -355,7 +475,7 @@ function actualizarInfo() {
 function guardarNuevos() {
   const {filas} = leerNuevos();
   if (!filas.length) { $('#nuevos').focus(); return; }
-  const csv = 'usuario,nombre,zona,activo\n' + filas.map(f => f.map(csvCelda).join(',')).join('\n') + '\n';
+  const csv = 'usuario,agencia,nombre,activo\n' + filas.map(f => f.map(csvCelda).join(',')).join('\n') + '\n';
   const d = new Date(), p = n => String(n).padStart(2, '0');
   const nombre = 'lote-' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + '.csv';
   const url = GH + '/new/main/vendedores?filename=' + encodeURIComponent(nombre) + '&value=' + encodeURIComponent(csv);
@@ -377,7 +497,7 @@ function renderPanel() {
       : !e ? '<span class="hint">pendiente</span>'
       : e.error ? '<span class="err" title="' + esc(e.error) + '">⚠ no se pudo revisar</span>'
       : e.enVivo ? '<span class="pill live">EN VIVO</span>' : '<span class="ok">✓ ok</span>';
-    return `<tr><td><b>${esc(v.nombre)}</b> <span class="hint">@${esc(v.usuario)}</span></td><td>${esc(v.zona)}</td><td>${st}</td>
+    return `<tr class="click" data-u="${esc(v.usuario)}"><td><b>${esc(v.nombre)}</b> <span class="hint">@${esc(v.usuario)}</span></td><td>${esc(v.agencia)}</td><td>${st}</td>
       <td>${v.archivo ? `<a class="u" href="${GH}/edit/main/vendedores/${encodeURIComponent(v.archivo)}" target="_blank" rel="noopener">editar</a>` : ''}</td></tr>`;
   }).join('') || '<tr><td colspan="4" class="empty">Aún no hay vendedores.</td></tr>';
 }
@@ -387,8 +507,8 @@ $('#guardar').addEventListener('click', guardarNuevos);
 
 /* Datos ficticios para la vista previa (?demo) */
 function demo() {
-  const nombres = [['andrea.ventas','Andrea Mora','Guayaquil Norte'],['carlos.crecos','Carlos Vera','Guayaquil Sur'],['dani.tecno','Daniela Ruiz','Quito'],['jose.motos','José Castro','Manta'],['mafer.hogar','María Fernanda León','Cuenca'],['luisvende','Luis Paredes','Guayaquil Norte'],['kathy.ofertas','Katherine Solís','Quito'],['bryan.ec','Bryan Zambrano','Guayaquil Sur'],['vale.promos','Valeria Cedeño','Manta'],['jorge.ofertas','Jorge Alvarado','Cuenca'],['nati.vende','Natalia Ponce','Guayaquil Norte'],['pablo.hogar','Pablo Intriago','Quito']];
-  const vendedores = nombres.map(([usuario, nombre, zona]) => ({usuario, nombre, zona, activo: true}));
+  const nombres = [['andrea.ventas','Andrea Mora','JAPON PARQUE CALIFORNIA'],['carlos.crecos','Carlos Vera','CRECOS MALL DEL SOL'],['dani.tecno','Daniela Ruiz','ORVE QUITO NORTE'],['jose.motos','José Castro','JAPON MANTA'],['mafer.hogar','María Fernanda León','CRECOS CUENCA'],['luisvende','Luis Paredes','JAPON PARQUE CALIFORNIA'],['kathy.ofertas','Katherine Solís','ORVE QUITO NORTE'],['bryan.ec','Bryan Zambrano','CRECOS MALL DEL SOL'],['vale.promos','Valeria Cedeño','JAPON MANTA'],['jorge.ofertas','Jorge Alvarado','CRECOS CUENCA'],['nati.vende','Natalia Ponce','JAPON PARQUE CALIFORNIA'],['pablo.hogar','Pablo Intriago','ORVE QUITO NORTE']];
+  const vendedores = nombres.map(([usuario, nombre, agencia]) => ({usuario, nombre, agencia, cadena: cadenaDe(agencia), activo: true}));
   let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const lives = []; const ahora = Date.now();
   vendedores.forEach((v, i) => {
@@ -398,17 +518,19 @@ function demo() {
       const dia = new Date(ahora - d * 86400000);
       dia.setHours(rnd() < 0.7 ? 18 + Math.floor(rnd() * 4) : 10 + Math.floor(rnd() * 6), Math.floor(rnd() * 60), 0, 0);
       const min = Math.round(15 + rnd() * 100);
-      lives.push({usuario: v.usuario, nombre: v.nombre, zona: v.zona, inicio: dia.getTime(), fin: dia.getTime() + min * 60000, min, titulo: ['Ofertas del día 🔥', 'Liquidación de electrodomésticos', 'Motos a crédito', 'Pregúntame lo que quieras', 'Promo fin de semana'][Math.floor(rnd() * 5)], estado: 'FINALIZADO'});
+      lives.push({usuario: v.usuario, nombre: v.nombre, agencia: v.agencia, inicio: dia.getTime(), fin: dia.getTime() + min * 60000, min, titulo: ['Ofertas del día 🔥', 'Liquidación de electrodomésticos', 'Motos a crédito', 'Pregúntame lo que quieras', 'Promo fin de semana'][Math.floor(rnd() * 5)], estado: 'FINALIZADO'});
     }
   });
   [[0, 42], [4, 17], [10, 65]].forEach(([i, m]) => {
     const v = vendedores[i];
-    lives.push({usuario: v.usuario, nombre: v.nombre, zona: v.zona, inicio: ahora - m * 60000, fin: null, min: null, titulo: 'Ofertas en vivo 🔴', estado: 'EN VIVO'});
+    lives.push({usuario: v.usuario, nombre: v.nombre, agencia: v.agencia, inicio: ahora - m * 60000, fin: null, min: null, titulo: 'Ofertas en vivo 🔴', estado: 'EN VIVO'});
   });
   return {generado: ahora, intervalo: 5, vendedores, lives, estado: vendedores.map(v => ({usuario: v.usuario, ultimaRev: ahora - 2 * 60000}))};
 }
 
-['periodo', 'zona'].forEach(id => $('#' + id).addEventListener('change', render));
+$('#periodo').addEventListener('change', render);
+$('#agencia').addEventListener('change', render);
+$('#cadena').addEventListener('change', () => { prepararFiltros(); render(); });
 $('#buscar').addEventListener('input', render);
 $('#exportar').addEventListener('click', exportarCSV);
 cargar();
