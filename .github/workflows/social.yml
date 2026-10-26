@@ -1,0 +1,45 @@
+name: Métricas de contenido
+
+on:
+  schedule:
+    - cron: "17 */4 * * *"   # cada 4 horas
+  workflow_dispatch:
+
+concurrency:
+  group: social
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  social:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar rama de datos
+        run: |
+          git config user.name "monitor-lives"
+          git config user.email "monitor-lives@users.noreply.github.com"
+          git fetch -q origin data
+          git worktree add -q _data origin/data
+          git -C _data checkout -q -B data origin/data
+
+      - name: Recolectar métricas
+        env:
+          DATA_DIR: _data/data
+        run: python3 social.py
+
+      - name: Guardar
+        run: |
+          cd _data && git add -A data
+          git diff --cached --quiet && exit 0
+          git commit -q -m "contenido $(date -u +%FT%TZ)"
+          for i in 1 2 3 4 5; do
+            git push -q origin data && exit 0
+            git pull -q --rebase origin data || { git rebase --abort; git pull -q --no-rebase -X ours origin data; }
+            sleep 3
+          done
+          exit 1
