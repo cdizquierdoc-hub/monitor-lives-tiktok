@@ -147,8 +147,11 @@ def consultar_api(usuario):
         t = int(room["startTime"]) * 1000
         if 0 <= ahora_ms() - t < 24 * 3600 * 1000:
             inicio = t
+    stats = room.get("liveRoomStats") or {}
     return {"enVivo": en_vivo, "roomId": str(user.get("roomId") or ""),
-            "inicio": inicio, "titulo": room.get("title") or ""}
+            "inicio": inicio, "titulo": room.get("title") or "",
+            "espectadores": int(stats.get("userCount") or 0) if en_vivo else None,
+            "vistas": int(stats.get("enterCount") or 0) if en_vivo else None}
 
 
 def consultar_html(usuario):
@@ -158,7 +161,7 @@ def consultar_html(usuario):
     if not m:
         if re.search(r'"statusCode":\s*10221|user doesn|couldn.t find this account', html, re.I):
             raise LookupError("TikTok: la cuenta no existe")
-        return {"enVivo": False, "roomId": "", "inicio": None, "titulo": ""}
+        return {"enVivo": False, "roomId": "", "inicio": None, "titulo": "", "espectadores": None, "vistas": None}
     room_id = m.group(1)
     _, txt = http_get("https://webcast.tiktok.com/webcast/room/check_alive/?aid=1988&region=CH"
                       "&user_is_login=false&room_ids=" + room_id)
@@ -167,7 +170,8 @@ def consultar_html(usuario):
     mt = re.search(r'"title":"([^"]{0,200})"', html)
     if mt:
         titulo = mt.group(1)
-    return {"enVivo": bool(data.get("alive")), "roomId": room_id, "inicio": None, "titulo": titulo}
+    return {"enVivo": bool(data.get("alive")), "roomId": room_id, "inicio": None, "titulo": titulo,
+            "espectadores": None, "vistas": None}
 
 
 def consultar(usuario):
@@ -210,10 +214,10 @@ def guardar_datos(d, vendedores):
         with open(archivo_hist, "a", encoding="utf-8", newline="") as f:
             w = csv.writer(f)
             if nuevo:
-                w.writerow(["id", "usuario", "nombre", "agencia", "inicio_utc", "fin_utc", "min", "titulo"])
+                w.writerow(["id", "usuario", "nombre", "agencia", "inicio_utc", "fin_utc", "min", "vistas", "pico", "promedio", "titulo"])
             for l in viejos:
                 iso = lambda ms: datetime.fromtimestamp(ms / 1000, timezone.utc).isoformat() if ms else ""
-                w.writerow([l["id"], l["usuario"], l["nombre"], l.get("agencia", ""), iso(l["inicio"]), iso(l.get("fin")), l.get("min"), l.get("titulo", "")])
+                w.writerow([l["id"], l["usuario"], l["nombre"], l.get("agencia", ""), iso(l["inicio"]), iso(l.get("fin")), l.get("min"), l.get("vistas"), l.get("pico"), l.get("promedio"), l.get("titulo", "")])
         d["lives"] = [l for l in d["lives"] if l not in viejos]
 
     salida = {
@@ -229,10 +233,24 @@ def guardar_datos(d, vendedores):
     os.replace(tmp, os.path.join(DATA_DIR, "data.json"))
 
 
+def registrar_audiencia(live, r):
+    """Vistas = entradas acumuladas al live; pico y promedio de espectadores simultáneos."""
+    esp, vis = r.get("espectadores"), r.get("vistas")
+    if vis is not None:
+        live["vistas"] = max(live.get("vistas") or 0, vis)
+    if esp is not None:
+        live["actual"] = esp
+        live["pico"] = max(live.get("pico") or 0, esp)
+        live["sumaEsp"] = (live.get("sumaEsp") or 0) + esp
+        live["muestras"] = (live.get("muestras") or 0) + 1
+        live["promedio"] = round(live["sumaEsp"] / live["muestras"])
+
+
 def cerrar_live(live, fin):
     live["fin"] = fin
     live["min"] = max(1, round((fin - live["inicio"]) / 60000))
     live["estado"] = "FINALIZADO"
+    live["actual"] = None
 
 
 def revisar(d):
@@ -289,10 +307,13 @@ def revisar(d):
                     por_id[lid] = live
                     log("🔴 INICIO", v["usuario"], r.get("metodo", ""))
                 live["estado"], live["visto"] = "EN VIVO", t
+                registrar_audiencia(live, r)
                 e.update(enVivo=True, roomId=r["roomId"], liveId=lid)
                 cambios = True
             else:
                 live["visto"] = t
+                registrar_audiencia(live, r)
+                cambios = True
                 if r["titulo"] and not live.get("titulo"):
                     live["titulo"] = r["titulo"]
         elif e["enVivo"]:

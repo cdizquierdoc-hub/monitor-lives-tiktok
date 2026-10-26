@@ -109,6 +109,7 @@
     <div class="card kpi"><div class="l">Lives en el periodo</div><div class="v" id="k-lives">–</div><div class="s" id="k-lives-s"></div></div>
     <div class="card kpi"><div class="l">Horas totales en live</div><div class="v" id="k-horas">–</div><div class="s" id="k-horas-s"></div></div>
     <div class="card kpi"><div class="l">Duración promedio</div><div class="v" id="k-prom">–</div><div class="s">por live</div></div>
+    <div class="card kpi"><div class="l">Vistas totales</div><div class="v" id="k-vis">–</div><div class="s" id="k-vis-s"></div></div>
     <div class="card kpi"><div class="l">Vendedores que hicieron live</div><div class="v" id="k-act">–</div><div class="s" id="k-act-s"></div></div>
   </div>
 
@@ -120,7 +121,7 @@
   <div class="card section">
     <h2>Ranking de vendedores <small>ordenado por horas en live</small></h2>
     <div class="tablewrap"><table>
-      <thead><tr><th>#</th><th>Vendedor</th><th>Agencia</th><th class="num">Lives</th><th class="num">Horas</th><th></th><th class="num">Promedio</th><th>Último live</th><th>Estado</th></tr></thead>
+      <thead><tr><th>#</th><th>Vendedor</th><th>Agencia</th><th class="num">Lives</th><th class="num">Horas</th><th></th><th class="num">Promedio</th><th class="num">Vistas</th><th class="num">Vistas/live</th><th>Último live</th><th>Estado</th></tr></thead>
       <tbody id="ranking"></tbody>
     </table></div>
   </div>
@@ -128,7 +129,7 @@
   <div class="card section">
     <h2>Resumen por agencia <small>ordenado por horas en live</small></h2>
     <div class="tablewrap"><table>
-      <thead><tr><th>Agencia</th><th>Cadena</th><th class="num">Vendedores</th><th class="num">Hicieron live</th><th class="num">Lives</th><th class="num">Horas</th><th></th><th class="num">Horas por vendedor</th></tr></thead>
+      <thead><tr><th>Agencia</th><th>Cadena</th><th class="num">Vendedores</th><th class="num">Hicieron live</th><th class="num">Lives</th><th class="num">Horas</th><th></th><th class="num">Horas por vendedor</th><th class="num">Vistas</th></tr></thead>
       <tbody id="agencias"></tbody>
     </table></div>
   </div>
@@ -141,7 +142,7 @@
   <div class="card">
     <h2>Historial de lives <small id="hist-sub"></small></h2>
     <div class="tablewrap"><table>
-      <thead><tr><th>Vendedor</th><th>Agencia</th><th>Inicio</th><th>Fin</th><th class="num">Duración</th><th>Título</th></tr></thead>
+      <thead><tr><th>Vendedor</th><th>Agencia</th><th>Inicio</th><th>Fin</th><th class="num">Duración</th><th class="num">Vistas</th><th class="num">Pico</th><th>Título</th></tr></thead>
       <tbody id="historial"></tbody>
     </table></div>
   </div>
@@ -160,10 +161,10 @@
     <p id="d-sub"></p>
     <div class="dk" id="d-kpis"></div>
     <div class="tablewrap"><table>
-      <thead><tr><th>Fecha</th><th>Comenzó</th><th>Terminó</th><th class="num">Duración</th><th>Horario</th><th>Título del live</th></tr></thead>
+      <thead><tr><th>Fecha</th><th>Comenzó</th><th>Terminó</th><th class="num">Duración</th><th class="num">Vistas</th><th class="num">Pico</th><th class="num">Promedio viendo</th><th>Horario</th><th>Título del live</th></tr></thead>
       <tbody id="d-tabla"></tbody>
     </table></div>
-    <p class="hint" style="margin-top:10px">Horas en hora de Ecuador. Las duraciones tienen un margen de ±2 min porque el monitor revisa cada 2 minutos.</p>
+    <p class="hint" style="margin-top:10px">Horas en hora de Ecuador. Las duraciones tienen un margen de ±2 min porque el monitor revisa cada 2 minutos. <b>Vistas</b> = personas que entraron al live; <b>Pico</b> = máximo de espectadores al mismo tiempo; <b>Promedio viendo</b> = espectadores promedio durante el live.</p>
   </div>
 </div>
 
@@ -196,6 +197,7 @@ let RAW = null, chart = null, ULTIMOS = [];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtDur = m => { m = Math.round(m || 0); if (m < 60) return m + ' min'; const h = Math.floor(m / 60), r = m % 60; return h + ' h' + (r ? ' ' + r + ' min' : ''); };
 const fmtF = ms => ms ? new Date(ms).toLocaleString('es-EC', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : '—';
+const fmtN = n => n == null ? '—' : Math.round(n).toLocaleString('es-EC');
 const fmtH = m => (m / 60).toLocaleString('es-EC', {maximumFractionDigits: 1});
 const diaKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 
@@ -265,6 +267,9 @@ function render() {
   $('#k-horas').textContent = fmtH(totMin);
   $('#k-horas-s').textContent = activos.size ? fmtH(totMin / activos.size) + ' h por vendedor activo' : '';
   $('#k-prom').textContent = lives.length ? fmtDur(totMin / lives.length) : '—';
+  const conVis = lives.filter(l => l.vistas != null), totVis = conVis.reduce((s, l) => s + l.vistas, 0);
+  $('#k-vis').textContent = conVis.length ? fmtN(totVis) : '—';
+  $('#k-vis-s').textContent = conVis.length ? fmtN(totVis / conVis.length) + ' por live' : 'se registra en cada live';
   $('#k-act').textContent = activos.size + ' / ' + vend.length;
   $('#k-act-s').textContent = vend.length ? Math.round(activos.size / vend.length * 100) + '% del equipo' : '';
 
@@ -274,7 +279,7 @@ function render() {
     <a class="live-item" href="https://www.tiktok.com/@${encodeURIComponent(l.usuario)}/live" target="_blank" rel="noopener">
       <span class="dot"></span>
       <div><div class="n">${esc(l.nombre)}</div><div class="m">@${esc(l.usuario)} · ${esc(l.agencia)}</div></div>
-      <span class="t">${fmtDur(l.d)} · desde ${new Date(l.inicio).toLocaleTimeString('es-EC', {hour: '2-digit', minute: '2-digit'})}</span>
+      <span class="t">${l.actual != null ? '👁 ' + fmtN(l.actual) + ' viendo · ' : ''}${fmtDur(l.d)} · desde ${new Date(l.inicio).toLocaleTimeString('es-EC', {hour: '2-digit', minute: '2-digit'})}</span>
     </a>`).join('') : '<div class="empty">Nadie está en vivo en este momento.</div>';
 
   // Gráfico por día
@@ -287,8 +292,8 @@ function render() {
 
   // Ranking
   const agg = {};
-  vend.forEach(v => agg[v.usuario] = {v, n: 0, min: 0, ult: null});
-  lives.forEach(l => { const a = agg[l.usuario]; if (!a) return; a.n++; a.min += l.d; if (!a.ult || l.inicio > a.ult) a.ult = l.inicio; });
+  vend.forEach(v => agg[v.usuario] = {v, n: 0, min: 0, ult: null, vis: 0, nVis: 0});
+  lives.forEach(l => { const a = agg[l.usuario]; if (!a) return; a.n++; a.min += l.d; if (l.vistas != null) { a.vis += l.vistas; a.nVis++; } if (!a.ult || l.inicio > a.ult) a.ult = l.inicio; });
   const vivoSet = new Set(enVivo.map(l => l.usuario));
   const filas = Object.values(agg).sort((a, b) => b.min - a.min || a.v.nombre.localeCompare(b.v.nombre));
   const maxMin = Math.max(1, ...filas.map(f => f.min));
@@ -301,15 +306,17 @@ function render() {
       <td class="num">${fmtH(f.min)}</td>
       <td><span class="bar"><i style="width:${(f.min / maxMin * 100).toFixed(1)}%"></i></span></td>
       <td class="num">${f.n ? fmtDur(f.min / f.n) : '—'}</td>
+      <td class="num">${f.nVis ? fmtN(f.vis) : '—'}</td>
+      <td class="num">${f.nVis ? fmtN(f.vis / f.nVis) : '—'}</td>
       <td>${f.ult ? fmtF(f.ult) + ' <span class="ver">ver detalle ›</span>' : 'Sin lives en el periodo'}</td>
       <td>${vivoSet.has(f.v.usuario) ? '<span class="pill live">EN VIVO</span>' : '<span class="pill off">offline</span>'}</td>
-    </tr>`).join('') || '<tr><td colspan="9" class="empty">No hay vendedores con esos filtros.</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="11" class="empty">No hay vendedores con esos filtros.</td></tr>';
 
   // Resumen por agencia
   const ag = {};
   filas.forEach(f => {
-    const a = ag[f.v.agencia] ||= {agencia: f.v.agencia, cadena: f.v.cadena, vend: 0, act: 0, n: 0, min: 0};
-    a.vend++; a.n += f.n; a.min += f.min; if (f.n) a.act++;
+    const a = ag[f.v.agencia] ||= {agencia: f.v.agencia, cadena: f.v.cadena, vend: 0, act: 0, n: 0, min: 0, vis: 0, nVis: 0};
+    a.vend++; a.n += f.n; a.min += f.min; a.vis += f.vis; a.nVis += f.nVis; if (f.n) a.act++;
   });
   const ags = Object.values(ag).sort((a, b) => b.min - a.min || a.agencia.localeCompare(b.agencia));
   const maxAg = Math.max(1, ...ags.map(a => a.min));
@@ -320,7 +327,8 @@ function render() {
       <td class="num">${a.n}</td><td class="num">${fmtH(a.min)}</td>
       <td><span class="bar"><i style="width:${(a.min / maxAg * 100).toFixed(1)}%"></i></span></td>
       <td class="num">${fmtH(a.min / a.vend)}</td>
-    </tr>`).join('') || '<tr><td colspan="8" class="empty">Sin agencias con esos filtros.</td></tr>';
+      <td class="num">${a.nVis ? fmtN(a.vis) : '—'}</td>
+    </tr>`).join('') || '<tr><td colspan="9" class="empty">Sin agencias con esos filtros.</td></tr>';
 
   // Mapa de calor día × hora (minutos)
   const H = Array.from({length: 7}, () => Array(24).fill(0));
@@ -347,8 +355,10 @@ function render() {
       <td>${fmtF(l.inicio)}</td>
       <td>${l.estado === 'EN VIVO' ? '<span class="pill live">EN VIVO</span>' : fmtF(l.fin)}</td>
       <td class="num">${fmtDur(l.d)}</td>
+      <td class="num">${fmtN(l.vistas)}</td>
+      <td class="num">${fmtN(l.pico)}</td>
       <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis">${esc(l.titulo)}</td>
-    </tr>`).join('') || '<tr><td colspan="6" class="empty">Sin lives en el periodo.</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="8" class="empty">Sin lives en el periodo.</td></tr>';
 
   $('#sinvendedores').hidden = RAW.vendedores.length > 0;
   const rev = Math.max(0, ...(RAW.estado || []).map(e => e.ultimaRev || 0));
@@ -373,9 +383,9 @@ function dibujarGrafico(labels, data) {
 }
 
 function exportarCSV() {
-  const enc = ['Usuario', 'Nombre', 'Agencia', 'Inicio', 'Fin', 'Duracion_min', 'Estado', 'Titulo'];
+  const enc = ['Usuario', 'Nombre', 'Agencia', 'Inicio', 'Fin', 'Duracion_min', 'Vistas', 'Pico', 'Promedio_viendo', 'Estado', 'Titulo'];
   const f = ms => ms ? new Date(ms).toLocaleString('es-EC') : '';
-  const rows = ULTIMOS.map(l => [l.usuario, l.nombre, l.agencia, f(l.inicio), f(l.fin), Math.round(l.d), l.estado, l.titulo]);
+  const rows = ULTIMOS.map(l => [l.usuario, l.nombre, l.agencia, f(l.inicio), f(l.fin), Math.round(l.d), l.vistas ?? '', l.pico ?? '', l.promedio ?? '', l.estado, l.titulo]);
   const csv = [enc, ...rows].map(r => r.map(c => '"' + String(c ?? '').replace(/"/g, '""') + '"').join(';')).join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], {type: 'text/csv;charset=utf-8'}));
@@ -394,13 +404,16 @@ function abrirDetalle(usuario) {
   const ls = RAW.lives.filter(l => l.usuario === usuario && l.inicio >= desde).map(l => ({...l, d: dur(l)})).sort((a, b) => b.inicio - a.inicio);
   const tot = ls.reduce((s, l) => s + l.d, 0);
   const largo = ls.reduce((m, l) => Math.max(m, l.d), 0);
+  const lv = ls.filter(l => l.vistas != null), vis = lv.reduce((s, l) => s + l.vistas, 0);
+  const pico = ls.reduce((m, l) => Math.max(m, l.pico || 0), 0);
   const diasConLive = new Set(ls.map(l => diaKey(new Date(l.inicio)))).size;
   const per = $('#periodo').selectedOptions[0].textContent.toLowerCase();
   $('#d-titulo').innerHTML = esc(v.nombre) + (ls.some(l => l.estado === 'EN VIVO') ? ' <span class="pill live">EN VIVO</span>' : '');
   $('#d-sub').innerHTML = `<a class="u" href="https://www.tiktok.com/@${encodeURIComponent(usuario)}" target="_blank" rel="noopener">@${esc(usuario)}</a> · ${esc(v.agencia || '')} · ${esc(per)}`;
   $('#d-kpis').innerHTML = [
     ['Lives', ls.length], ['Tiempo total', fmtDur(tot)], ['Promedio por live', ls.length ? fmtDur(tot / ls.length) : '—'],
-    ['Live más largo', ls.length ? fmtDur(largo) : '—'], ['Días con live', diasConLive + ' de ' + dias]
+    ['Live más largo', ls.length ? fmtDur(largo) : '—'], ['Vistas totales', lv.length ? fmtN(vis) : '—'],
+    ['Vistas por live', lv.length ? fmtN(vis / lv.length) : '—'], ['Pico de espectadores', pico ? fmtN(pico) : '—'], ['Días con live', diasConLive + ' de ' + dias]
   ].map(([k, val]) => `<div><span>${k}</span><b>${val}</b></div>`).join('');
   const hora = ms => new Date(ms).toLocaleTimeString('es-EC', {hour: '2-digit', minute: '2-digit'});
   const fecha = ms => new Date(ms).toLocaleDateString('es-EC', {weekday: 'short', day: '2-digit', month: 'short', year: 'numeric'});
@@ -414,10 +427,13 @@ function abrirDetalle(usuario) {
       <td><b>${hora(l.inicio)}</b></td>
       <td>${fin ? '<b>' + hora(fin) + '</b>' + (otroDia ? ' <span class="hint">(+1 día)</span>' : '') : '<span class="pill live">EN VIVO</span>'}</td>
       <td class="num"><b>${fmtDur(l.d)}</b></td>
+      <td class="num"><b>${fmtN(l.vistas)}</b></td>
+      <td class="num">${fmtN(l.pico)}</td>
+      <td class="num">${fmtN(l.promedio)}</td>
       <td><div class="tl" title="${hora(l.inicio)} – ${fin ? hora(fin) : 'ahora'}"><i style="left:${izq.toFixed(2)}%;width:${ancho.toFixed(2)}%"></i></div></td>
       <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis">${esc(l.titulo || '')}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="6" class="empty">No hizo lives en este periodo. Cambia el periodo arriba para ver más.</td></tr>';
+  }).join('') || '<tr><td colspan="9" class="empty">No hizo lives en este periodo. Cambia el periodo arriba para ver más.</td></tr>';
   $('#detalle').classList.add('open');
 }
 function cerrarDetalle() { $('#detalle').classList.remove('open'); DETALLE = null; }
@@ -517,13 +533,13 @@ function demo() {
       if (rnd() > freq) continue;
       const dia = new Date(ahora - d * 86400000);
       dia.setHours(rnd() < 0.7 ? 18 + Math.floor(rnd() * 4) : 10 + Math.floor(rnd() * 6), Math.floor(rnd() * 60), 0, 0);
-      const min = Math.round(15 + rnd() * 100);
-      lives.push({usuario: v.usuario, nombre: v.nombre, agencia: v.agencia, inicio: dia.getTime(), fin: dia.getTime() + min * 60000, min, titulo: ['Ofertas del día 🔥', 'Liquidación de electrodomésticos', 'Motos a crédito', 'Pregúntame lo que quieras', 'Promo fin de semana'][Math.floor(rnd() * 5)], estado: 'FINALIZADO'});
+      const min = Math.round(15 + rnd() * 100), pico = Math.round(8 + rnd() * 120);
+      lives.push({usuario: v.usuario, nombre: v.nombre, agencia: v.agencia, inicio: dia.getTime(), fin: dia.getTime() + min * 60000, min, vistas: Math.round(pico * (3 + min / 12)), pico, promedio: Math.round(pico * .6), titulo: ['Ofertas del día 🔥', 'Liquidación de electrodomésticos', 'Motos a crédito', 'Pregúntame lo que quieras', 'Promo fin de semana'][Math.floor(rnd() * 5)], estado: 'FINALIZADO'});
     }
   });
   [[0, 42], [4, 17], [10, 65]].forEach(([i, m]) => {
     const v = vendedores[i];
-    lives.push({usuario: v.usuario, nombre: v.nombre, agencia: v.agencia, inicio: ahora - m * 60000, fin: null, min: null, titulo: 'Ofertas en vivo 🔴', estado: 'EN VIVO'});
+    lives.push({usuario: v.usuario, nombre: v.nombre, agencia: v.agencia, inicio: ahora - m * 60000, fin: null, min: null, vistas: 40 + m * 4, pico: 30 + m, promedio: 20, actual: 18 + m % 20, titulo: 'Ofertas en vivo 🔴', estado: 'EN VIVO'});
   });
   return {generado: ahora, intervalo: 5, vendedores, lives, estado: vendedores.map(v => ({usuario: v.usuario, ultimaRev: ahora - 2 * 60000}))};
 }
