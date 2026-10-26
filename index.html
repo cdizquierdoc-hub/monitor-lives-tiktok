@@ -452,7 +452,7 @@ async function cargar() {
   if ($('#detalle').classList.contains('open') && DETALLE) abrirDetalle(DETALLE);
 }
 
-const CADENAS = {CRECOS: 'Crecos', ORVE: 'Orve Hogar', JAPON: 'Japón', 'JAPÓN': 'Japón', MOTOZONE: 'Motozone', PAGAMENOS: 'Pagamenos', PAGA: 'Pagamenos', SAMSUNG: 'Samsung'};
+const CADENAS = {CRECOS: 'Crecos', ORVE: 'Orve Hogar', JAPON: 'Japón', 'JAPÓN': 'Japón', MOTOZONE: 'Motozone', PAGAMENOS: 'Pagamenos', PAGA: 'Pagamenos', SAMSUNG: 'Samsung', MULTINIVEL: 'Multinivel'};
 const cadenaDe = a => CADENAS[String(a || '').trim().split(/\s+/)[0].toUpperCase()] || 'Otra';
 function opciones(sel, todos, valores) {
   const actual = sel.value;
@@ -460,12 +460,12 @@ function opciones(sel, todos, valores) {
   if (actual && !valores.includes(actual)) sel.value = '';
 }
 function prepararFiltros() {
-  RAW.vendedores.forEach(v => { v.tipo = v.tipo || 'propio'; v.agencia = v.agencia || v.zona || 'SIN AGENCIA'; v.cadena = v.cadena || cadenaDe(v.agencia);
+  RAW.vendedores.forEach(v => { v.tipo = v.tipo || 'propio'; v.cadena = v.cadena || cadenaDe(v.agencia || v.zona || ''); v.agencia = v.cadena === 'Multinivel' ? '' : (v.agencia || v.zona || 'SIN AGENCIA');
     v.plataforma = v.plataforma || (String(v.usuario).startsWith('ig:') ? 'instagram' : 'tiktok'); v.handle = v.handle || String(v.usuario).replace(/^ig:/, ''); v.rol = v.rol || 'vendedor'; });
   const tipo = $('#tipo').value, deTipo = RAW.vendedores.filter(v => (!tipo || v.tipo === tipo) && pasaGlobal(v));
   opciones($('#cadena'), tipo === 'competencia' ? 'Todas las empresas' : tipo ? 'Todas las cadenas' : 'Todas las cadenas y empresas', [...new Set(deTipo.map(v => v.cadena))].sort());
   const cad = $('#cadena').value;
-  opciones($('#agencia'), tipo === 'competencia' ? 'Todas las cuentas' : 'Todas las agencias', [...new Set(deTipo.filter(v => !cad || v.cadena === cad).map(v => v.agencia))].sort());
+  opciones($('#agencia'), tipo === 'competencia' ? 'Todas las cuentas' : 'Todas las agencias', [...new Set(deTipo.filter(v => (!cad || v.cadena === cad) && v.agencia).map(v => v.agencia))].sort());
 }
 
 function render() {
@@ -509,7 +509,7 @@ function render() {
   $('#vivos').innerHTML = enVivo.length ? enVivo.map(l => `
     <a class="live-item" href="${urlLive(porUsuario[l.usuario] || {usuario: l.usuario})}" target="_blank" rel="noopener">
       <span class="dot"></span>
-      <div><div class="n">${esc(l.nombre)}</div><div class="m">${esc(hdl(porUsuario[l.usuario] || {usuario: l.usuario}))}${redBadge(porUsuario[l.usuario] || {})} · ${esc(l.agencia)}</div></div>
+      <div><div class="n">${esc(l.nombre)}</div><div class="m">${esc(hdl(porUsuario[l.usuario] || {usuario: l.usuario}))}${redBadge(porUsuario[l.usuario] || {})} · ${esc(l.agencia || '—')}</div></div>
       <span class="t">${l.actual != null ? '👁 ' + fmtN(l.actual) + ' viendo · ' : ''}${fmtDur(l.d)} · desde ${new Date(l.inicio).toLocaleTimeString('es-EC', {hour: '2-digit', minute: '2-digit'})}</span>
     </a>`).join('') : '<div class="empty">Nadie está en vivo en este momento.</div>';
 
@@ -533,7 +533,7 @@ function render() {
       <td>${f.n ? i + 1 : '–'}</td>
       <td>${cuentaHtml(f.v)}${f.v.tipo === 'competencia' ? ' <span class="pill them">competencia</span>' : ''}</td>
       <td>${esc(f.v.cadena)}</td>
-      <td>${esc(f.v.agencia)}</td>
+      <td>${esc(f.v.agencia || '—')}</td>
       <td class="num">${f.n}</td>
       <td class="num">${fmtH(f.min)}</td>
       <td><span class="bar"><i style="width:${(f.min / maxMin * 100).toFixed(1)}%"></i></span></td>
@@ -573,7 +573,7 @@ function render() {
   const maxAg = Math.max(1, ...ags.map(a => a.min));
   $('#agencias').innerHTML = ags.map(a => `
     <tr class="${a.n ? '' : 'zero'}">
-      <td><b>${esc(a.agencia)}</b></td><td>${esc(a.cadena)}</td>
+      <td><b>${a.agencia ? esc(a.agencia) : '— <span class="hint">(sin agencia: ' + esc(a.cadena) + ')</span>'}</b></td><td>${esc(a.cadena)}</td>
       <td class="num">${a.vend}</td><td class="num">${a.act} <span class="hint">(${Math.round(a.act / a.vend * 100)}%)</span></td>
       <td class="num">${a.n}</td><td class="num">${fmtH(a.min)}</td>
       <td><span class="bar"><i style="width:${(a.min / maxAg * 100).toFixed(1)}%"></i></span></td>
@@ -589,7 +589,7 @@ function render() {
   $('#hist-sub').textContent = hist.length > 200 ? 'mostrando los 200 más recientes de ' + hist.length : hist.length + ' lives';
   $('#historial').innerHTML = hist.slice(0, 200).map(l => `
     <tr class="click" data-u="${esc(l.usuario)}" title="Ver detalle del vendedor">
-      <td><b>${esc(l.nombre)}</b></td><td>${esc(l.cadena)}</td><td>${esc(l.agencia)}</td>
+      <td><b>${esc(l.nombre)}</b></td><td>${esc(l.cadena)}</td><td>${esc(l.agencia || '—')}</td>
       <td>${fmtF(l.inicio)}</td>
       <td>${l.estado === 'EN VIVO' ? '<span class="pill live">EN VIVO</span>' : fmtF(l.fin)}</td>
       <td class="num">${fmtDur(l.d)}</td>
@@ -710,7 +710,7 @@ function renderComp() {
     <tr class="click" data-u="${esc(a.v.usuario)}">
       <td>${i + 1}</td><td>${cuentaHtml(a.v, false)}</td>
       <td>${a.v.tipo === 'competencia' ? '<span class="pill them">competencia</span>' : '<span class="pill us">nosotros</span>'}</td>
-      <td>${esc(a.v.cadena)}</td><td>${esc(a.v.agencia)}</td><td class="num">${a.n}</td><td class="num">${fmtH(a.min)}</td>
+      <td>${esc(a.v.cadena)}</td><td>${esc(a.v.agencia || '—')}</td><td class="num">${a.n}</td><td class="num">${fmtH(a.min)}</td>
       <td class="num">${a.nVis ? fmtN(a.vis) : '—'}</td><td class="num">${a.nVis ? fmtN(a.vis / a.nVis) : '—'}</td>
       <td>${a.vivo ? '<span class="pill live">EN VIVO</span>' : '<span class="pill off">offline</span>'}</td>
     </tr>`).join('') || '<tr><td colspan="10" class="empty">Sin lives en el periodo.</td></tr>';
@@ -883,7 +883,7 @@ function renderContenido() {
     <tr>
       <td>${cuentaHtml(a.v)}</td>
       <td>${pillTipo(a.v.tipo)}</td>
-      <td>${esc(a.v.cadena)}</td><td>${esc(a.v.agencia)}</td>
+      <td>${esc(a.v.cadena)}</td><td>${esc(a.v.agencia || '—')}</td>
       <td class="num"><b>${a.seg == null ? (a.err ? '<span class="err" title="' + esc(a.err) + '">⚠</span>' : '<span class="hint">pendiente</span>') : fmtN(a.seg)}</b></td>
       <td class="num">${a.delta == null ? '—' : (a.delta >= 0 ? '<span class="ok">+' : '<span class="err">') + fmtN(a.delta) + '</span>'}</td>
       <td class="num">${a.n}</td><td class="num">${f1(a.n / dias)}</td><td class="num">${f1(a.n / dias * 7)}</td><td class="num">${f1(a.n / dias * 30)}</td>
@@ -1001,7 +1001,7 @@ function ayudaPanel() {
   const comp = tipoPanel() === 'competencia';
   $('#p-ayuda').innerHTML = comp
     ? 'Pega una cuenta por línea: <b>usuario y empresa</b> (ej. <code>"@vendedora.x" "ARTEFACTA KIA"</code>). Se agrupan solas por empresa: Artefacta, Marcimex, Almacenes España, Comandato, Jaher, Almacenes Al Precio, La Ganga… Cualquier otra empresa también funciona. Sirve con comillas, comas, @usuario, el link del perfil o columnas de Excel.'
-    : 'Elige arriba la red (TikTok o Instagram; un link de instagram.com se detecta solo) y si son vendedores o cuentas oficiales. Pega uno por línea: <b>usuario y agencia</b> (el nombre del vendedor es opcional, al final). La cadena se toma de la 1.ª palabra de la agencia: <b>CRECOS, ORVE HOGAR, JAPON, MOTOZONE o PAGAMENOS</b>. Si la agencia es de un competidor conocido (ej. ARTEFACTA…), la cuenta se marca sola como competencia.';
+    : 'Elige arriba la red (TikTok o Instagram; un link de instagram.com se detecta solo) y si son vendedores o cuentas oficiales. Pega uno por línea: <b>usuario y agencia</b> (el nombre del vendedor es opcional, al final). La cadena se toma del inicio de la agencia: <b>CRECOS, ORVE HOGAR, JAPON, MOTOZONE, PAGAMENOS o SAMSUNG</b>. Para vendedores de <b>Multinivel</b> escribe solo <code>MULTINIVEL</code> (no llevan agencia). Si la agencia es de un competidor conocido (ej. ARTEFACTA…), la cuenta se marca sola como competencia.';
   $('#nuevos').placeholder = comp
     ? '"@comandato.ofertas" "COMANDATO"\n@artefacta.ec, ARTEFACTA\nhttps://www.tiktok.com/@marcimex.ec, MARCIMEX'
     : '"@pepito" "JAPON PARQUE CALIFORNIA"\n@andrea.ventas, CRECOS MALL DEL SOL, Andrea Mora\nhttps://www.tiktok.com/@dani.tecno, ORVE HOGAR QUITO NORTE';
@@ -1092,7 +1092,7 @@ function renderPanel() {
       : !e ? '<span class="hint">pendiente</span>'
       : e.error ? '<span class="err" title="' + esc(e.error) + '">⚠ no se pudo revisar</span>'
       : e.enVivo ? '<span class="pill live">EN VIVO</span>' : '<span class="ok">✓ ok</span>';
-    return `<tr class="click" data-u="${esc(v.usuario)}"><td>${cuentaHtml(v, false)}</td><td>${v.tipo === 'competencia' ? '<span class="pill them">competencia</span>' : '<span class="pill us">nuestro</span>'}</td><td>${esc(v.agencia)}</td><td>${st}</td>
+    return `<tr class="click" data-u="${esc(v.usuario)}"><td>${cuentaHtml(v, false)}</td><td>${v.tipo === 'competencia' ? '<span class="pill them">competencia</span>' : '<span class="pill us">nuestro</span>'}</td><td>${esc(v.agencia || '—')}</td><td>${st}</td>
       <td>${v.archivo ? `<a class="u" href="${GH}/edit/main/vendedores/${encodeURIComponent(v.archivo)}" target="_blank" rel="noopener">editar</a>` : ''}</td></tr>`;
   }).join('') || '<tr><td colspan="5" class="empty">Aún no hay cuentas.</td></tr>';
 }

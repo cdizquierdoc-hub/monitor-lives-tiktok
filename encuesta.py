@@ -53,7 +53,7 @@ def traer_respuestas():
             d = json.loads(ev.get("message") or "{}")
         except ValueError:
             continue
-        if d.get("prueba") or not d.get("agencia"):
+        if d.get("prueba") or not (d.get("agencia") or d.get("cadena") == "Multinivel"):
             continue
         d["_id"], d["_t"] = ev["id"], ev["time"]
         nuevas.append(d)
@@ -141,7 +141,7 @@ def main():
     for r in sorted(respuestas, key=lambda x: x["_t"]):
         tt = r.get("tiktok") or ""
         v = verificar(tt, cache) if tt else {}
-        filas.append([fecha(r), r.get("nombre", ""), r.get("cadena", ""), r.get("agencia", ""),
+        filas.append([fecha(r), r.get("nombre", ""), r.get("cadena", ""), r.get("agencia", "") or ("(sin agencia)" if r.get("cadena") == "Multinivel" else ""),
                       ("@" + tt) if tt else "(no tiene TikTok)", existe_txt(v) if tt else "",
                       v.get("nick", ""), v.get("seguidores"), r.get("lives", ""),
                       ("@" + r["instagram"]) if r.get("instagram") else "",
@@ -168,7 +168,7 @@ def main():
             if c.get("contenido"):
                 x["contenido"][c["contenido"]] += 1
             x["por"].append(r.get("nombre", ""))
-            x["agencias"].add(r.get("agencia", ""))
+            x["agencias"].add(r.get("agencia") or r.get("cadena", ""))
     filas = []
     for u, x in sorted(comp.items(), key=lambda kv: -len(kv[1]["por"])):
         v = verificar(u, cache)
@@ -186,10 +186,13 @@ def main():
     # ---- Avance por agencia (para saber a quién insistir)
     por_ag = defaultdict(set)
     for r in respuestas:
-        por_ag[r.get("agencia", "")].add((r.get("nombre") or "").strip().lower() or r["_id"])
+        clave = "MULTINIVEL (sin agencia)" if r.get("cadena") == "Multinivel" else r.get("agencia", "")
+        por_ag[clave].add((r.get("nombre") or "").strip().lower() or r["_id"])
     cad = lambda a: next((n for p, n in [("PAGA MENOS", "Pagamenos"), ("MOTOZONE", "Motozone"), ("SAMSUNG", "Samsung"),
                                           ("CRECOS", "Crecos"), ("ORVE", "Orve Hogar"), ("JAPON", "Japón")] if a.startswith(p)), "")
     filas = [[cad(a), a, len(por_ag.get(a, ())), "Sí" if por_ag.get(a) else "Sin respuestas"] for a in agencias]
+    m = "MULTINIVEL (sin agencia)"
+    filas.append(["Multinivel", m, len(por_ag.get(m, ())), "Sí" if por_ag.get(m) else "Sin respuestas"])
     filas.sort(key=lambda f: (f[2] > 0, f[0], f[1]))
     ws3 = wb.create_sheet("Avance por agencia")
     hoja(ws3, ["Cadena", "Agencia", "Vendedores que respondieron", "¿Respondió?"], filas, [12, 32, 14, 16])

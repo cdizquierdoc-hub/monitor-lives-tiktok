@@ -84,8 +84,10 @@ CADENAS_CRESA = [
     ("ALMACENES JAPON", "Japón"), ("ALMACENES JAPÓN", "Japón"), ("JAPON", "Japón"), ("JAPÓN", "Japón"),
     ("CRECOS", "Crecos"), ("ORVE HOGAR", "Orve Hogar"), ("ORVE", "Orve Hogar"),
     ("MOTOZONE", "Motozone"), ("MOTO ZONE", "Motozone"), ("PAGA MENOS", "Pagamenos"), ("PAGAMENOS", "Pagamenos"),
-    ("SAMSUNG", "Samsung"),
+    ("SAMSUNG", "Samsung"), ("MULTINIVEL", "Multinivel"), ("MULTI NIVEL", "Multinivel"),
 ]
+# Multinivel: vendedores independientes que pueden vender para cualquier agencia → no llevan agencia
+MULTINIVEL = "Multinivel"
 COLUMNAS = {
     "usuario": ("usuario", "usuario tiktok", "user", "username", "tiktok"),
     "agencia": ("agencia", "zona", "zona / agencia", "tienda", "almacen", "almacén"),
@@ -138,6 +140,8 @@ def rol_de(txt_rol, agencia):
         return "vendedor"
     for lista in (CADENAS_CRESA, COMPETIDORES):
         nombre, exacto = _prefijo(agencia, lista)
+        if nombre == MULTINIVEL:
+            return "vendedor"
         if nombre:
             return "oficial" if exacto else "vendedor"
     return "vendedor"
@@ -184,6 +188,8 @@ def leer_vendedores():
             usuario = clave_cuenta(handle, plataforma)
             agencia = re.sub(r"\s+", " ", datos.get("agencia", "")).strip().upper() or "SIN AGENCIA"
             cadena, tipo = clasificar(agencia, datos.get("tipo"))
+            if cadena == MULTINIVEL:
+                agencia, tipo = "", "propio"          # multinivel no pertenece a una agencia
             v = {
                 "usuario": usuario,
                 "handle": handle,

@@ -78,7 +78,7 @@
     <div class="logo">🐸</div>
     <div>
       <h1>Encuesta TikTok para vendedores</h1>
-      <div class="sub">Cresa · Crecos, Orve Hogar, Japón, Motozone, Pagamenos y Samsung · 2 minutos</div>
+      <div class="sub">Cresa · Crecos, Orve Hogar, Japón, Motozone, Pagamenos, Samsung y Multinivel · 2 minutos</div>
     </div>
   </header>
 
@@ -89,12 +89,21 @@
       <label class="lbl" for="nombre">Nombre y apellido</label>
       <input type="text" id="nombre" autocomplete="name" placeholder="Ej. María Fernanda León" maxlength="80">
 
+      <label class="lbl">¿Dónde vendes?</label>
+      <div class="chips" id="canal">
+        <label><input type="radio" name="canal" value="agencia" checked>En una agencia</label>
+        <label><input type="radio" name="canal" value="multinivel">Multinivel</label>
+      </div>
+      <p class="hint" id="multi-hint" hidden style="margin-top:8px">Como vendedor de Multinivel puedes vender para cualquier agencia, así que no necesitas elegir una.</p>
+
+      <div id="bloque-ag">
       <label class="lbl" for="buscar-ag">Tu agencia</label>
       <div class="combo" id="combo">
         <input type="text" id="buscar-ag" placeholder="Escribe para buscar: ej. parque california" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="lista-ag">
         <div class="lista" id="lista-ag" role="listbox" hidden></div>
       </div>
       <div class="elegida" id="ag-elegida" hidden><span id="ag-texto"></span><button type="button" id="ag-cambiar">Cambiar</button></div>
+      </div>
     </div>
 
     <div class="card">
@@ -169,6 +178,13 @@ function elegir(a) {
   agencia = a; $('#ag-texto').textContent = a + ' · ' + cadena(a);
   $('#combo').hidden = true; $('#ag-elegida').hidden = false; lista.hidden = true; inp.classList.remove('bad'); guardar();
 }
+const esMulti = () => document.querySelector('input[name=canal]:checked').value === 'multinivel';
+function canal() {
+  const m = esMulti(); $('#bloque-ag').hidden = m; $('#multi-hint').hidden = !m;
+  if (m) inp.classList.remove('bad');
+  guardar();
+}
+document.querySelectorAll('input[name=canal]').forEach(r => r.addEventListener('change', canal));
 inp.addEventListener('focus', pintar);
 inp.addEventListener('input', pintar);
 inp.addEventListener('keydown', e => {
@@ -224,14 +240,14 @@ const leerComps = () => [...document.querySelectorAll('.comp')].map(el => ({
 
 /* ---------- borrador local ---------- */
 function guardar() {
-  try { localStorage.setItem('sapo-encuesta', JSON.stringify({nombre: $('#nombre').value, agencia, tiktok: $('#tiktok').value, instagram: $('#instagram').value,
+  try { localStorage.setItem('sapo-encuesta', JSON.stringify({nombre: $('#nombre').value, agencia, multi: esMulti(), tiktok: $('#tiktok').value, instagram: $('#instagram').value,
     lives: document.querySelector('input[name=lives]:checked')?.value || '', comps: leerComps()})); } catch (e) {}
 }
 ['#nombre', '#instagram'].forEach(s => $(s).addEventListener('input', guardar));
 document.querySelectorAll('input[name=lives]').forEach(r => r.addEventListener('change', guardar));
 try {
   const b = JSON.parse(localStorage.getItem('sapo-encuesta') || 'null');
-  if (b) { $('#nombre').value = b.nombre || ''; if (b.agencia && AGENCIAS.includes(b.agencia)) elegir(b.agencia); $('#tiktok').value = b.tiktok || ''; $('#instagram').value = b.instagram || '';
+  if (b) { if (b.multi) { document.querySelector('input[name=canal][value=multinivel]').checked = true; canal(); } $('#nombre').value = b.nombre || ''; if (b.agencia && AGENCIAS.includes(b.agencia)) elegir(b.agencia); $('#tiktok').value = b.tiktok || ''; $('#instagram').value = b.instagram || '';
     if (b.lives) { const r = document.querySelector('input[name=lives][value="' + b.lives + '"]'); if (r) r.checked = true; } (b.comps || []).forEach(agregarComp); prevTT(); }
 } catch (e) {}
 
@@ -241,14 +257,15 @@ $('#f').addEventListener('submit', async e => {
   e.preventDefault();
   const errs = [], nombre = $('#nombre').value.trim(), sinTT = $('#sin-tt').checked, tt = limpiar($('#tiktok').value);
   $('#nombre').classList.toggle('bad', !nombre); if (!nombre) errs.push('tu nombre');
-  if (!agencia) { inp.classList.add('bad'); errs.push('tu agencia'); }
+  const multi = esMulti();
+  if (!multi && !agencia) { inp.classList.add('bad'); errs.push('tu agencia'); }
   if (!sinTT && !valido(tt)) { $('#tiktok').classList.add('bad'); errs.push('tu usuario de TikTok'); }
   const comps = leerComps(), compMal = comps.filter(c => !valido(c.usuario));
   if (compMal.length) errs.push('revisar el usuario de la competencia @' + compMal[0].usuario);
   const g = $('#err-global');
   if (errs.length) { g.hidden = false; g.textContent = 'Falta ' + errs.join(', ') + '.'; document.querySelector('.bad')?.scrollIntoView({behavior: 'smooth', block: 'center'}); return; }
   g.hidden = true;
-  const datos = {v: 1, enviado: new Date().toISOString(), nombre, agencia, cadena: cadena(agencia), tiktok: sinTT ? '' : tt,
+  const datos = {v: 1, enviado: new Date().toISOString(), nombre, agencia: multi ? '' : agencia, cadena: multi ? 'Multinivel' : cadena(agencia), tiktok: sinTT ? '' : tt,
     lives: document.querySelector('input[name=lives]:checked')?.value || '', instagram: limpiar($('#instagram').value), competencia: comps};
   const btn = $('#enviar'); btn.disabled = true; btn.textContent = 'Enviando…';
   try {
@@ -256,7 +273,7 @@ $('#f').addEventListener('submit', async e => {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     try { localStorage.removeItem('sapo-encuesta'); } catch (e) {}
     $('#f').hidden = true; $('#ok').hidden = false;
-    $('#ok-det').textContent = (datos.tiktok ? '@' + datos.tiktok + ' · ' : '') + agencia + (comps.length ? ' · ' + comps.length + ' cuenta(s) de competencia' : '');
+    $('#ok-det').textContent = (datos.tiktok ? '@' + datos.tiktok + ' · ' : '') + (multi ? 'Multinivel' : agencia) + (comps.length ? ' · ' + comps.length + ' cuenta(s) de competencia' : '');
     window.scrollTo({top: 0, behavior: 'smooth'});
   } catch (err) {
     g.hidden = false; g.textContent = 'No se pudo enviar (revisa tu conexión a internet) y vuelve a tocar "Enviar respuesta". Tus datos siguen aquí.';
