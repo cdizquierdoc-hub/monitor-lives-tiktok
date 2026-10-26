@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lives TikTok · Vendedores</title>
+<title>Monitor TikTok · Vendedores</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root{--bg:#f5f6f8;--card:#ffffff;--ink:#0f172a;--mute:#64748b;--line:#e6e8ec;--accent:#fe2c55;--accent2:#14b8c4;--soft:#fff1f4}
@@ -106,9 +106,9 @@
 <div class="wrap">
   <header>
     <div>
-      <h1><span class="logo">▶</span> Lives TikTok · Vendedores</h1>
+      <h1><span class="logo">▶</span> Monitor TikTok · Vendedores</h1>
       <div class="sub" id="actualizado">Cargando…</div>
-      <nav class="tabs"><a href="#" id="t-resumen" class="on">Resumen</a><a href="#competencia" id="t-comp">Nosotros vs Competencia</a></nav>
+      <nav class="tabs"><a href="#" id="t-resumen" class="on">Resumen</a><a href="#competencia" id="t-comp">Nosotros vs Competencia</a><a href="#contenido" id="t-cont">Contenido (posts y seguidores)</a></nav>
     </div>
     <div class="filters">
       <select id="periodo">
@@ -117,14 +117,14 @@
         <option value="30">Últimos 30 días</option>
         <option value="90">Últimos 90 días</option>
       </select>
-      <select id="tipo" class="solo-resumen">
+      <select id="tipo" class="f-cuentas">
         <option value="propio" selected>Nuestras cuentas</option>
         <option value="competencia">Competencia</option>
         <option value="">Todas (incl. competencia)</option>
       </select>
-      <select id="cadena" class="solo-resumen"><option value="">Todas las cadenas</option></select>
-      <select id="agencia" class="solo-resumen"><option value="">Todas las agencias</option></select>
-      <input id="buscar" class="solo-resumen" placeholder="Buscar vendedor…" size="16">
+      <select id="cadena" class="f-cuentas"><option value="">Todas las cadenas</option></select>
+      <select id="agencia" class="f-cuentas"><option value="">Todas las agencias</option></select>
+      <input id="buscar" class="f-cuentas" placeholder="Buscar vendedor…" size="16">
       <button id="exportar" class="solo-resumen" title="Descargar los lives filtrados">⬇ CSV</button>
       <button id="gestionar" class="primary">＋ Cuentas</button>
     </div>
@@ -228,6 +228,58 @@
       </table></div>
     </div>
   </section>
+
+  <section id="p-cont" hidden>
+    <div class="card section" id="s-vacio" hidden>
+      <div class="empty-cta">
+        <h2 style="justify-content:center">Todavía no hay métricas de contenido</h2>
+        <p>Se recolectan cada 4 horas para todas las cuentas cargadas. Vuelve en un rato.</p>
+      </div>
+    </div>
+    <div class="kpis">
+      <div class="card kpi"><div class="l">Seguidores</div><div class="v" id="s-seg">–</div><div class="s" id="s-seg-s"></div></div>
+      <div class="card kpi"><div class="l">Publicaciones</div><div class="v" id="s-posts">–</div><div class="s" id="s-posts-s"></div></div>
+      <div class="card kpi"><div class="l">Views</div><div class="v" id="s-vis">–</div><div class="s" id="s-vis-s"></div></div>
+      <div class="card kpi"><div class="l">Likes</div><div class="v" id="s-lik">–</div><div class="s" id="s-lik-s"></div></div>
+      <div class="card kpi"><div class="l">Comentarios</div><div class="v" id="s-com">–</div><div class="s" id="s-com-s"></div></div>
+      <div class="card kpi"><div class="l">Compartidos</div><div class="v" id="s-sha">–</div><div class="s" id="s-sha-s"></div></div>
+      <div class="card kpi"><div class="l">Guardados</div><div class="v" id="s-sav">–</div><div class="s" id="s-sav-s"></div></div>
+      <div class="card kpi hot"><div class="l">Engagement</div><div class="v" id="s-er">–</div><div class="s">interacciones ÷ views</div></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Publicaciones <select id="s-agrupar" style="font-size:12.5px;padding:4px 8px">
+          <option value="dia">por día</option><option value="semana" selected>por semana</option><option value="mes">por mes</option></select></h2>
+        <div class="chartbox"><canvas id="chart3"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>¿Cuándo publican? <small>publicaciones por día y hora</small></h2>
+        <div class="tablewrap"><div class="heat" id="s-heat" style="grid-template-columns:34px repeat(24,minmax(8px,1fr))"></div></div>
+      </div>
+    </div>
+
+    <div class="card section">
+      <h2>Por cuenta <small>publicaciones del periodo; seguidores al día de hoy</small></h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Cuenta</th><th></th><th>Agencia / empresa</th><th class="num">Seguidores</th><th class="num">Δ periodo</th><th class="num">Posts</th><th class="num">Por día</th><th class="num">Por semana</th><th class="num">Por mes</th><th class="num">Views</th><th class="num">Views/post</th><th class="num">Likes</th><th class="num">Coment.</th><th class="num">Compart.</th><th class="num">Guard.</th><th class="num">Engagement</th><th>Último post</th></tr></thead>
+        <tbody id="s-cuentas"></tbody>
+      </table></div>
+    </div>
+
+    <div class="card">
+      <h2>Publicaciones del periodo <small id="s-top-sub"></small></h2>
+      <div class="row" style="margin:-4px 0 8px"><span class="hint">Ordenar por</span>
+        <select id="s-orden" style="font-size:12.5px;padding:4px 8px">
+          <option value="vistas">Views</option><option value="er">Engagement</option><option value="likes">Likes</option><option value="comentarios">Comentarios</option><option value="compartidos">Compartidos</option><option value="guardados">Guardados</option><option value="creado">Más recientes</option>
+        </select></div>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Publicado</th><th>Cuenta</th><th>Descripción</th><th class="num">Views</th><th class="num">Likes</th><th class="num">Coment.</th><th class="num">Compart.</th><th class="num">Guard.</th><th class="num">Engagement</th><th></th></tr></thead>
+        <tbody id="s-posts-t"></tbody>
+      </table></div>
+      <p class="hint" style="margin-top:10px">Se actualiza cada 4 horas. TikTok permite leer gratis las ~13 publicaciones más recientes de cada cuenta, así que el historial anterior al inicio del monitoreo es parcial; desde ahora cada publicación nueva queda registrada. Las métricas de cada post se siguen actualizando durante 45 días.</p>
+    </div>
+  </section>
 </div>
 
 <div class="modal" id="detalle" onclick="if(event.target===this)cerrarDetalle()">
@@ -284,20 +336,23 @@ const REPO = 'cdizquierdoc-hub/monitor-lives-tiktok';
 const DATA_URL = 'https://raw.githubusercontent.com/' + REPO + '/data/data/data.json';
 const GH = 'https://github.com/' + REPO;
 const VACIO = {generado: 0, intervalo: 2, vendedores: [], lives: [], estado: []};
+const SOCIAL_URL = 'https://raw.githubusercontent.com/' + REPO + '/data/data/social.json';
+let SOC = {cuentas: {}, posts: {}};
 
 async function cargar() {
   if (new URLSearchParams(location.search).has('demo')) {
-    RAW = demo(); $('#modo').hidden = false; prepararFiltros(); pagina(); return;
+    RAW = demo(); SOC = demoSocial(RAW.vendedores); $('#modo').hidden = false; prepararFiltros(); pagina(); return;
   }
   try {
     const r = await fetch(DATA_URL + '?t=' + Date.now(), {cache: 'no-store'});
     RAW = r.status === 404 ? VACIO : await r.json();
     if (!r.ok && r.status !== 404) throw new Error('HTTP ' + r.status);
+    try { const rs = await fetch(SOCIAL_URL + '?t=' + Date.now(), {cache: 'no-store'}); if (rs.ok) SOC = await rs.json(); } catch (e) {}
   } catch (e) {
     if (!RAW) RAW = VACIO;
     $('#actualizado').textContent = 'No se pudieron cargar los datos (' + e.message + '). Reintentando…';
   }
-  prepararFiltros(); render(); if (location.hash === '#competencia') renderComp();
+  prepararFiltros(); pagina();
   if ($('#modal').classList.contains('open')) renderPanel();
   if ($('#detalle').classList.contains('open') && DETALLE) abrirDetalle(DETALLE);
 }
@@ -547,11 +602,122 @@ function renderComp() {
 
 /* ---------- Navegación entre páginas ---------- */
 function pagina() {
-  const comp = location.hash === '#competencia';
-  $('#p-resumen').hidden = comp; $('#p-comp').hidden = !comp;
-  $('#t-resumen').classList.toggle('on', !comp); $('#t-comp').classList.toggle('on', comp);
-  document.querySelectorAll('.solo-resumen').forEach(el => el.style.display = comp ? 'none' : '');
-  if (RAW) comp ? renderComp() : render();
+  const p = location.hash === '#competencia' ? 'comp' : location.hash === '#contenido' ? 'cont' : 'resumen';
+  $('#p-resumen').hidden = p !== 'resumen'; $('#p-comp').hidden = p !== 'comp'; $('#p-cont').hidden = p !== 'cont';
+  $('#t-resumen').classList.toggle('on', p === 'resumen'); $('#t-comp').classList.toggle('on', p === 'comp'); $('#t-cont').classList.toggle('on', p === 'cont');
+  document.querySelectorAll('.solo-resumen').forEach(el => el.style.display = p === 'resumen' ? '' : 'none');
+  document.querySelectorAll('.f-cuentas').forEach(el => el.style.display = p === 'comp' ? 'none' : '');
+  if (RAW) p === 'comp' ? renderComp() : p === 'cont' ? renderContenido() : render();
+}
+
+/* ---------- Página: Contenido (posts y seguidores) ---------- */
+let chart3 = null;
+const pct = x => x == null || !isFinite(x) ? '—' : (x * 100).toLocaleString('es-EC', {maximumFractionDigits: 1}) + '%';
+function renderContenido() {
+  const dias = +$('#periodo').value;
+  const hoy0 = new Date(); hoy0.setHours(0, 0, 0, 0);
+  const desde = hoy0.getTime() - (dias - 1) * 86400000;
+  const tipo = $('#tipo').value, cad = $('#cadena').value, agencia = $('#agencia').value, q = $('#buscar').value.trim().toLowerCase();
+  const cuentas = RAW.vendedores.filter(v => v.activo !== false && (!tipo || v.tipo === tipo) && (!cad || v.cadena === cad) && (!agencia || v.agencia === agencia) &&
+    (!q || v.nombre.toLowerCase().includes(q) || v.usuario.includes(q) || v.agencia.toLowerCase().includes(q)));
+  const porU = Object.fromEntries(cuentas.map(v => [v.usuario, v]));
+  const posts = Object.entries(SOC.posts || {}).map(([id, p]) => ({id, ...p})).filter(p => porU[p.usuario] && p.creado >= desde);
+  const inter = p => (p.likes || 0) + (p.comentarios || 0) + (p.compartidos || 0) + (p.guardados || 0);
+  posts.forEach(p => p.er = p.vistas ? inter(p) / p.vistas : null);
+  $('#s-vacio').hidden = Object.keys(SOC.cuentas || {}).length > 0;
+
+  // seguidores y crecimiento
+  const desdeKey = diaKey(new Date(desde));
+  const segInfo = u => {
+    const c = (SOC.cuentas || {})[u]; if (!c) return {seg: null, delta: null};
+    const h = c.historial || [];
+    const base = [...h].reverse().find(x => x.d <= desdeKey) || h[0];
+    return {seg: c.seguidores ?? null, delta: base && c.seguidores != null && base.seguidores != null && h.length > 1 ? c.seguidores - base.seguidores : null, desde: base?.d};
+  };
+  let segTot = 0, segDelta = 0, conDelta = 0;
+  cuentas.forEach(v => { const s = segInfo(v.usuario); if (s.seg != null) segTot += s.seg; if (s.delta != null) { segDelta += s.delta; conDelta++; } });
+  const sum = k => posts.reduce((s, p) => s + (p[k] || 0), 0);
+  const V = sum('vistas'), L = sum('likes'), C = sum('comentarios'), S = sum('compartidos'), G = sum('guardados');
+  const np = posts.length || 1;
+  $('#s-seg').textContent = fmtN(segTot);
+  $('#s-seg-s').innerHTML = conDelta ? (segDelta >= 0 ? '<span class="ok">+' : '<span class="err">') + fmtN(segDelta) + '</span> en el periodo' : cuentas.length + ' cuentas';
+  $('#s-posts').textContent = fmtN(posts.length);
+  $('#s-posts-s').textContent = (posts.length / dias * 7).toLocaleString('es-EC', {maximumFractionDigits: 1}) + ' por semana';
+  [['vis', V], ['lik', L], ['com', C], ['sha', S], ['sav', G]].forEach(([k, val]) => {
+    $('#s-' + k).textContent = posts.length ? fmtN(val) : '—';
+    $('#s-' + k + '-s').textContent = posts.length ? fmtN(val / np) + ' por post' : '';
+  });
+  $('#s-er').textContent = V ? pct((L + C + S + G) / V) : '—';
+
+  // publicaciones por día / semana / mes
+  const modo = $('#s-agrupar').value;
+  const clave = t => { const d = new Date(t); if (modo === 'dia') return diaKey(d);
+    if (modo === 'mes') return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    const l = new Date(d); l.setHours(0, 0, 0, 0); l.setDate(l.getDate() - (l.getDay() + 6) % 7); return diaKey(l); };
+  const keys = []; const paso = modo === 'dia' ? 1 : 1;
+  for (let t = desde; t <= hoy0.getTime(); t += 86400000 * paso) { const k = clave(t); if (!keys.includes(k)) keys.push(k); }
+  const us = Object.fromEntries(keys.map(k => [k, 0])), them = Object.fromEntries(keys.map(k => [k, 0]));
+  posts.forEach(p => { const k = clave(p.creado); if (k in us) (porU[p.usuario].tipo === 'competencia' ? them : us)[k]++; });
+  const etq = keys.map(k => { const [y, m, d] = k.split('-'); return modo === 'mes' ? new Date(y, m - 1, 1).toLocaleDateString('es-EC', {month: 'short', year: '2-digit'})
+    : (modo === 'semana' ? 'sem. ' : '') + new Date(y, m - 1, d).toLocaleDateString('es-EC', {day: '2-digit', month: 'short'}); });
+  if (window.Chart) {
+    const css = getComputedStyle(document.documentElement), mute = css.getPropertyValue('--mute').trim(), line = css.getPropertyValue('--line').trim();
+    const ds = [];
+    if (tipo !== 'competencia') ds.push({label: 'Nosotros', data: keys.map(k => us[k]), backgroundColor: '#14b8c4', borderRadius: 4, maxBarThickness: 30});
+    if (tipo !== 'propio') ds.push({label: 'Competencia', data: keys.map(k => them[k]), backgroundColor: '#8b5cf6', borderRadius: 4, maxBarThickness: 30});
+    const data = {labels: etq, datasets: ds};
+    if (chart3) { chart3.data = data; chart3.options.plugins.legend.display = ds.length > 1; chart3.update(); }
+    else chart3 = new Chart($('#chart3'), {type: 'bar', data, options: {responsive: true, maintainAspectRatio: false,
+      plugins: {legend: {display: ds.length > 1, position: 'bottom', labels: {color: mute, boxWidth: 10}}},
+      scales: {x: {stacked: false, ticks: {color: mute, maxRotation: 0, autoSkip: true}, grid: {display: false}},
+               y: {beginAtZero: true, ticks: {color: mute, precision: 0}, grid: {color: line}}}}});
+  }
+
+  // cuándo publican (conteo de posts)
+  const H = Array.from({length: 7}, () => Array(24).fill(0));
+  posts.forEach(p => { const d = new Date(p.creado); H[(d.getDay() + 6) % 7][d.getHours()]++; });
+  const maxH = Math.max(1, ...H.flat());
+  let hh = '<div></div>' + Array.from({length: 24}, (_, h) => `<div class="h">${h % 3 === 0 ? h : ''}</div>`).join('');
+  H.forEach((f, di) => { hh += `<div>${DIAS[di]}</div>` + f.map((c, h) => `<div class="c" title="${DIAS[di]} ${h}:00 · ${c} post${c === 1 ? '' : 's'}" style="${c ? `background:rgba(254,44,85,${(0.15 + c / maxH * 0.85).toFixed(2)})` : ''}"></div>`).join(''); });
+  $('#s-heat').innerHTML = hh;
+
+  // por cuenta
+  const ac = Object.fromEntries(cuentas.map(v => [v.usuario, {v, n: 0, V: 0, L: 0, C: 0, S: 0, G: 0, ult: null}]));
+  posts.forEach(p => { const a = ac[p.usuario]; a.n++; a.V += p.vistas || 0; a.L += p.likes || 0; a.C += p.comentarios || 0; a.S += p.compartidos || 0; a.G += p.guardados || 0; });
+  Object.entries(SOC.posts || {}).forEach(([id, p]) => { const a = ac[p.usuario]; if (a && (!a.ult || p.creado > a.ult)) a.ult = p.creado; });
+  const filas = Object.values(ac).map(a => ({...a, ...segInfo(a.v.usuario), err: (SOC.cuentas || {})[a.v.usuario]?.error}))
+    .sort((a, b) => (b.seg ?? -1) - (a.seg ?? -1));
+  const f1 = x => x.toLocaleString('es-EC', {maximumFractionDigits: 1});
+  $('#s-cuentas').innerHTML = filas.map(a => `
+    <tr>
+      <td><b>${esc(a.v.nombre)}</b>${a.v.nombre === '@' + a.v.usuario ? '' : ` <span class="hint">@${esc(a.v.usuario)}</span>`} <a class="u" href="https://www.tiktok.com/@${encodeURIComponent(a.v.usuario)}" target="_blank" rel="noopener">↗</a></td>
+      <td>${a.v.tipo === 'competencia' ? '<span class="pill them">competencia</span>' : '<span class="pill us">nosotros</span>'}</td>
+      <td>${esc(a.v.agencia)}</td>
+      <td class="num"><b>${a.seg == null ? (a.err ? '<span class="err" title="' + esc(a.err) + '">⚠</span>' : '<span class="hint">pendiente</span>') : fmtN(a.seg)}</b></td>
+      <td class="num">${a.delta == null ? '—' : (a.delta >= 0 ? '<span class="ok">+' : '<span class="err">') + fmtN(a.delta) + '</span>'}</td>
+      <td class="num">${a.n}</td><td class="num">${f1(a.n / dias)}</td><td class="num">${f1(a.n / dias * 7)}</td><td class="num">${f1(a.n / dias * 30)}</td>
+      <td class="num">${a.n ? fmtN(a.V) : '—'}</td><td class="num">${a.n ? fmtN(a.V / a.n) : '—'}</td>
+      <td class="num">${a.n ? fmtN(a.L) : '—'}</td><td class="num">${a.n ? fmtN(a.C) : '—'}</td><td class="num">${a.n ? fmtN(a.S) : '—'}</td><td class="num">${a.n ? fmtN(a.G) : '—'}</td>
+      <td class="num"><b>${a.V ? pct((a.L + a.C + a.S + a.G) / a.V) : '—'}</b></td>
+      <td>${a.ult ? fmtF(a.ult) : '—'}</td>
+    </tr>`).join('') || '<tr><td colspan="17" class="empty">No hay cuentas con esos filtros.</td></tr>';
+
+  // publicaciones
+  const orden = $('#s-orden').value;
+  const lista = [...posts].sort((a, b) => (b[orden] ?? -1) - (a[orden] ?? -1)).slice(0, 100);
+  $('#s-top-sub').textContent = posts.length > 100 ? 'mostrando 100 de ' + posts.length : posts.length + ' publicaciones';
+  $('#s-posts-t').innerHTML = lista.map(p => { const v = porU[p.usuario]; return `
+    <tr>
+      <td>${new Date(p.creado).toLocaleString('es-EC', {weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'})}</td>
+      <td><b>${esc(v.nombre)}</b> ${v.tipo === 'competencia' ? '<span class="pill them">comp.</span>' : ''}</td>
+      <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis" title="${esc(p.desc)}">${esc(p.desc) || '<span class="hint">sin descripción</span>'}</td>
+      <td class="num"><b>${fmtN(p.vistas)}</b></td><td class="num">${fmtN(p.likes)}</td><td class="num">${fmtN(p.comentarios)}</td>
+      <td class="num">${fmtN(p.compartidos)}</td><td class="num">${fmtN(p.guardados)}</td><td class="num"><b>${pct(p.er)}</b></td>
+      <td><a class="u" href="https://www.tiktok.com/@${encodeURIComponent(p.usuario)}/video/${p.id}" target="_blank" rel="noopener">ver ↗</a></td>
+    </tr>`; }).join('') || '<tr><td colspan="10" class="empty">Sin publicaciones en el periodo.</td></tr>';
+
+  const gen = SOC.generado;
+  $('#actualizado').textContent = 'Métricas de contenido cada 4 h · última actualización: ' + (gen ? fmtF(gen) : '—');
 }
 window.addEventListener('hashchange', pagina);
 
@@ -724,6 +890,24 @@ $('#nuevos').addEventListener('input', actualizarInfo);
 $('#guardar').addEventListener('click', guardarNuevos);
 
 /* Datos ficticios para la vista previa (?demo) */
+function demoSocial(vendedores) {
+  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const ahora = Date.now(), cuentas = {}, posts = {};
+  vendedores.forEach((v, i) => {
+    const seg = Math.round(300 + rnd() * (v.tipo === 'competencia' ? 40000 : 9000)), hist = [];
+    for (let d = 60; d >= 0; d--) hist.push({d: diaKey(new Date(ahora - d * 86400000)), seguidores: Math.round(seg * (1 - d * 0.002 * rnd())), likes: 0, videos: 0});
+    cuentas[v.usuario] = {seguidores: seg, siguiendo: 100, likesTotales: seg * 3, videos: 40, historial: hist, error: ''};
+    const ritmo = 0.2 + rnd() * 0.8;
+    for (let d = 60; d >= 0; d--) if (rnd() < ritmo * 0.6) {
+      const t = new Date(ahora - d * 86400000); t.setHours(rnd() < .6 ? 18 + Math.floor(rnd() * 4) : 9 + Math.floor(rnd() * 8), Math.floor(rnd() * 60));
+      const vis = Math.round(200 + rnd() * rnd() * 15000);
+      posts['7' + i + d + Math.floor(rnd() * 1e6)] = {usuario: v.usuario, creado: t.getTime(), desc: ['Ofertas de la semana 🔥', 'Moto lista para entregar 🏍️', 'Refri a crédito, pregunta por inbox', 'Tour por la tienda', 'Cliente feliz con su compra'][Math.floor(rnd() * 5)],
+        vistas: vis, likes: Math.round(vis * (0.02 + rnd() * 0.06)), comentarios: Math.round(vis * rnd() * 0.006), compartidos: Math.round(vis * rnd() * 0.004), guardados: Math.round(vis * rnd() * 0.005)};
+    }
+  });
+  return {generado: ahora, cuentas, posts};
+}
+
 function demo() {
   const nombres = [['andrea.ventas','Andrea Mora','JAPON PARQUE CALIFORNIA'],['carlos.crecos','Carlos Vera','CRECOS MALL DEL SOL'],['dani.tecno','Daniela Ruiz','ORVE QUITO NORTE'],['jose.motos','José Castro','JAPON MANTA'],['mafer.hogar','María Fernanda León','CRECOS CUENCA'],['luisvende','Luis Paredes','JAPON PARQUE CALIFORNIA'],['kathy.ofertas','Katherine Solís','ORVE QUITO NORTE'],['bryan.ec','Bryan Zambrano','CRECOS MALL DEL SOL'],['vale.promos','Valeria Cedeño','JAPON MANTA'],['jorge.ofertas','Jorge Alvarado','CRECOS CUENCA'],['nati.vende','Natalia Ponce','JAPON PARQUE CALIFORNIA'],['pablo.hogar','Pablo Intriago','ORVE QUITO NORTE']];
   const vendedores = nombres.map(([usuario, nombre, agencia]) => ({usuario, nombre, agencia, cadena: cadenaDe(agencia), tipo: 'propio', activo: true}));
@@ -749,10 +933,12 @@ function demo() {
 }
 
 $('#periodo').addEventListener('change', pagina);
-$('#tipo').addEventListener('change', () => { $('#cadena').value = ''; $('#agencia').value = ''; prepararFiltros(); render(); });
-$('#agencia').addEventListener('change', render);
-$('#cadena').addEventListener('change', () => { prepararFiltros(); render(); });
-$('#buscar').addEventListener('input', render);
+$('#tipo').addEventListener('change', () => { $('#cadena').value = ''; $('#agencia').value = ''; prepararFiltros(); pagina(); });
+$('#agencia').addEventListener('change', pagina);
+$('#s-agrupar').addEventListener('change', renderContenido);
+$('#s-orden').addEventListener('change', renderContenido);
+$('#cadena').addEventListener('change', () => { prepararFiltros(); pagina(); });
+$('#buscar').addEventListener('input', pagina);
 $('#exportar').addEventListener('click', exportarCSV);
 pagina();
 cargar();

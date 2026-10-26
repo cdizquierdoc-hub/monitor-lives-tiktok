@@ -13,7 +13,7 @@ Desde el dashboard: botón **＋ Vendedores** → pega la lista (usuario y agenc
 También puedes editar directamente cualquier archivo de la carpeta `vendedores/` (CSV: `usuario,agencia,nombre,activo`, ej. `@pepito,JAPON PARQUE CALIFORNIA,Pepito Pérez,SI`).
 Pon `NO` en la columna `activo` para dejar de monitorear a alguien. Para cuentas de la competencia usa `tipo` = `competencia` y en `agencia` pon la empresa (ej. `COMANDATO`).
 
-El dashboard tiene dos páginas: **Resumen** (filtro Nuestras / Competencia / Todas) y **Nosotros vs Competencia** (`#competencia`).
+El dashboard tiene tres páginas: **Resumen** de lives (filtro Nuestras / Competencia / Todas), **Nosotros vs Competencia** (`#competencia`) y **Contenido** (`#contenido`: seguidores, publicaciones, views, likes, comentarios, compartidos, guardados y engagement; se actualiza cada 4 h con `social.py`).
 
 ## Probar una cuenta
 Actions → *Monitor de lives* → *Run workflow* (o localmente: `python3 monitor.py probar usuario1 usuario2`).
