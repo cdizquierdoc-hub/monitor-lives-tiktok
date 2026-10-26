@@ -1,0 +1,47 @@
+name: Monitor de lives
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # arranca un turno nuevo si no hay uno corriendo
+  workflow_dispatch:
+    inputs:
+      duracion:
+        description: "Minutos que corre este turno"
+        default: "340"
+
+concurrency:
+  group: monitor-lives
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar rama de datos
+        run: |
+          git config user.name "monitor-lives"
+          git config user.email "monitor-lives@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin data >/dev/null; then
+            git fetch -q origin data
+            git worktree add -q _data origin/data
+            git -C _data checkout -q -B data origin/data
+          else
+            git worktree add -q --orphan -b data _data
+          fi
+
+      - name: Monitorear
+        env:
+          DATA_DIR: _data/data
+          INTERVALO: "120"
+          DURACION_MIN: ${{ github.event.inputs.duracion || '340' }}
+          AL_GUARDAR: >-
+            cd _data && git add -A data &&
+            (git diff --cached --quiet || git commit -q -m "datos $(date -u +%FT%TZ)") &&
+            (git push -q origin data || (git pull -q --rebase -X theirs origin data && git push -q origin data))
+        run: python3 monitor.py

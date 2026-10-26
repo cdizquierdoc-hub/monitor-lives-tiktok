@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lives TikTok · Vendedores</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{--bg:#f5f6f8;--card:#ffffff;--ink:#0f172a;--mute:#64748b;--line:#e6e8ec;--accent:#fe2c55;--accent2:#14b8c4;--soft:#fff1f4}
+  @media (prefers-color-scheme:dark){:root{--bg:#0b0f17;--card:#121826;--ink:#e5e7eb;--mute:#94a3b8;--line:#222b3a;--soft:#2a1620}}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  .wrap{max-width:1240px;margin:0 auto;padding:22px 16px 48px}
+  header{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
+  h1{font-size:22px;margin:0;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+  .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--accent2),var(--accent));display:grid;place-items:center;color:#fff;font-size:15px}
+  .sub{color:var(--mute);font-size:13px;margin-top:4px}
+  .filters{display:flex;gap:8px;flex-wrap:wrap}
+  select,input,button{font:inherit;font-size:14px;padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+  button{cursor:pointer} button:hover{border-color:var(--accent)}
+  .demo{background:var(--soft);border:1px dashed var(--accent);color:var(--ink);padding:9px 12px;border-radius:10px;font-size:13px;margin-bottom:14px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px;margin-bottom:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+  .kpi .l{color:var(--mute);font-size:12.5px;font-weight:500}
+  .kpi .v{font-size:28px;font-weight:700;margin-top:6px;letter-spacing:-.02em}
+  .kpi .s{color:var(--mute);font-size:12px;margin-top:2px}
+  .kpi.hot .v{color:var(--accent)}
+  .grid2{display:grid;grid-template-columns:1.7fr 1fr;gap:12px;margin-bottom:14px}
+  @media (max-width:880px){.grid2{grid-template-columns:1fr}}
+  h2{font-size:14.5px;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center}
+  h2 small{color:var(--mute);font-weight:500;font-size:12px}
+  .live-list{max-height:290px;overflow:auto}
+  .live-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
+  .live-item:last-child{border-bottom:0}
+  .dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--accent);animation:p 1.6s infinite}
+  @keyframes p{0%{box-shadow:0 0 0 0 rgba(254,44,85,.55)}70%{box-shadow:0 0 0 9px rgba(254,44,85,0)}100%{box-shadow:0 0 0 0 rgba(254,44,85,0)}}
+  .live-item .n{font-weight:600;font-size:14px}.live-item .m{color:var(--mute);font-size:12px}
+  .live-item .t{margin-left:auto;font-size:13px;font-weight:600;color:var(--accent);white-space:nowrap}
+  .empty{color:var(--mute);font-size:13px;padding:10px 0}
+  .tablewrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+  td.num,th.num{text-align:right}
+  tr.zero td{color:var(--mute)}
+  .bar{height:6px;width:110px;background:var(--line);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent))}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600}
+  .pill.live{background:var(--accent);color:#fff}.pill.off{background:var(--line);color:var(--mute)}
+  .heat{display:grid;grid-template-columns:34px repeat(24,minmax(10px,1fr));gap:2px;font-size:10px;color:var(--mute)}
+  .heat .c{aspect-ratio:1;border-radius:3px;background:var(--line)}
+  .heat .h{text-align:center}
+  .chartbox{position:relative;height:260px}
+  .section{margin-bottom:14px}
+  a.u{color:var(--accent2);text-decoration:none}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  button.primary:hover{filter:brightness(1.08)}
+  .modal{position:fixed;inset:0;background:rgba(5,8,15,.55);display:none;align-items:flex-start;justify-content:center;padding:24px 16px;overflow:auto;z-index:20}
+  .modal.open{display:flex}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;max-width:760px;width:100%;padding:20px}
+  .panel h3{margin:0 0 4px;font-size:17px}
+  .panel p{color:var(--mute);font-size:13px;margin:4px 0 12px;line-height:1.5}
+  .panel textarea{width:100%;min-height:150px;font:13px ui-monospace,SFMono-Regular,Menlo,monospace;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);resize:vertical}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  .hint{font-size:12.5px;color:var(--mute)}
+  .ok{color:#16a34a}.err{color:#dc2626}
+  .close{margin-left:auto;background:none;border:0;font-size:22px;line-height:1;color:var(--mute);padding:4px 8px}
+  .vlist{max-height:300px;overflow:auto;margin-top:8px}
+  .empty-cta{text-align:center;padding:30px 10px}
+  .empty-cta p{color:var(--mute);margin:6px 0 14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1><span class="logo">▶</span> Lives TikTok · Vendedores</h1>
+      <div class="sub" id="actualizado">Cargando…</div>
+    </div>
+    <div class="filters">
+      <select id="periodo">
+        <option value="1">Hoy</option>
+        <option value="7" selected>Últimos 7 días</option>
+        <option value="30">Últimos 30 días</option>
+        <option value="90">Últimos 90 días</option>
+      </select>
+      <select id="zona"><option value="">Todas las zonas</option></select>
+      <input id="buscar" placeholder="Buscar vendedor…" size="16">
+      <button id="exportar" title="Descargar los lives filtrados">⬇ CSV</button>
+      <button id="gestionar" class="primary">＋ Vendedores</button>
+    </div>
+  </header>
+
+  <div class="demo" id="modo" hidden>Vista de ejemplo con datos ficticios.</div>
+
+  <div class="kpis">
+    <div class="card kpi hot"><div class="l">En vivo ahora</div><div class="v" id="k-vivo">–</div><div class="s" id="k-vivo-s"></div></div>
+    <div class="card kpi"><div class="l">Lives en el periodo</div><div class="v" id="k-lives">–</div><div class="s" id="k-lives-s"></div></div>
+    <div class="card kpi"><div class="l">Horas totales en live</div><div class="v" id="k-horas">–</div><div class="s" id="k-horas-s"></div></div>
+    <div class="card kpi"><div class="l">Duración promedio</div><div class="v" id="k-prom">–</div><div class="s">por live</div></div>
+    <div class="card kpi"><div class="l">Vendedores que hicieron live</div><div class="v" id="k-act">–</div><div class="s" id="k-act-s"></div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card"><h2>Horas en live por día <small id="chart-sub"></small></h2><div class="chartbox"><canvas id="chart"></canvas></div></div>
+    <div class="card"><h2>🔴 En vivo ahora <small id="vivo-sub"></small></h2><div class="live-list" id="vivos"></div></div>
+  </div>
+
+  <div class="card section">
+    <h2>Ranking de vendedores <small>ordenado por horas en live</small></h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>#</th><th>Vendedor</th><th>Zona</th><th class="num">Lives</th><th class="num">Horas</th><th></th><th class="num">Promedio</th><th>Último live</th><th>Estado</th></tr></thead>
+      <tbody id="ranking"></tbody>
+    </table></div>
+  </div>
+
+  <div class="card section">
+    <h2>¿Cuándo hacen live? <small>minutos en vivo por día y hora</small></h2>
+    <div class="tablewrap"><div class="heat" id="heat"></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Historial de lives <small id="hist-sub"></small></h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Vendedor</th><th>Zona</th><th>Inicio</th><th>Fin</th><th class="num">Duración</th><th>Título</th></tr></thead>
+      <tbody id="historial"></tbody>
+    </table></div>
+  </div>
+  <div class="card" id="sinvendedores" hidden style="margin-top:14px">
+    <div class="empty-cta">
+      <h2 style="justify-content:center">Todavía no hay vendedores cargados</h2>
+      <p>Agrega los usuarios de TikTok de tus vendedores y el monitor empezará a revisarlos en 2–3 minutos.</p>
+      <button class="primary" onclick="abrirPanel()">＋ Agregar vendedores</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal" onclick="if(event.target===this)cerrarPanel()">
+  <div class="panel">
+    <div class="row" style="margin-top:0"><h3>Agregar vendedores</h3><button class="close" onclick="cerrarPanel()" aria-label="Cerrar">×</button></div>
+    <p>Pega uno por línea: <b>usuario, nombre, zona</b>. Solo el usuario es obligatorio. Sirve con @usuario, con el link del perfil o copiando columnas desde Excel. Puedes agregar todos los que quieras.</p>
+    <textarea id="nuevos" placeholder="andrea.ventas, Andrea Mora, Guayaquil Norte&#10;@carlos.crecos, Carlos Vera, Guayaquil Sur&#10;https://www.tiktok.com/@dani.tecno"></textarea>
+    <div class="row">
+      <span class="hint" id="nuevos-info">0 vendedores listos</span>
+      <span style="flex:1"></span>
+      <button class="primary" id="guardar">Guardar en GitHub</button>
+    </div>
+    <p class="hint" style="margin-top:10px">Al guardar se abre GitHub con la lista ya escrita: solo pulsa <b>Commit changes</b>. El monitor los toma en la siguiente revisión y aparecen aquí en unos minutos.</p>
+
+    <h3 style="margin-top:18px">Vendedores monitoreados <small class="hint" id="vcount"></small></h3>
+    <p>Para editar, desactivar (pon <b>NO</b> en la 4.ª columna) o eliminar, abre el archivo donde está cada uno.</p>
+    <div class="vlist tablewrap"><table>
+      <thead><tr><th>Vendedor</th><th>Zona</th><th>Revisión</th><th></th></tr></thead>
+      <tbody id="vtabla"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<script>
+const DIAS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const $ = s => document.querySelector(s);
+let RAW = null, chart = null, ULTIMOS = [];
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDur = m => { m = Math.round(m || 0); if (m < 60) return m + ' min'; const h = Math.floor(m / 60), r = m % 60; return h + ' h' + (r ? ' ' + r + ' min' : ''); };
+const fmtF = ms => ms ? new Date(ms).toLocaleString('es-EC', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : '—';
+const fmtH = m => (m / 60).toLocaleString('es-EC', {maximumFractionDigits: 1});
+const diaKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+
+const REPO = 'cdizquierdoc-hub/monitor-lives-tiktok';
+const DATA_URL = 'https://raw.githubusercontent.com/' + REPO + '/data/data/data.json';
+const GH = 'https://github.com/' + REPO;
+const VACIO = {generado: 0, intervalo: 2, vendedores: [], lives: [], estado: []};
+
+async function cargar() {
+  if (new URLSearchParams(location.search).has('demo')) {
+    RAW = demo(); $('#modo').hidden = false; prepararFiltros(); render(); return;
+  }
+  try {
+    const r = await fetch(DATA_URL + '?t=' + Date.now(), {cache: 'no-store'});
+    RAW = r.status === 404 ? VACIO : await r.json();
+    if (!r.ok && r.status !== 404) throw new Error('HTTP ' + r.status);
+  } catch (e) {
+    if (!RAW) RAW = VACIO;
+    $('#actualizado').textContent = 'No se pudieron cargar los datos (' + e.message + '). Reintentando…';
+  }
+  prepararFiltros(); render();
+  if ($('#modal').classList.contains('open')) renderPanel();
+}
+
+function prepararFiltros() {
+  const sel = $('#zona'), actual = sel.value;
+  const zonas = [...new Set(RAW.vendedores.map(v => v.zona))].sort();
+  sel.innerHTML = '<option value="">Todas las zonas</option>' + zonas.map(z => `<option${z === actual ? ' selected' : ''}>${esc(z)}</option>`).join('');
+}
+
+function render() {
+  const ahora = Date.now();
+  const dias = +$('#periodo').value;
+  const hoy0 = new Date(); hoy0.setHours(0, 0, 0, 0);
+  const desde = hoy0.getTime() - (dias - 1) * 86400000;
+  const zona = $('#zona').value, q = $('#buscar').value.trim().toLowerCase();
+
+  const vend = RAW.vendedores.filter(v => v.activo !== false && (!zona || v.zona === zona) &&
+    (!q || v.nombre.toLowerCase().includes(q) || v.usuario.includes(q)));
+  const permit = new Set(vend.map(v => v.usuario));
+
+  const dur = l => l.estado === 'EN VIVO' ? Math.max(1, (ahora - l.inicio) / 60000) : (l.min || (l.fin ? (l.fin - l.inicio) / 60000 : 0));
+  const lives = RAW.lives.filter(l => permit.has(l.usuario) && l.inicio >= desde).map(l => ({...l, d: dur(l)}));
+  ULTIMOS = lives;
+
+  // En vivo ahora
+  const enVivo = RAW.lives.filter(l => l.estado === 'EN VIVO' && permit.has(l.usuario)).map(l => ({...l, d: dur(l)})).sort((a, b) => b.d - a.d);
+
+  // KPIs
+  const totMin = lives.reduce((s, l) => s + l.d, 0);
+  const activos = new Set(lives.map(l => l.usuario));
+  $('#k-vivo').textContent = enVivo.length;
+  $('#k-vivo-s').textContent = 'de ' + vend.length + ' vendedores';
+  $('#k-lives').textContent = lives.length.toLocaleString('es-EC');
+  $('#k-lives-s').textContent = (lives.length / dias).toLocaleString('es-EC', {maximumFractionDigits: 1}) + ' por día';
+  $('#k-horas').textContent = fmtH(totMin);
+  $('#k-horas-s').textContent = activos.size ? fmtH(totMin / activos.size) + ' h por vendedor activo' : '';
+  $('#k-prom').textContent = lives.length ? fmtDur(totMin / lives.length) : '—';
+  $('#k-act').textContent = activos.size + ' / ' + vend.length;
+  $('#k-act-s').textContent = vend.length ? Math.round(activos.size / vend.length * 100) + '% del equipo' : '';
+
+  // Lista en vivo
+  $('#vivo-sub').textContent = enVivo.length ? enVivo.length + ' transmitiendo' : '';
+  $('#vivos').innerHTML = enVivo.length ? enVivo.map(l => `
+    <a class="live-item" href="https://www.tiktok.com/@${encodeURIComponent(l.usuario)}/live" target="_blank" rel="noopener">
+      <span class="dot"></span>
+      <div><div class="n">${esc(l.nombre)}</div><div class="m">@${esc(l.usuario)} · ${esc(l.zona)}</div></div>
+      <span class="t">${fmtDur(l.d)}</span>
+    </a>`).join('') : '<div class="empty">Nadie está en vivo en este momento.</div>';
+
+  // Gráfico por día
+  const porDia = {}; const labels = [];
+  for (let t = desde; t <= hoy0.getTime(); t += 86400000) { const k = diaKey(new Date(t)); porDia[k] = 0; labels.push(k); }
+  lives.forEach(l => { const k = diaKey(new Date(l.inicio)); if (k in porDia) porDia[k] += l.d / 60; });
+  const etiquetas = labels.map(k => { const [y, m, d] = k.split('-'); return new Date(y, m - 1, d).toLocaleDateString('es-EC', {day: '2-digit', month: 'short'}); });
+  $('#chart-sub').textContent = dias === 1 ? 'hoy' : dias + ' días';
+  dibujarGrafico(etiquetas, labels.map(k => +porDia[k].toFixed(2)));
+
+  // Ranking
+  const agg = {};
+  vend.forEach(v => agg[v.usuario] = {v, n: 0, min: 0, ult: null});
+  lives.forEach(l => { const a = agg[l.usuario]; if (!a) return; a.n++; a.min += l.d; if (!a.ult || l.inicio > a.ult) a.ult = l.inicio; });
+  const vivoSet = new Set(enVivo.map(l => l.usuario));
+  const filas = Object.values(agg).sort((a, b) => b.min - a.min || a.v.nombre.localeCompare(b.v.nombre));
+  const maxMin = Math.max(1, ...filas.map(f => f.min));
+  $('#ranking').innerHTML = filas.map((f, i) => `
+    <tr class="${f.n ? '' : 'zero'}">
+      <td>${f.n ? i + 1 : '–'}</td>
+      <td><b>${esc(f.v.nombre)}</b> <a class="u" href="https://www.tiktok.com/@${encodeURIComponent(f.v.usuario)}" target="_blank" rel="noopener">@${esc(f.v.usuario)}</a></td>
+      <td>${esc(f.v.zona)}</td>
+      <td class="num">${f.n}</td>
+      <td class="num">${fmtH(f.min)}</td>
+      <td><span class="bar"><i style="width:${(f.min / maxMin * 100).toFixed(1)}%"></i></span></td>
+      <td class="num">${f.n ? fmtDur(f.min / f.n) : '—'}</td>
+      <td>${f.ult ? fmtF(f.ult) : 'Sin lives en el periodo'}</td>
+      <td>${vivoSet.has(f.v.usuario) ? '<span class="pill live">EN VIVO</span>' : '<span class="pill off">offline</span>'}</td>
+    </tr>`).join('') || '<tr><td colspan="9" class="empty">No hay vendedores con esos filtros.</td></tr>';
+
+  // Mapa de calor día × hora (minutos)
+  const H = Array.from({length: 7}, () => Array(24).fill(0));
+  lives.forEach(l => {
+    const fin = l.inicio + l.d * 60000;
+    for (let t = l.inicio; t < fin; t += 5 * 60000) { const d = new Date(t); H[(d.getDay() + 6) % 7][d.getHours()] += 5; }
+  });
+  const maxH = Math.max(1, ...H.flat());
+  let html = '<div></div>' + Array.from({length: 24}, (_, h) => `<div class="h">${h % 3 === 0 ? h : ''}</div>`).join('');
+  H.forEach((fila, di) => {
+    html += `<div>${DIAS[di]}</div>` + fila.map((m, h) => {
+      const a = m / maxH;
+      return `<div class="c" title="${DIAS[di]} ${h}:00 · ${Math.round(m)} min" style="${m ? `background:rgba(254,44,85,${(0.12 + a * 0.88).toFixed(2)})` : ''}"></div>`;
+    }).join('');
+  });
+  $('#heat').innerHTML = html;
+
+  // Historial
+  const hist = [...lives].sort((a, b) => b.inicio - a.inicio);
+  $('#hist-sub').textContent = hist.length > 200 ? 'mostrando los 200 más recientes de ' + hist.length : hist.length + ' lives';
+  $('#historial').innerHTML = hist.slice(0, 200).map(l => `
+    <tr>
+      <td><b>${esc(l.nombre)}</b></td><td>${esc(l.zona)}</td>
+      <td>${fmtF(l.inicio)}</td>
+      <td>${l.estado === 'EN VIVO' ? '<span class="pill live">EN VIVO</span>' : fmtF(l.fin)}</td>
+      <td class="num">${fmtDur(l.d)}</td>
+      <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis">${esc(l.titulo)}</td>
+    </tr>`).join('') || '<tr><td colspan="6" class="empty">Sin lives en el periodo.</td></tr>';
+
+  $('#sinvendedores').hidden = RAW.vendedores.length > 0;
+  const rev = Math.max(0, ...(RAW.estado || []).map(e => e.ultimaRev || 0));
+  $('#actualizado').textContent = 'Revisión cada ' + RAW.intervalo + ' min · última revisión: ' + (rev ? fmtF(rev) : '—') + ' · se actualiza solo';
+}
+
+function dibujarGrafico(labels, data) {
+  if (!window.Chart) return;
+  const css = getComputedStyle(document.documentElement);
+  const mute = css.getPropertyValue('--mute').trim(), line = css.getPropertyValue('--line').trim();
+  if (chart) { chart.data.labels = labels; chart.data.datasets[0].data = data; chart.update(); return; }
+  chart = new Chart($('#chart'), {
+    type: 'bar',
+    data: {labels, datasets: [{label: 'Horas en live', data, backgroundColor: '#fe2c55', borderRadius: 5, maxBarThickness: 34}]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {legend: {display: false}, tooltip: {callbacks: {label: c => c.parsed.y.toLocaleString('es-EC', {maximumFractionDigits: 1}) + ' h'}}},
+      scales: {x: {ticks: {color: mute, maxRotation: 0, autoSkip: true}, grid: {display: false}},
+               y: {beginAtZero: true, ticks: {color: mute}, grid: {color: line}}}
+    }
+  });
+}
+
+function exportarCSV() {
+  const enc = ['Usuario', 'Nombre', 'Zona', 'Inicio', 'Fin', 'Duracion_min', 'Estado', 'Titulo'];
+  const f = ms => ms ? new Date(ms).toLocaleString('es-EC') : '';
+  const rows = ULTIMOS.map(l => [l.usuario, l.nombre, l.zona, f(l.inicio), f(l.fin), Math.round(l.d), l.estado, l.titulo]);
+  const csv = [enc, ...rows].map(r => r.map(c => '"' + String(c ?? '').replace(/"/g, '""') + '"').join(';')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], {type: 'text/csv;charset=utf-8'}));
+  a.download = 'lives_tiktok.csv'; a.click();
+}
+
+/* Panel de vendedores */
+function abrirPanel() { $('#modal').classList.add('open'); renderPanel(); setTimeout(() => $('#nuevos').focus(), 50); }
+function cerrarPanel() { $('#modal').classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarPanel(); });
+
+function limpiarUsuario(t) {
+  let u = String(t || '').trim();
+  const m = u.match(/tiktok\.com\/@([^/?#\s]+)/i); if (m) u = m[1];
+  return u.replace(/^@/, '').replace(/\s+/g, '').toLowerCase();
+}
+function leerNuevos() {
+  const existentes = new Set((RAW?.vendedores || []).map(v => v.usuario));
+  const vistos = new Set(), filas = [], repetidos = [];
+  $('#nuevos').value.split(/\r?\n/).forEach(l => {
+    if (!l.trim()) return;
+    const p = l.includes('\t') ? l.split('\t') : l.includes(';') ? l.split(';') : l.split(',');
+    const u = limpiarUsuario(p[0]);
+    if (!u || ['usuario', 'user', 'username'].includes(u) || vistos.has(u)) return;
+    vistos.add(u);
+    if (existentes.has(u)) repetidos.push(u);
+    filas.push([u, (p[1] || '').trim(), (p[2] || '').trim(), 'SI']);
+  });
+  return {filas, repetidos};
+}
+function csvCelda(c) { c = String(c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }
+function actualizarInfo() {
+  const {filas, repetidos} = leerNuevos();
+  $('#nuevos-info').innerHTML = filas.length + ' vendedor' + (filas.length === 1 ? '' : 'es') + ' listo' + (filas.length === 1 ? '' : 's') +
+    (repetidos.length ? ' · <span class="err">' + repetidos.length + ' ya existe' + (repetidos.length === 1 ? '' : 'n') + ' (se actualizarán)</span>' : '');
+}
+function guardarNuevos() {
+  const {filas} = leerNuevos();
+  if (!filas.length) { $('#nuevos').focus(); return; }
+  const csv = 'usuario,nombre,zona,activo\n' + filas.map(f => f.map(csvCelda).join(',')).join('\n') + '\n';
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  const nombre = 'lote-' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + '.csv';
+  const url = GH + '/new/main/vendedores?filename=' + encodeURIComponent(nombre) + '&value=' + encodeURIComponent(csv);
+  if (url.length < 7500) { window.open(url, '_blank', 'noopener'); return; }
+  // lista muy larga: se descarga el archivo y se abre la página para subirlo
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8'}));
+  a.download = nombre; a.click();
+  alert('La lista es larga: se descargó "' + nombre + '". En la página que se abre, arrástralo y pulsa Commit changes.');
+  window.open(GH + '/upload/main/vendedores', '_blank', 'noopener');
+}
+function renderPanel() {
+  const est = Object.fromEntries((RAW?.estado || []).map(e => [e.usuario, e]));
+  const vs = [...(RAW?.vendedores || [])].sort((a, b) => a.nombre.localeCompare(b.nombre));
+  $('#vcount').textContent = vs.length ? '(' + vs.filter(v => v.activo !== false).length + ' activos de ' + vs.length + ')' : '';
+  $('#vtabla').innerHTML = vs.map(v => {
+    const e = est[v.usuario];
+    const st = v.activo === false ? '<span class="hint">desactivado</span>'
+      : !e ? '<span class="hint">pendiente</span>'
+      : e.error ? '<span class="err" title="' + esc(e.error) + '">⚠ no se pudo revisar</span>'
+      : e.enVivo ? '<span class="pill live">EN VIVO</span>' : '<span class="ok">✓ ok</span>';
+    return `<tr><td><b>${esc(v.nombre)}</b> <span class="hint">@${esc(v.usuario)}</span></td><td>${esc(v.zona)}</td><td>${st}</td>
+      <td>${v.archivo ? `<a class="u" href="${GH}/edit/main/vendedores/${encodeURIComponent(v.archivo)}" target="_blank" rel="noopener">editar</a>` : ''}</td></tr>`;
+  }).join('') || '<tr><td colspan="4" class="empty">Aún no hay vendedores.</td></tr>';
+}
+$('#gestionar').addEventListener('click', abrirPanel);
+$('#nuevos').addEventListener('input', actualizarInfo);
+$('#guardar').addEventListener('click', guardarNuevos);
+
+/* Datos ficticios para la vista previa (?demo) */
+function demo() {
+  const nombres = [['andrea.ventas','Andrea Mora','Guayaquil Norte'],['carlos.crecos','Carlos Vera','Guayaquil Sur'],['dani.tecno','Daniela Ruiz','Quito'],['jose.motos','José Castro','Manta'],['mafer.hogar','María Fernanda León','Cuenca'],['luisvende','Luis Paredes','Guayaquil Norte'],['kathy.ofertas','Katherine Solís','Quito'],['bryan.ec','Bryan Zambrano','Guayaquil Sur'],['vale.promos','Valeria Cedeño','Manta'],['jorge.ofertas','Jorge Alvarado','Cuenca'],['nati.vende','Natalia Ponce','Guayaquil Norte'],['pablo.hogar','Pablo Intriago','Quito']];
+  const vendedores = nombres.map(([usuario, nombre, zona]) => ({usuario, nombre, zona, activo: true}));
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const lives = []; const ahora = Date.now();
+  vendedores.forEach((v, i) => {
+    const freq = [0.9, 0.7, 0.6, 0.4, 0.8, 0.2, 0.5, 0.3, 0.65, 0.05, 0.75, 0.45][i];
+    for (let d = 60; d >= 1; d--) {
+      if (rnd() > freq) continue;
+      const dia = new Date(ahora - d * 86400000);
+      dia.setHours(rnd() < 0.7 ? 18 + Math.floor(rnd() * 4) : 10 + Math.floor(rnd() * 6), Math.floor(rnd() * 60), 0, 0);
+      const min = Math.round(15 + rnd() * 100);
+      lives.push({usuario: v.usuario, nombre: v.nombre, zona: v.zona, inicio: dia.getTime(), fin: dia.getTime() + min * 60000, min, titulo: ['Ofertas del día 🔥', 'Liquidación de electrodomésticos', 'Motos a crédito', 'Pregúntame lo que quieras', 'Promo fin de semana'][Math.floor(rnd() * 5)], estado: 'FINALIZADO'});
+    }
+  });
+  [[0, 42], [4, 17], [10, 65]].forEach(([i, m]) => {
+    const v = vendedores[i];
+    lives.push({usuario: v.usuario, nombre: v.nombre, zona: v.zona, inicio: ahora - m * 60000, fin: null, min: null, titulo: 'Ofertas en vivo 🔴', estado: 'EN VIVO'});
+  });
+  return {generado: ahora, intervalo: 5, vendedores, lives, estado: vendedores.map(v => ({usuario: v.usuario, ultimaRev: ahora - 2 * 60000}))};
+}
+
+['periodo', 'zona'].forEach(id => $('#' + id).addEventListener('change', render));
+$('#buscar').addEventListener('input', render);
+$('#exportar').addEventListener('click', exportarCSV);
+cargar();
+setInterval(cargar, 2 * 60 * 1000);
+</script>
+</body>
+</html>
