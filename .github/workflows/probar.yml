@@ -6,6 +6,9 @@ on:
       usuarios:
         description: "Usuarios de TikTok separados por espacio"
         default: "tiktok"
+      modo:
+        description: "probar o crudo"
+        default: "probar"
 
 permissions:
   contents: write
@@ -18,7 +21,7 @@ jobs:
       - name: Probar
         run: |
           mkdir -p /tmp/out
-          python3 monitor.py probar ${{ github.event.inputs.usuarios }} | tee /tmp/out/resultado.txt
+          python3 monitor.py ${{ github.event.inputs.modo || 'probar' }} ${{ github.event.inputs.usuarios }} | tee /tmp/out/resultado.txt
       - name: Guardar resultado en la rama "pruebas"
         run: |
           git config user.name "monitor-lives"; git config user.email "monitor-lives@users.noreply.github.com"

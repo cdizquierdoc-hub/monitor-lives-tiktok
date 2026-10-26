@@ -311,6 +311,25 @@ def revisar(d):
 
 
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "crudo":
+        for u in sys.argv[2:]:
+            try:
+                q = urllib.parse.urlencode({"aid": "1988", "app_name": "tiktok_web", "device_platform": "web_pc",
+                                            "sourceType": "54", "uniqueId": limpiar_usuario(u)})
+                _, txt = http_get("https://www.tiktok.com/api-live/user/room/?" + q)
+                d = json.loads(txt).get("data") or {}
+                room = d.get("liveRoom") or {}
+                print(u, "status", room.get("status"), (d.get("user") or {}).get("status"))
+                print("  liveRoom keys:", sorted(room.keys()))
+                print("  stats:", json.dumps(room.get("liveRoomStats"), ensure_ascii=False)[:400])
+                for k in ("userCount", "enterCount", "viewerCount", "likeCount", "totalUser"):
+                    if k in room:
+                        print("  ", k, room[k])
+                print("  data keys:", sorted(d.keys()))
+            except Exception as e:
+                print(u, "ERROR", e)
+        return
+
     if len(sys.argv) > 1 and sys.argv[1] == "probar":
         for u in sys.argv[2:]:
             print(u, json.dumps(consultar(limpiar_usuario(u)), ensure_ascii=False))
