@@ -7,9 +7,20 @@ on:
         description: "Usuarios de TikTok separados por espacio"
         default: "tiktok"
 
+permissions:
+  contents: write
+
 jobs:
   probar:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: python3 monitor.py probar ${{ github.event.inputs.usuarios }}
+      - name: Probar
+        run: |
+          mkdir -p /tmp/out
+          python3 monitor.py probar ${{ github.event.inputs.usuarios }} | tee /tmp/out/resultado.txt
+      - name: Guardar resultado en la rama "pruebas"
+        run: |
+          git config user.name "monitor-lives"; git config user.email "monitor-lives@users.noreply.github.com"
+          git checkout -q --orphan pruebas && git rm -rq --cached . && cp /tmp/out/resultado.txt .
+          git add resultado.txt && git commit -qm "prueba $(date -u +%FT%TZ)" && git push -qf origin pruebas
