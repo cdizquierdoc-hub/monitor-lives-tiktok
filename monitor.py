@@ -59,23 +59,42 @@ def log(*a):
 
 def limpiar_usuario(txt):
     u = str(txt or "").strip()
-    m = re.search(r"tiktok\.com/@([^/?#\s]+)", u, re.I)
+    m = re.search(r"tiktok\.com/@([^/?#\s]+)", u, re.I) or re.search(r"instagram\.com/([^/?#\s]+)", u, re.I)
     if m:
         u = m.group(1)
+    u = re.sub(r"^(ig|instagram|tt|tiktok):", "", u.strip(), flags=re.I)
     return re.sub(r"\s+", "", u.lstrip("@")).lower()
 
 
-# Cadenas de Cresa: se reconocen por la 1.ª palabra de la agencia (ej. "JAPON PARQUE CALIFORNIA")
-CADENAS = {"CRECOS": "Crecos", "ORVE": "Orve Hogar", "JAPON": "Japón", "JAPÓN": "Japón",
-           "MOTOZONE": "Motozone", "PAGAMENOS": "Pagamenos", "PAGA": "Pagamenos"}
+def plataforma_de(txt_plataforma, txt_usuario=""):
+    p = str(txt_plataforma or "").strip().lower()
+    u = str(txt_usuario or "").strip().lower()
+    if p.startswith(("ig", "insta")) or "instagram.com" in u or u.startswith(("ig:", "instagram:")):
+        return "instagram"
+    return "tiktok"
+
+
+def clave_cuenta(handle, plataforma):
+    """Identificador interno: TikTok usa el usuario tal cual; Instagram lleva el prefijo ig:."""
+    return ("ig:" + handle) if plataforma == "instagram" else handle
+
+
+# Cadenas de Cresa: se reconocen por el inicio de la agencia (ej. "JAPON PARQUE CALIFORNIA")
+CADENAS_CRESA = [
+    ("ALMACENES JAPON", "Japón"), ("ALMACENES JAPÓN", "Japón"), ("JAPON", "Japón"), ("JAPÓN", "Japón"),
+    ("CRECOS", "Crecos"), ("ORVE HOGAR", "Orve Hogar"), ("ORVE", "Orve Hogar"),
+    ("MOTOZONE", "Motozone"), ("MOTO ZONE", "Motozone"), ("PAGA MENOS", "Pagamenos"), ("PAGAMENOS", "Pagamenos"),
+]
 COLUMNAS = {
     "usuario": ("usuario", "usuario tiktok", "user", "username", "tiktok"),
     "agencia": ("agencia", "zona", "zona / agencia", "tienda", "almacen", "almacén"),
     "nombre": ("nombre", "vendedor", "name"),
     "activo": ("activo", "activo (si/no)", "estado"),
-    "tipo": ("tipo", "cuenta", "tipo de cuenta"),
+    "tipo": ("tipo", "nuestra/competencia"),
+    "rol": ("rol", "cuenta", "tipo de cuenta", "perfil", "clase"),
+    "plataforma": ("plataforma", "red", "red social", "app"),
 }
-ORDEN_POR_DEFECTO = ["usuario", "agencia", "nombre", "activo", "tipo"]
+ORDEN_POR_DEFECTO = ["usuario", "agencia", "nombre", "activo", "tipo", "rol", "plataforma"]
 
 
 def tipo_de(txt):
@@ -93,12 +112,34 @@ COMPETIDORES = [
 ]
 
 
-def competidor_de(agencia):
+def _prefijo(agencia, lista):
+    """(nombre, coincide_exacto) del primer prefijo que calce, o (None, False)."""
     a = agencia.upper()
-    for prefijo, nombre in COMPETIDORES:
-        if a == prefijo or a.startswith(prefijo + " "):
-            return nombre
-    return None
+    for prefijo, nombre in lista:
+        if a == prefijo:
+            return nombre, True
+        if a.startswith(prefijo + " "):
+            return nombre, False
+    return None, False
+
+
+def competidor_de(agencia):
+    return _prefijo(agencia, COMPETIDORES)[0]
+
+
+def rol_de(txt_rol, agencia):
+    """'oficial' = cuenta de la cadena/empresa; 'vendedor' = cuenta personal de un vendedor.
+    Si no se indica, es oficial cuando la agencia es solo el nombre de la cadena (ej. CRECOS, JAPON, ARTEFACTA)."""
+    t = str(txt_rol or "").strip().upper()
+    if t.startswith(("OFI", "MARCA", "CADENA", "CORP")):
+        return "oficial"
+    if t.startswith(("VEN", "PERS", "ASES")):
+        return "vendedor"
+    for lista in (CADENAS_CRESA, COMPETIDORES):
+        nombre, exacto = _prefijo(agencia, lista)
+        if nombre:
+            return "oficial" if exacto else "vendedor"
+    return "vendedor"
 
 
 def clasificar(agencia, tipo_txt):
@@ -114,8 +155,7 @@ def cadena_de(agencia, tipo="propio"):
     """Nuestras: Japón / Crecos / Orve según la 1.ª palabra. Competencia: la empresa completa."""
     if tipo == "competencia":
         return agencia.title() if agencia != "SIN AGENCIA" else "Competencia"
-    primera = (agencia.split() or [""])[0].upper()
-    return CADENAS.get(primera, "Otra")
+    return _prefijo(agencia, CADENAS_CRESA)[0] or "Otra"
 
 
 def leer_vendedores():
@@ -136,14 +176,19 @@ def leer_vendedores():
                 orden = [next((k for k, alias in COLUMNAS.items() if c in alias), "") for c in cab]
                 continue
             datos = {k: (fila[j].strip() if j < len(fila) else "") for j, k in enumerate(orden) if k}
-            usuario = limpiar_usuario(datos.get("usuario"))
-            if not usuario:
+            handle = limpiar_usuario(datos.get("usuario"))
+            if not handle:
                 continue
+            plataforma = plataforma_de(datos.get("plataforma"), datos.get("usuario"))
+            usuario = clave_cuenta(handle, plataforma)
             agencia = re.sub(r"\s+", " ", datos.get("agencia", "")).strip().upper() or "SIN AGENCIA"
             cadena, tipo = clasificar(agencia, datos.get("tipo"))
             v = {
                 "usuario": usuario,
-                "nombre": datos.get("nombre") or "@" + usuario,
+                "handle": handle,
+                "plataforma": plataforma,
+                "rol": rol_de(datos.get("rol"), agencia),
+                "nombre": datos.get("nombre") or "@" + handle,
                 "agencia": agencia,
                 "cadena": cadena,
                 "tipo": tipo,
@@ -212,6 +257,36 @@ def consultar_html(usuario):
         titulo = mt.group(1)
     return {"enVivo": bool(data.get("alive")), "roomId": room_id, "inicio": None, "titulo": titulo,
             "espectadores": None, "vistas": None}
+
+
+# ------------------------------------------------------------------ Instagram (API oficial de Meta)
+
+IG_CADA_MIN = 5            # la API de Meta tiene límite de llamadas: los lives de Instagram se revisan cada 5 min
+_ig_ultima = {"t": 0, "res": {}}
+
+
+def consultar_instagram(v):
+    """Lives de Instagram: solo para cuentas propias conectadas a la API de Meta."""
+    import meta
+    if not meta.disponible():
+        return {"omitir": True, "nota": "Instagram: falta conectar la API de Meta (IG_TOKEN)"}
+    try:
+        propias = meta.cuentas_propias()
+    except Exception as e:
+        return {"omitir": True, "nota": "Instagram: %s" % str(e)[:120]}
+    ig_id = propias.get(v["handle"])
+    if not ig_id:
+        return {"omitir": True, "nota": "Instagram: lives solo para cuentas propias conectadas a Meta (las métricas de contenido sí se registran)"}
+    t = time.time()
+    if t - _ig_ultima["res"].get(v["usuario"], {}).get("_t", 0) < IG_CADA_MIN * 60 - 5:
+        return {"omitir": True}
+    try:
+        live_id = meta.en_vivo(ig_id)
+        r = {"enVivo": bool(live_id), "roomId": live_id or "", "inicio": None, "titulo": "", "espectadores": None, "vistas": None, "metodo": "meta"}
+    except Exception as e:
+        r = {"error": "Instagram: %s" % str(e)[:120]}
+    _ig_ultima["res"][v["usuario"]] = dict(r, _t=t)
+    return r
 
 
 def consultar(usuario):
@@ -311,7 +386,8 @@ def revisar(d):
             cambios = True
 
     with ThreadPoolExecutor(HILOS) as ex:
-        resultados = list(ex.map(lambda v: consultar(v["usuario"]), activos))
+        resultados = list(ex.map(lambda v: consultar(v["handle"]) if v["plataforma"] == "tiktok" else None, activos))
+    resultados = [r if r is not None else consultar_instagram(v) for v, r in zip(activos, resultados)]
 
     en_vivo = 0
     for v, r in zip(activos, resultados):
@@ -320,6 +396,11 @@ def revisar(d):
         e["ultimaRev"] = t
         live = por_id.get(e.get("liveId"))
 
+        if r.get("omitir"):               # Instagram fuera de turno o sin datos de lives disponibles
+            if "nota" in r and e.get("error") != r["nota"]:
+                e["error"] = r["nota"]
+                cambios = True
+            continue
         if "error" in r:
             if e.get("error") != r["error"]:
                 cambios = True
@@ -341,6 +422,7 @@ def revisar(d):
                 live = por_id.get(lid)
                 if not live:
                     live = {"id": lid, "usuario": v["usuario"], "nombre": v["nombre"], "agencia": v["agencia"], "cadena": v["cadena"],
+                            "plataforma": v["plataforma"],
                             "inicio": inicio, "fin": None, "min": None, "titulo": r["titulo"],
                             "estado": "EN VIVO", "visto": t}
                     d["lives"].append(live)
@@ -358,15 +440,16 @@ def revisar(d):
                     live["titulo"] = r["titulo"]
         elif e["enVivo"]:
             e["sinLive"] = e.get("sinLive", 0) + 1
-            if e["sinLive"] >= REVISIONES_PARA_CERRAR:
+            if e["sinLive"] >= (1 if v["plataforma"] == "instagram" else REVISIONES_PARA_CERRAR):
                 if live:
                     visto = live.get("visto") or t
-                    cerrar_live(live, visto + INTERVALO * 1000 // 2)
+                    paso = IG_CADA_MIN * 60000 if v["plataforma"] == "instagram" else INTERVALO * 1000
+                    cerrar_live(live, visto + paso // 2)
                     log("⚪ FIN", v["usuario"], "%s min" % live["min"])
                 e.update(enVivo=False, roomId="", liveId="", sinLive=0)
                 cambios = True
 
-    errores = sum(1 for v in activos if d["estado"][v["usuario"]].get("error"))
+    errores = sum(1 for v in activos if d["estado"][v["usuario"]].get("error") and v["plataforma"] == "tiktok")
     log("Revisados %d · en vivo %d · errores %d" % (len(activos), en_vivo, errores))
     return vendedores, cambios
 

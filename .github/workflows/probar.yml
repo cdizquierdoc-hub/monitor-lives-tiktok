@@ -7,7 +7,7 @@ on:
         description: "Usuarios de TikTok separados por espacio"
         default: "tiktok"
       modo:
-        description: "probar, crudo o explorar"
+        description: "probar, crudo, explorar, explorar_ig o meta"
         default: "probar"
 
 permissions:
@@ -21,7 +21,9 @@ jobs:
       - name: Probar
         run: |
           mkdir -p /tmp/out
-          if [ "${{ github.event.inputs.modo }}" = "explorar_ig" ]; then
+          if [ "${{ github.event.inputs.modo }}" = "meta" ]; then
+            IG_TOKEN="${{ secrets.IG_TOKEN }}" python3 probar_meta.py ${{ github.event.inputs.usuarios }} 2>&1 | tee /tmp/out/resultado.txt
+          elif [ "${{ github.event.inputs.modo }}" = "explorar_ig" ]; then
             python3 explorar_ig.py ${{ github.event.inputs.usuarios }} 2>&1 | tee /tmp/out/resultado.txt
           elif [ "${{ github.event.inputs.modo }}" = "explorar" ]; then
             python3 explorar.py ${{ github.event.inputs.usuarios }} 2>&1 | tee /tmp/out/resultado.txt

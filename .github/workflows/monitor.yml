@@ -39,6 +39,7 @@ jobs:
         env:
           DATA_DIR: _data/data
           INTERVALO: "60"
+          IG_TOKEN: ${{ secrets.IG_TOKEN }}
           DURACION_MIN: ${{ github.event.inputs.duracion || '340' }}
           AL_GUARDAR: >-
             cd _data && git add -A data &&

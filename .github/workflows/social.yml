@@ -27,10 +27,16 @@ jobs:
           git worktree add -q _data origin/data
           git -C _data checkout -q -B data origin/data
 
-      - name: Recolectar métricas
+      - name: Recolectar métricas de TikTok
         env:
           DATA_DIR: _data/data
         run: python3 social.py
+
+      - name: Recolectar métricas de Instagram (API de Meta)
+        env:
+          DATA_DIR: _data/data
+          IG_TOKEN: ${{ secrets.IG_TOKEN }}
+        run: python3 instagram.py
 
       - name: Guardar
         run: |

@@ -86,8 +86,8 @@ def video(usuario, vid):
 
 
 def procesar(v, posts_previos, t):
-    u = v["usuario"]
-    res = {"usuario": u, "error": "", "perfil": None, "posts": {}}
+    u = v["handle"]
+    res = {"usuario": v["usuario"], "error": "", "perfil": None, "posts": {}}
     try:
         res["perfil"] = perfil(u)
     except Exception as e:
@@ -104,7 +104,7 @@ def procesar(v, posts_previos, t):
             continue                       # post viejo: sus métricas ya casi no cambian
         try:
             d = video(u, vid)
-            d.update(usuario=u, actualizado=t)
+            d.update(usuario=v["usuario"], plataforma="tiktok", actualizado=t)
             res["posts"][vid] = d
         except Exception as e:
             if not prev:
@@ -121,7 +121,7 @@ def main():
             datos = json.load(f)
     t = ahora_ms()
     hoy = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    vendedores = [v for v in leer_vendedores() if v["activo"]]
+    vendedores = [v for v in leer_vendedores() if v["activo"] and v["plataforma"] == "tiktok"]
 
     with ThreadPoolExecutor(HILOS) as ex:
         resultados = list(ex.map(lambda v: procesar(v, datos["posts"], t), vendedores))
