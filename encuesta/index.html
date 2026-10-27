@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Encuesta TikTok · SAPO</title>
-<meta name="description" content="Registra tu cuenta de TikTok de ventas y cuéntanos qué cuentas de la competencia conoces.">
-<meta property="og:title" content="Encuesta TikTok de vendedores · Cresa">
-<meta property="og:description" content="2 minutos: tu usuario de TikTok, tu agencia y cuentas de la competencia que conozcas.">
+<title>Encuesta TikTok para vendedores e independientes · Cresa</title>
+<meta name="description" content="Encuesta para vendedores e independientes de Cresa: registra tu cuenta de TikTok de ventas y cuéntanos qué cuentas de la competencia conoces.">
+<meta property="og:title" content="Encuesta TikTok para vendedores e independientes · Cresa">
+<meta property="og:description" content="2 minutos: tu usuario de TikTok y cuentas de la competencia que conozcas.">
 <style>
   /* Layout: una sola columna tipo formulario móvil, tarjetas por paso */
   :root{
@@ -64,6 +64,14 @@
   .enviar{width:100%;font:inherit;font-size:17px;font-weight:700;padding:15px;border:0;border-radius:13px;background:var(--frog);color:#fff;cursor:pointer;margin-top:4px}
   .enviar:disabled{opacity:.6;cursor:wait}
   .enviar:focus-visible,.add:focus-visible,button:focus-visible{outline:2px solid var(--frog);outline-offset:2px}
+  .tipo-btns{display:grid;gap:10px}
+  .tipo-btns label{display:flex;flex-direction:column;gap:2px;border:1.5px solid var(--line);border-radius:13px;padding:15px 16px;cursor:pointer;background:var(--bg)}
+  .tipo-btns label b{font-size:17px}
+  .tipo-btns label span{color:var(--mute);font-size:13.5px}
+  .tipo-btns input{position:absolute;opacity:0;pointer-events:none}
+  .tipo-btns label:has(input:checked){border-color:var(--frog);background:var(--soft)}
+  .tipo-btns label:has(input:focus-visible){outline:2px solid var(--frog);outline-offset:2px}
+  .cambiar-tipo{float:right;font:inherit;font-size:12.5px;font-weight:500;color:var(--frog-ink);background:none;border:0;cursor:pointer;padding:2px 0}
   .ok{text-align:center;padding:34px 18px}
   .ok .big{font-size:52px;line-height:1}
   .ok h2{font-size:22px;margin:12px 0 6px}
@@ -77,24 +85,28 @@
   <header>
     <div class="logo">🐸</div>
     <div>
-      <h1>Encuesta TikTok para vendedores</h1>
-      <div class="sub">Cresa · Crecos, Orve Hogar, Japón, Motozone, Pagamenos, Samsung y Multinivel · 2 minutos</div>
+      <h1>Encuesta TikTok para vendedores e independientes</h1>
+      <div class="sub">Cresa · Crecos, Orve Hogar, Japón, Motozone, Pagamenos, Samsung e independientes · 2 minutos</div>
     </div>
   </header>
 
   <form id="f" novalidate>
+    <div class="card" id="intro">
+      <h2 style="font-size:19px;margin-bottom:12px">¿Eres vendedor o independiente?</h2>
+      <div class="tipo-btns">
+        <label><input type="radio" name="canal" value="agencia"><b>Vendedor</b><span>Trabajo en una agencia de Cresa</span></label>
+        <label><input type="radio" name="canal" value="independiente"><b>Independiente</b><span>Vendo por mi cuenta, para cualquier agencia</span></label>
+      </div>
+    </div>
+
+    <div id="resto" hidden>
     <div class="card">
       <div class="paso">Paso 1 de 3</div>
-      <h2>Tus datos</h2>
+      <h2>Tus datos <button type="button" class="cambiar-tipo" id="cambiar-tipo">Cambiar: <span id="tipo-txt"></span></button></h2>
       <label class="lbl" for="nombre">Nombre y apellido</label>
       <input type="text" id="nombre" autocomplete="name" placeholder="Ej. María Fernanda León" maxlength="80">
 
-      <label class="lbl">¿Dónde vendes?</label>
-      <div class="chips" id="canal">
-        <label><input type="radio" name="canal" value="agencia" checked>En una agencia</label>
-        <label><input type="radio" name="canal" value="multinivel">Multinivel</label>
-      </div>
-      <p class="hint" id="multi-hint" hidden style="margin-top:8px">Como vendedor de Multinivel puedes vender para cualquier agencia, así que no necesitas elegir una.</p>
+      <p class="hint" id="multi-hint" hidden style="margin-top:12px">Como independiente puedes vender para cualquier agencia, así que no necesitas elegir una.</p>
 
       <div id="bloque-ag">
       <label class="lbl" for="buscar-ag">Tu agencia</label>
@@ -136,6 +148,7 @@
 
     <div class="msg-err" id="err-global" hidden></div>
     <button class="enviar" id="enviar" type="submit">Enviar respuesta</button>
+    </div>
     <div class="pie">Solo usamos estos datos para medir la presencia de Cresa en TikTok.</div>
   </form>
 
@@ -178,13 +191,19 @@ function elegir(a) {
   agencia = a; $('#ag-texto').textContent = a + ' · ' + cadena(a);
   $('#combo').hidden = true; $('#ag-elegida').hidden = false; lista.hidden = true; inp.classList.remove('bad'); guardar();
 }
-const esMulti = () => document.querySelector('input[name=canal]:checked').value === 'multinivel';
-function canal() {
-  const m = esMulti(); $('#bloque-ag').hidden = m; $('#multi-hint').hidden = !m;
+const tipoElegido = () => document.querySelector('input[name=canal]:checked')?.value || '';
+const esMulti = () => tipoElegido() === 'independiente';
+function canal(desplazar) {
+  const t = tipoElegido(), m = t === 'independiente';
+  $('#resto').hidden = !t; $('#intro').hidden = !!t;
+  $('#tipo-txt').textContent = m ? 'Independiente' : 'Vendedor';
+  $('#bloque-ag').hidden = m; $('#multi-hint').hidden = !m;
   if (m) inp.classList.remove('bad');
+  if (t && desplazar) { window.scrollTo({top: 0}); setTimeout(() => $('#nombre').focus(), 50); }
   guardar();
 }
-document.querySelectorAll('input[name=canal]').forEach(r => r.addEventListener('change', canal));
+document.querySelectorAll('input[name=canal]').forEach(r => r.addEventListener('change', () => canal(true)));
+$('#cambiar-tipo').addEventListener('click', () => { document.querySelectorAll('input[name=canal]').forEach(r => r.checked = false); canal(); window.scrollTo({top: 0}); });
 inp.addEventListener('focus', pintar);
 inp.addEventListener('input', pintar);
 inp.addEventListener('keydown', e => {
@@ -240,14 +259,14 @@ const leerComps = () => [...document.querySelectorAll('.comp')].map(el => ({
 
 /* ---------- borrador local ---------- */
 function guardar() {
-  try { localStorage.setItem('sapo-encuesta', JSON.stringify({nombre: $('#nombre').value, agencia, multi: esMulti(), tiktok: $('#tiktok').value, instagram: $('#instagram').value,
+  try { localStorage.setItem('sapo-encuesta', JSON.stringify({nombre: $('#nombre').value, agencia, canal: tipoElegido(), tiktok: $('#tiktok').value, instagram: $('#instagram').value,
     lives: document.querySelector('input[name=lives]:checked')?.value || '', comps: leerComps()})); } catch (e) {}
 }
 ['#nombre', '#instagram'].forEach(s => $(s).addEventListener('input', guardar));
 document.querySelectorAll('input[name=lives]').forEach(r => r.addEventListener('change', guardar));
 try {
   const b = JSON.parse(localStorage.getItem('sapo-encuesta') || 'null');
-  if (b) { if (b.multi) { document.querySelector('input[name=canal][value=multinivel]').checked = true; canal(); } $('#nombre').value = b.nombre || ''; if (b.agencia && AGENCIAS.includes(b.agencia)) elegir(b.agencia); $('#tiktok').value = b.tiktok || ''; $('#instagram').value = b.instagram || '';
+  if (b) { const c = b.canal || (b.multi ? 'independiente' : ''); if (c) { document.querySelector('input[name=canal][value=' + c + ']').checked = true; canal(); } $('#nombre').value = b.nombre || ''; if (b.agencia && AGENCIAS.includes(b.agencia)) elegir(b.agencia); $('#tiktok').value = b.tiktok || ''; $('#instagram').value = b.instagram || '';
     if (b.lives) { const r = document.querySelector('input[name=lives][value="' + b.lives + '"]'); if (r) r.checked = true; } (b.comps || []).forEach(agregarComp); prevTT(); }
 } catch (e) {}
 
@@ -265,7 +284,7 @@ $('#f').addEventListener('submit', async e => {
   const g = $('#err-global');
   if (errs.length) { g.hidden = false; g.textContent = 'Falta ' + errs.join(', ') + '.'; document.querySelector('.bad')?.scrollIntoView({behavior: 'smooth', block: 'center'}); return; }
   g.hidden = true;
-  const datos = {v: 1, enviado: new Date().toISOString(), nombre, agencia: multi ? '' : agencia, cadena: multi ? 'Multinivel' : cadena(agencia), tiktok: sinTT ? '' : tt,
+  const datos = {v: 1, enviado: new Date().toISOString(), nombre, agencia: multi ? '' : agencia, cadena: multi ? 'Independientes' : cadena(agencia), tiktok: sinTT ? '' : tt,
     lives: document.querySelector('input[name=lives]:checked')?.value || '', instagram: limpiar($('#instagram').value), competencia: comps};
   const btn = $('#enviar'); btn.disabled = true; btn.textContent = 'Enviando…';
   try {
@@ -273,7 +292,7 @@ $('#f').addEventListener('submit', async e => {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     try { localStorage.removeItem('sapo-encuesta'); } catch (e) {}
     $('#f').hidden = true; $('#ok').hidden = false;
-    $('#ok-det').textContent = (datos.tiktok ? '@' + datos.tiktok + ' · ' : '') + (multi ? 'Multinivel' : agencia) + (comps.length ? ' · ' + comps.length + ' cuenta(s) de competencia' : '');
+    $('#ok-det').textContent = (datos.tiktok ? '@' + datos.tiktok + ' · ' : '') + (multi ? 'Independiente' : agencia) + (comps.length ? ' · ' + comps.length + ' cuenta(s) de competencia' : '');
     window.scrollTo({top: 0, behavior: 'smooth'});
   } catch (err) {
     g.hidden = false; g.textContent = 'No se pudo enviar (revisa tu conexión a internet) y vuelve a tocar "Enviar respuesta". Tus datos siguen aquí.';

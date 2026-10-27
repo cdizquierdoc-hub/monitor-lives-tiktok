@@ -35,7 +35,8 @@ RAIZ = os.path.dirname(os.path.abspath(__file__))
 AGENCIAS = os.path.join(RAIZ, "encuesta", "agencias.json")
 EXCLUIR = os.path.join(RAIZ, "encuesta", "excluir")
 EC = timezone(timedelta(hours=-5))
-MULTI = "MULTINIVEL (sin agencia)"
+MULTI = "INDEPENDIENTES (sin agencia)"
+INDEP = ("Independientes", "Multinivel")   # Multinivel = nombre anterior
 CADENAS = [("PAGA MENOS", "Pagamenos"), ("MOTOZONE", "Motozone"), ("SAMSUNG", "Samsung"),
            ("CRECOS", "Crecos"), ("ORVE", "Orve Hogar"), ("JAPON", "Japón")]
 
@@ -65,7 +66,9 @@ def traer_respuestas():
             d = json.loads(ev.get("message") or "{}")
         except ValueError:
             continue
-        if d.get("prueba") or not (d.get("agencia") or d.get("cadena") == "Multinivel"):
+        if d.get("cadena") == "Multinivel":
+            d["cadena"] = "Independientes"
+        if d.get("prueba") or not (d.get("agencia") or d.get("cadena") in INDEP):
             continue
         d["_id"], d["_t"] = ev["id"], ev["time"]
         nuevas.append(d)
@@ -128,6 +131,9 @@ def cadena_de(a):
 
 def procesar(respuestas, cache):
     excl_u, excl_ids = leer_exclusiones()
+    for r in respuestas:
+        if r.get("cadena") == "Multinivel":
+            r["cadena"] = "Independientes"
     validas = [r for r in respuestas if r["_id"] not in excl_ids]
     manuales = {(v["plataforma"], v["handle"]): v for v in leer_vendedores(incluir_encuesta=False)}
 
@@ -151,7 +157,7 @@ def procesar(respuestas, cache):
         man = manuales.get(("tiktok", tt))
         filas_cresa.append({
             "fecha": fecha(x["_t"]), "nombre": x.get("nombre", ""), "cadena": x.get("cadena", ""),
-            "agencia": x.get("agencia") or ("(sin agencia)" if x.get("cadena") == "Multinivel" else ""),
+            "agencia": x.get("agencia") or ("(sin agencia)" if x.get("cadena") in INDEP else ""),
             "tiktok": tt, "existe": v.get("existe") if tt else None, "nick": v.get("nick", ""),
             "seguidores": v.get("seguidores"), "lives": x.get("lives", ""),
             "instagram": (x.get("instagram") or "").lower(), "veces": x["_veces"], "ids": x["_ids"],
@@ -189,10 +195,10 @@ def procesar(respuestas, cache):
     agencias = leer_json(AGENCIAS, [])
     por_ag = defaultdict(set)
     for f in filas_cresa:
-        clave = MULTI if f["cadena"] == "Multinivel" else f["agencia"]
+        clave = MULTI if f["cadena"] in INDEP else f["agencia"]
         por_ag[clave].add(f["tiktok"] or f["nombre"].lower())
     avance = [{"cadena": cadena_de(a), "agencia": a, "n": len(por_ag.get(a, ()))} for a in agencias]
-    avance.append({"cadena": "Multinivel", "agencia": MULTI, "n": len(por_ag.get(MULTI, ()))})
+    avance.append({"cadena": "Independientes", "agencia": MULTI, "n": len(por_ag.get(MULTI, ()))})
     return filas_cresa, filas_comp, avance, len(validas), len(respuestas) - len(validas)
 
 
@@ -253,10 +259,10 @@ def escribir_cuentas_sapo(filas_cresa, filas_comp):
     filas = []
     for f in filas_cresa:
         if f["tiktok"] and f["existe"] and not f["ya_en_sapo"]:
-            agencia = "MULTINIVEL" if f["cadena"] == "Multinivel" else f["agencia"]
+            agencia = "INDEPENDIENTE" if f["cadena"] in INDEP else f["agencia"]
             filas.append([f["tiktok"], agencia, f["nombre"], "SI", "propio", "vendedor", "tiktok"])
         if f["instagram"]:
-            agencia = "MULTINIVEL" if f["cadena"] == "Multinivel" else f["agencia"]
+            agencia = "INDEPENDIENTE" if f["cadena"] in INDEP else f["agencia"]
             filas.append([f["instagram"], agencia, f["nombre"], "SI", "propio", "vendedor", "instagram"])
     for f in filas_comp:
         if f["existe"] and not f["ya_en_sapo"]:

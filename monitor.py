@@ -84,10 +84,11 @@ CADENAS_CRESA = [
     ("ALMACENES JAPON", "Japón"), ("ALMACENES JAPÓN", "Japón"), ("JAPON", "Japón"), ("JAPÓN", "Japón"),
     ("CRECOS", "Crecos"), ("ORVE HOGAR", "Orve Hogar"), ("ORVE", "Orve Hogar"),
     ("MOTOZONE", "Motozone"), ("MOTO ZONE", "Motozone"), ("PAGA MENOS", "Pagamenos"), ("PAGAMENOS", "Pagamenos"),
-    ("SAMSUNG", "Samsung"), ("MULTINIVEL", "Multinivel"), ("MULTI NIVEL", "Multinivel"),
+    ("SAMSUNG", "Samsung"), ("INDEPENDIENTES", "Independientes"), ("INDEPENDIENTE", "Independientes"),
+    ("MULTINIVEL", "Independientes"), ("MULTI NIVEL", "Independientes"),
 ]
-# Multinivel: vendedores independientes que pueden vender para cualquier agencia → no llevan agencia
-MULTINIVEL = "Multinivel"
+# Independientes (antes "Multinivel"): venden para cualquier agencia → no llevan agencia
+MULTINIVEL = "Independientes"
 COLUMNAS = {
     "usuario": ("usuario", "usuario tiktok", "user", "username", "tiktok"),
     "agencia": ("agencia", "zona", "zona / agencia", "tienda", "almacen", "almacén"),
@@ -198,7 +199,7 @@ def leer_vendedores(incluir_encuesta=True):
             agencia = re.sub(r"\s+", " ", datos.get("agencia", "")).strip().upper() or "SIN AGENCIA"
             cadena, tipo = clasificar(agencia, datos.get("tipo"))
             if cadena == MULTINIVEL:
-                agencia, tipo = "", "propio"          # multinivel no pertenece a una agencia
+                agencia, tipo = "", "propio"          # los independientes no pertenecen a una agencia
             v = {
                 "usuario": usuario,
                 "handle": handle,

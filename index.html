@@ -536,7 +536,7 @@ function renderEncuesta() {
   $('#e-vend').textContent = fmtN(r.vendedores || 0);
   $('#e-comp').textContent = fmtN(r.competencia || 0);
   $('#e-ag').textContent = (r.agencias_con_respuesta || 0) + ' / ' + (r.agencias_total || 191);
-  $('#e-ag-s').textContent = '+ ' + (r.multinivel || 0) + ' de Multinivel';
+  $('#e-ag-s').textContent = '+ ' + (r.multinivel || 0) + ' independientes';
   $('#e-sapo').textContent = fmtN(r.agregadas_a_sapo || 0);
   $('#e-act').textContent = r.actualizado ? 'Actualizado ' + fmtF(r.actualizado) : '';
   $('#actualizado').textContent = 'Encuesta en vivo · se refresca sola cada minuto';
@@ -565,7 +565,7 @@ function renderEncuesta() {
     </tr>`).join('') || '<tr><td colspan="10" class="empty">Nadie ha reportado cuentas de la competencia todavía.</td></tr>';
   const cads = {};
   d.avance.forEach(a => { const c = cads[a.cadena] ||= {t: 0, r: 0}; c.t++; if (a.n) c.r++; });
-  $('#e-cadenas').innerHTML = Object.entries(cads).map(([c, x]) => `<div><span>${esc(c)}</span><b>${c === 'Multinivel' ? (d.avance.find(a => a.cadena === 'Multinivel')?.n || 0) + ' vend.' : x.r + ' / ' + x.t}</b></div>`).join('');
+  $('#e-cadenas').innerHTML = Object.entries(cads).map(([c, x]) => `<div><span>${esc(c)}</span><b>${c === 'Independientes' ? (d.avance.find(a => a.cadena === 'Independientes')?.n || 0) + ' vend.' : x.r + ' / ' + x.t}</b></div>`).join('');
   const av = d.avance.filter(a => (!$('#e-faltan').checked || !a.n) && pasa(a.agencia, a.cadena)).sort((a, b) => (a.n > 0) - (b.n > 0) || a.cadena.localeCompare(b.cadena) || a.agencia.localeCompare(b.agencia));
   $('#e-avance').innerHTML = av.map(a => `<tr class="${a.n ? '' : 'zero'}"><td>${esc(a.cadena)}</td><td>${esc(a.agencia)}</td><td class="num">${a.n}</td><td>${a.n ? '<span class="ok">✓ respondió</span>' : '<span class="err">sin respuestas</span>'}</td></tr>`).join('');
 }
@@ -605,7 +605,7 @@ async function cargar() {
 /* ======================================================================
    Filtros (panel izquierdo)
    ====================================================================== */
-const CADENAS = {CRECOS: 'Crecos', ORVE: 'Orve Hogar', JAPON: 'Japón', 'JAPÓN': 'Japón', MOTOZONE: 'Motozone', PAGAMENOS: 'Pagamenos', PAGA: 'Pagamenos', SAMSUNG: 'Samsung', MULTINIVEL: 'Multinivel'};
+const CADENAS = {CRECOS: 'Crecos', ORVE: 'Orve Hogar', JAPON: 'Japón', 'JAPÓN': 'Japón', MOTOZONE: 'Motozone', PAGAMENOS: 'Pagamenos', PAGA: 'Pagamenos', SAMSUNG: 'Samsung', MULTINIVEL: 'Independientes', INDEPENDIENTE: 'Independientes', INDEPENDIENTES: 'Independientes'};
 const cadenaDe = a => CADENAS[String(a || '').trim().split(/\s+/)[0].toUpperCase()] || 'Otra';
 const FILT = {cadenas: new Set()};
 function opciones(sel, todos, valores) {
@@ -615,7 +615,7 @@ function opciones(sel, todos, valores) {
 }
 const paginaActual = () => ({'#competencia': 'comp', '#contenido': 'cont', '#encuesta': 'enc'}[location.hash] || 'resumen');
 function prepararFiltros() {
-  RAW.vendedores.forEach(v => { v.tipo = v.tipo || 'propio'; v.cadena = v.cadena || cadenaDe(v.agencia || v.zona || ''); v.agencia = v.cadena === 'Multinivel' ? '' : (v.agencia || v.zona || 'SIN AGENCIA');
+  RAW.vendedores.forEach(v => { v.tipo = v.tipo || 'propio'; v.cadena = v.cadena || cadenaDe(v.agencia || v.zona || ''); v.cadena = v.cadena === 'Multinivel' ? 'Independientes' : v.cadena; v.agencia = v.cadena === 'Independientes' ? '' : (v.agencia || v.zona || 'SIN AGENCIA');
     v.plataforma = v.plataforma || (String(v.usuario).startsWith('ig:') ? 'instagram' : 'tiktok'); v.handle = v.handle || String(v.usuario).replace(/^ig:/, ''); v.rol = v.rol || 'vendedor'; });
   const tipo = paginaActual() === 'comp' ? '' : $('#tipo').value;
   const deTipo = RAW.vendedores.filter(v => (!tipo || v.tipo === tipo) && pasaGlobal(v));
@@ -1211,7 +1211,7 @@ function ayudaPanel() {
   const comp = tipoPanel() === 'competencia';
   $('#p-ayuda').innerHTML = comp
     ? 'Pega una cuenta por línea: <b>usuario y empresa</b> (ej. <code>"@vendedora.x" "ARTEFACTA KIA"</code>). Se agrupan solas por empresa: Artefacta, Marcimex, Almacenes España, Comandato, Jaher, Almacenes Al Precio, La Ganga… Cualquier otra empresa también funciona. Sirve con comillas, comas, @usuario, el link del perfil o columnas de Excel.'
-    : 'Elige arriba la red (TikTok o Instagram; un link de instagram.com se detecta solo) y si son vendedores o cuentas oficiales. Pega uno por línea: <b>usuario y agencia</b> (el nombre del vendedor es opcional, al final). La cadena se toma del inicio de la agencia: <b>CRECOS, ORVE HOGAR, JAPON, MOTOZONE, PAGAMENOS o SAMSUNG</b>. Para vendedores de <b>Multinivel</b> escribe solo <code>MULTINIVEL</code> (no llevan agencia). Si la agencia es de un competidor conocido (ej. ARTEFACTA…), la cuenta se marca sola como competencia.';
+    : 'Elige arriba la red (TikTok o Instagram; un link de instagram.com se detecta solo) y si son vendedores o cuentas oficiales. Pega uno por línea: <b>usuario y agencia</b> (el nombre del vendedor es opcional, al final). La cadena se toma del inicio de la agencia: <b>CRECOS, ORVE HOGAR, JAPON, MOTOZONE, PAGAMENOS o SAMSUNG</b>. Para <b>independientes</b> escribe solo <code>INDEPENDIENTE</code> (no llevan agencia). Si la agencia es de un competidor conocido (ej. ARTEFACTA…), la cuenta se marca sola como competencia.';
   $('#nuevos').placeholder = comp
     ? '"@comandato.ofertas" "COMANDATO"\n@artefacta.ec, ARTEFACTA\nhttps://www.tiktok.com/@marcimex.ec, MARCIMEX'
     : '"@pepito" "JAPON PARQUE CALIFORNIA"\n@andrea.ventas, CRECOS MALL DEL SOL, Andrea Mora\nhttps://www.tiktok.com/@dani.tecno, ORVE HOGAR QUITO NORTE';
@@ -1314,12 +1314,12 @@ $('#guardar').addEventListener('click', guardarNuevos);
 /* Datos ficticios para la vista previa (?demo) */
 function demoEnc() {
   const cresa = [['María León', 'Crecos', 'CRECOS MALL DEL SOL', 'mafer.hogar', true, 1830, 'Sí, seguido', '', false, 2], ['José Castro', 'Motozone', 'MOTOZONE MILAGRO', 'jose.motos', true, 940, 'A veces', 'jose.ig', false, 1],
-    ['Kevin R.', 'Crecos', 'CRECOS MACHALA', 'kevinasesor', true, 610, 'Sí, seguido', '', true, 1], ['Pedro M.', 'Multinivel', '(sin agencia)', 'pedro.vende', true, 220, 'No', '', false, 1], ['Ana T.', 'Japón', 'JAPON CUENCA', 'ana.tiendaa', false, null, 'A veces', '', false, 1]]
+    ['Kevin R.', 'Crecos', 'CRECOS MACHALA', 'kevinasesor', true, 610, 'Sí, seguido', '', true, 1], ['Pedro M.', 'Independientes', '(sin agencia)', 'pedro.vende', true, 220, 'No', '', false, 1], ['Ana T.', 'Japón', 'JAPON CUENCA', 'ana.tiendaa', false, null, 'A veces', '', false, 1]]
     .map(([nombre, cadena, agencia, tiktok, existe, seguidores, lives, instagram, ya, veces], i) => ({fecha: '2026-10-26 1' + (6 + i % 3) + ':0' + i, nombre, cadena, agencia, tiktok, existe, seguidores, lives, instagram, ya_en_sapo: ya, veces, ids: ['x' + i]}));
   const competencia = [['vende.artefacta', 'Artefacta', 'Lives', 3], ['comandato.gye', 'Comandato', 'Ambos', 2], ['jaher.sto', 'Jaher', 'Videos', 1]]
     .map(([tiktok, empresa, contenido, veces]) => ({tiktok, empresa, contenido, existe: true, seguidores: 4000 * veces, veces, por: ['María León', 'José Castro', 'Kevin R.'].slice(0, veces), agencias: ['CRECOS MALL DEL SOL', 'MOTOZONE MILAGRO'], ya_en_sapo: false}));
   const avance = ['CRECOS MALL DEL SOL', 'MOTOZONE MILAGRO', 'CRECOS MACHALA', 'JAPON CUENCA', 'ORVE PORTETE', 'PAGA MENOS DAULE', 'SAMSUNG CITY MALL'].map((a, i) => ({cadena: cadenaDe(a), agencia: a, n: i < 4 ? 1 : 0}));
-  avance.push({cadena: 'Multinivel', agencia: 'MULTINIVEL (sin agencia)', n: 1});
+  avance.push({cadena: 'Independientes', agencia: 'INDEPENDIENTES (sin agencia)', n: 1});
   return {resumen: {respuestas: 6, vendedores: 5, competencia: 3, agencias_con_respuesta: 4, agencias_total: 191, multinivel: 1, agregadas_a_sapo: 6, actualizado: Date.now()}, cresa, competencia, avance};
 }
 function demoSocial(vendedores) {
