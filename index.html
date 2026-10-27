@@ -109,41 +109,117 @@
   .seg label{border:1px solid var(--line);border-radius:10px;padding:7px 12px;font-size:13.5px;cursor:pointer}
   .seg input{margin-right:6px}
   .seg label:has(input:checked){border-color:var(--accent);background:var(--soft)}
+  /* ---- Layout tipo Power BI: filtros a la izquierda ---- */
+  .wrap{max-width:none;padding:0}
+  .app{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh}
+  .side{background:var(--card);border-right:1px solid var(--line);padding:18px 14px;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .side-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .side-head b{font-size:15px}
+  .side .flbl{display:block;font-size:12px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.04em;margin:0 0 14px}
+  .side select,.side input[type=text],.side input:not([type]){width:100%;margin-top:5px;font-size:13.5px;padding:7px 9px}
+  .checks{margin-top:6px;display:grid;gap:2px;max-height:230px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px}
+  .checks label{display:flex;gap:7px;align-items:center;font-size:13px;font-weight:500;color:var(--ink);text-transform:none;letter-spacing:0;padding:3px 4px;border-radius:6px;cursor:pointer}
+  .checks label:hover{background:var(--soft)}
+  .checks .grp{font-size:11px;color:var(--mute);font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:6px 4px 2px}
+  .checks input{margin:0;padding:0;width:auto}
+  button.link{background:none;border:0;color:var(--accent2);font-size:13px;padding:2px 4px;font-weight:600}
+  .sel-box{background:var(--soft);border:1px solid var(--accent);border-radius:10px;padding:10px;font-size:12.5px;margin-bottom:14px}
+  .sel-box b{display:block;margin-bottom:4px;font-size:13px}
+  .side .nota{font-size:11.5px;color:var(--mute);line-height:1.45}
+  main.cont{padding:20px max(16px,env(safe-area-inset-right)) 48px 22px;min-width:0}
+  .btn-filtros{display:none}
+  @media (max-width:900px){
+    .app{display:block}
+    .side{position:fixed;inset:0 auto 0 0;width:min(86vw,300px);z-index:25;transform:translateX(-102%);transition:transform .2s;box-shadow:0 0 40px rgba(0,0,0,.3)}
+    .side.abierto{transform:none}
+    .btn-filtros{display:inline-block}
+    main.cont{padding-left:max(16px,env(safe-area-inset-left))}
+  }
+  /* ---- Visuales con jerarquía ---- */
+  .vh{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .vh h2{margin:0}
+  .vctl{display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+  .vctl .nivel{font-size:12px;color:var(--mute);margin-right:6px}
+  .vctl .nivel b{color:var(--ink);font-weight:600}
+  button.ic{width:30px;height:28px;padding:0;border-radius:7px;font-size:15px;line-height:1;display:inline-grid;place-items:center;color:var(--ink)}
+  button.ic.on{background:var(--ink);color:var(--card);border-color:var(--ink)}
+  button.ic:disabled{opacity:.35;cursor:default}
+  .vctl select{font-size:12.5px;padding:4px 8px}
+  table.mx th{cursor:pointer;user-select:none}
+  table.mx th:hover{color:var(--ink)}
+  table.mx th .o{font-size:10px;margin-left:3px;color:var(--accent2)}
+  table.mx tbody tr{cursor:pointer}
+  table.mx tbody tr:hover td{background:var(--soft)}
+  table.mx tbody tr.sel td{background:rgba(20,184,196,.14)}
+  table.mx tbody tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--accent2)}
+  table.mx.drill tbody tr td:nth-child(2){text-decoration:underline dotted}
+  table.mx tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:0}
+  table.mx tfoot tr.seltot td{color:var(--accent2)}
+  .ck{width:16px;height:16px;border:1.5px solid var(--mute);border-radius:4px;display:inline-grid;place-items:center;font-size:11px;color:transparent;vertical-align:-3px}
+  tr.sel .ck{background:var(--accent2);border-color:var(--accent2);color:#fff}
+  .vh-hint{font-size:11.5px;color:var(--mute);margin:-4px 0 8px}
+  header > div:first-child{min-width:0;flex:1 1 320px;max-width:100%}
+  .tabs{max-width:100%}
+  .live-item > div{flex:1;min-width:0}
+  .live-item .t{max-width:48%;white-space:normal;text-align:right}
+  @media (max-width:520px){.live-item{flex-wrap:wrap}.live-item .t{margin-left:20px;white-space:normal}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div>
-      <h1><span class="logo">🐸</span> SAPO <span class="marca">Sistema de Análisis de Presencia Online</span></h1>
-      <div class="sub" id="actualizado">Cargando…</div>
-      <nav class="tabs"><a href="#" id="t-resumen" class="on">Resumen</a><a href="#competencia" id="t-comp">Nosotros vs Competencia</a><a href="#contenido" id="t-cont">Contenido (posts y seguidores)</a><a href="#encuesta" id="t-enc">Encuesta</a></nav>
-    </div>
-    <div class="filters">
-      <select id="periodo" class="no-enc">
+<div class="wrap app">
+  <aside class="side" id="side">
+    <div class="side-head"><b>Filtros</b><button type="button" class="link" id="f-limpiar">Limpiar</button></div>
+    <div class="sel-box" id="sel-box" hidden></div>
+    <label class="flbl no-enc">Periodo
+      <select id="periodo">
         <option value="1">Hoy</option>
         <option value="7" selected>Últimos 7 días</option>
         <option value="30">Últimos 30 días</option>
         <option value="90">Últimos 90 días</option>
       </select>
-      <select id="red" class="no-enc" title="Red social">
+    </label>
+    <label class="flbl no-enc" id="lbl-tipo">Grupo
+      <select id="tipo">
+        <option value="" selected>Cresa + Competencia</option>
+        <option value="propio">Solo Cresa</option>
+        <option value="competencia">Solo competencia</option>
+      </select>
+    </label>
+    <label class="flbl no-enc">Red social
+      <select id="red">
         <option value="">TikTok + Instagram</option>
         <option value="tiktok">Solo TikTok</option>
         <option value="instagram">Solo Instagram</option>
       </select>
-      <select id="rol" class="no-enc" title="Tipo de cuenta">
+    </label>
+    <label class="flbl no-enc">Tipo de cuenta
+      <select id="rol">
         <option value="">Vendedores + oficiales</option>
         <option value="vendedor">Solo vendedores</option>
         <option value="oficial">Solo cuentas oficiales</option>
       </select>
-      <select id="tipo" class="f-cuentas">
-        <option value="propio" selected>Nuestras cuentas</option>
-        <option value="competencia">Competencia</option>
-        <option value="">Todas (incl. competencia)</option>
-      </select>
-      <select id="cadena" class="f-cuentas"><option value="">Todas las cadenas</option></select>
-      <select id="agencia" class="f-cuentas"><option value="">Todas las agencias</option></select>
-      <input id="buscar" class="f-cuentas" placeholder="Buscar vendedor…" size="16">
+    </label>
+    <div class="flbl no-enc">Cadena / empresa <span id="f-cad-n" style="text-transform:none;letter-spacing:0;font-weight:500"></span>
+      <div class="checks" id="f-cadenas"></div>
+    </div>
+    <label class="flbl no-enc">Agencia
+      <select id="agencia"><option value="">Todas las agencias</option></select>
+    </label>
+    <label class="flbl no-enc">Buscar cuenta
+      <input id="buscar" placeholder="Nombre o @usuario">
+    </label>
+    <p class="nota no-enc"><b>Tablas y gráficos:</b> clic en una fila o línea para filtrar toda la página; <b>Ctrl/Shift + clic</b> (o el cuadrito ☐) para elegir varias. <b>↑</b> sube de nivel, <b>↓</b> activa el modo detalle (clic en una fila = ver solo su detalle) y <b>⇊</b> baja de nivel mostrando todo. Clic en el título de una columna para ordenar.</p>
+  </aside>
+
+  <main class="cont">
+  <header>
+    <div>
+      <h1><span class="logo">🐸</span> SAPO <span class="marca">Sistema de Análisis de Presencia Online</span></h1>
+      <div class="sub" id="actualizado">Cargando…</div>
+      <nav class="tabs"><a href="#" id="t-resumen" class="on">Lives</a><a href="#competencia" id="t-comp">Nosotros vs Competencia</a><a href="#contenido" id="t-cont">Contenido (posts y seguidores)</a><a href="#encuesta" id="t-enc">Encuesta</a></nav>
+    </div>
+    <div class="filters">
+      <button type="button" class="btn-filtros" id="btn-filtros">☰ Filtros</button>
       <button id="exportar" class="solo-resumen" title="Descargar los lives filtrados">⬇ CSV</button>
       <button id="gestionar" class="primary">＋ Cuentas</button>
     </div>
@@ -152,73 +228,51 @@
   <div class="demo" id="modo" hidden>Vista de ejemplo con datos ficticios.</div>
 
   <section id="p-resumen">
-  <div class="kpis">
-    <div class="card kpi hot"><div class="l">En vivo ahora</div><div class="v" id="k-vivo">–</div><div class="s" id="k-vivo-s"></div></div>
-    <div class="card kpi"><div class="l">Lives en el periodo</div><div class="v" id="k-lives">–</div><div class="s" id="k-lives-s"></div></div>
-    <div class="card kpi"><div class="l">Horas totales en live</div><div class="v" id="k-horas">–</div><div class="s" id="k-horas-s"></div></div>
-    <div class="card kpi"><div class="l">Duración promedio</div><div class="v" id="k-prom">–</div><div class="s">por live</div></div>
-    <div class="card kpi"><div class="l">Vistas totales</div><div class="v" id="k-vis">–</div><div class="s" id="k-vis-s"></div></div>
-    <div class="card kpi"><div class="l">Vendedores que hicieron live</div><div class="v" id="k-act">–</div><div class="s" id="k-act-s"></div></div>
-  </div>
-
-  <div class="grid2">
-    <div class="card"><h2>Horas en live por día <small id="chart-sub"></small></h2><div class="chartbox"><canvas id="chart"></canvas></div></div>
-    <div class="card"><h2>🔴 En vivo ahora <small id="vivo-sub"></small></h2><div class="live-list" id="vivos"></div></div>
-  </div>
-
-  <div class="card section">
-    <h2>Ranking de vendedores <small>ordenado por horas en live</small></h2>
-    <div class="tablewrap"><table>
-      <thead><tr><th>#</th><th>Vendedor</th><th>Cadena</th><th>Agencia</th><th class="num">Lives</th><th class="num">Horas</th><th></th><th class="num">Promedio</th><th class="num">Vistas</th><th class="num">Vistas/live</th><th>Último live</th><th>Estado</th></tr></thead>
-      <tbody id="ranking"></tbody>
-    </table></div>
-  </div>
-
-  <div class="card section">
-    <h2>Por cadena <small>suma de todas las agencias / cuentas de cada cadena</small></h2>
-    <div class="tablewrap"><table>
-      <thead><tr><th>Cadena / empresa</th><th></th><th class="num">Cuentas</th><th class="num">Hicieron live</th><th class="num">Lives</th><th class="num">Horas</th><th class="num">Horas por cuenta</th><th></th><th class="num">Duración prom.</th><th class="num">Vistas</th><th class="num">Vistas por live</th><th class="num">En vivo ahora</th></tr></thead>
-      <tbody id="cadenas-l"></tbody>
-    </table></div>
-  </div>
-
-  <div class="card section">
-    <h2>Resumen por agencia <small>ordenado por horas en live</small></h2>
-    <div class="tablewrap"><table>
-      <thead><tr><th>Agencia</th><th>Cadena</th><th class="num">Vendedores</th><th class="num">Hicieron live</th><th class="num">Lives</th><th class="num">Horas</th><th></th><th class="num">Horas por vendedor</th><th class="num">Vistas</th></tr></thead>
-      <tbody id="agencias"></tbody>
-    </table></div>
-  </div>
-
-  <div class="card section">
-    <h2>¿Cuándo hacen live? <small>minutos en vivo por día y hora</small></h2>
-    <div class="tablewrap"><div class="heat" id="heat"></div></div>
-  </div>
-
-  <div class="card">
-    <h2>Historial de lives <small id="hist-sub"></small></h2>
-    <div class="tablewrap"><table>
-      <thead><tr><th>Vendedor</th><th>Cadena</th><th>Agencia</th><th>Inicio</th><th>Fin</th><th class="num">Duración</th><th class="num">Vistas</th><th class="num">Pico</th><th>Título</th></tr></thead>
-      <tbody id="historial"></tbody>
-    </table></div>
-  </div>
-  <div class="card" id="sinvendedores" hidden style="margin-top:14px">
-    <div class="empty-cta">
-      <h2 style="justify-content:center">Todavía no hay vendedores cargados</h2>
-      <p>Agrega los usuarios de TikTok de tus vendedores y el monitor empezará a revisarlos en 2–3 minutos.</p>
-      <button class="primary" onclick="abrirPanel()">＋ Agregar vendedores</button>
+    <div class="kpis">
+      <div class="card kpi hot"><div class="l">En vivo ahora</div><div class="v" id="k-vivo">–</div><div class="s" id="k-vivo-s"></div></div>
+      <div class="card kpi"><div class="l">Lives en el periodo</div><div class="v" id="k-lives">–</div><div class="s" id="k-lives-s"></div></div>
+      <div class="card kpi"><div class="l">Horas totales en live</div><div class="v" id="k-horas">–</div><div class="s" id="k-horas-s"></div></div>
+      <div class="card kpi"><div class="l">Duración promedio</div><div class="v" id="k-prom">–</div><div class="s">por live</div></div>
+      <div class="card kpi"><div class="l">Vistas totales</div><div class="v" id="k-vis">–</div><div class="s" id="k-vis-s"></div></div>
+      <div class="card kpi"><div class="l">Cuentas que hicieron live</div><div class="v" id="k-act">–</div><div class="s" id="k-act-s"></div></div>
     </div>
-  </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="vh"><h2>Lives por día</h2><div class="vctl"><select id="gL-met"><option value="horas">Horas en live</option><option value="horasCuenta">Horas por cuenta</option><option value="lives">Número de lives</option><option value="vistas">Vistas</option></select><span data-ctl="gL"></span></div></div>
+        <div class="chartbox" style="height:300px"><canvas id="gL"></canvas></div>
+      </div>
+      <div class="card"><h2>🔴 En vivo ahora <small id="vivo-sub"></small></h2><div class="live-list" id="vivos"></div></div>
+    </div>
+    <div class="card section">
+      <div class="vh"><h2>Lives por cadena, agencia y cuenta</h2><div class="vctl" data-ctl="mL"></div></div>
+      <div class="tablewrap" id="mL"></div>
+    </div>
+    <div class="card section">
+      <h2>¿Cuándo hacen live? <small>minutos en vivo por día y hora</small></h2>
+      <div class="tablewrap"><div class="heat" id="heat"></div></div>
+    </div>
+    <div class="card">
+      <h2>Historial de lives <small id="hist-sub">clic en un live para ver el detalle de la cuenta</small></h2>
+      <div class="tablewrap" id="historial"></div>
+    </div>
+    <div class="card" id="sinvendedores" hidden style="margin-top:14px">
+      <div class="empty-cta">
+        <h2 style="justify-content:center">Todavía no hay cuentas cargadas</h2>
+        <p>Agrega los usuarios de TikTok y el monitor empezará a revisarlos en 1–2 minutos.</p>
+        <button class="primary" onclick="abrirPanel()">＋ Agregar cuentas</button>
+      </div>
+    </div>
   </section>
 
   <section id="p-comp" hidden>
     <div class="card section" id="c-vacio" hidden>
       <div class="empty-cta">
         <h2 style="justify-content:center">Aún no hay cuentas de competencia</h2>
-        <p>Agrega las cuentas de TikTok de la competencia (usuario y empresa) para compararlas con las nuestras.</p>
+        <p>Agrega cuentas de TikTok de la competencia (usuario y empresa) para compararlas con las nuestras.</p>
         <button class="primary" onclick="abrirPanel('competencia')">＋ Agregar competencia</button>
       </div>
     </div>
+    <p class="hint" style="margin:-4px 0 12px">Esta página siempre compara Cresa contra la competencia, así que ignora el filtro "Grupo".</p>
     <h2 class="seccion">Lives</h2>
     <div class="grid2b">
       <div class="card">
@@ -227,33 +281,19 @@
           <thead><tr><th>Indicador</th><th class="num">Nosotros</th><th class="num">Competencia</th></tr></thead>
           <tbody id="c-vs"></tbody>
         </table></div>
-        <p class="hint" style="margin-top:10px">Los indicadores "por cuenta" y "por live" permiten comparar aunque cada lado tenga distinta cantidad de cuentas.</p>
       </div>
       <div class="card">
-        <h2>Horas en live por cuenta, por día <small>promedio de cada lado</small></h2>
-        <div class="chartbox" style="height:320px"><canvas id="chart2"></canvas></div>
+        <div class="vh"><h2>Lives por día</h2><div class="vctl"><select id="gL2-met"><option value="horasCuenta">Horas por cuenta</option><option value="horas">Horas en live</option><option value="lives">Número de lives</option><option value="vistas">Vistas</option></select><span data-ctl="gL2"></span></div></div>
+        <div class="chartbox" style="height:340px"><canvas id="gL2"></canvas></div>
       </div>
     </div>
-
     <div class="card section">
-      <h2>Lives por cadena / empresa <small>ordenado por horas en live por cuenta</small></h2>
-      <div class="tablewrap"><table>
-        <thead><tr><th>Empresa / cadena</th><th></th><th class="num">Cuentas</th><th class="num">Hicieron live</th><th class="num">Lives</th><th class="num">Horas</th><th class="num">Horas por cuenta</th><th></th><th class="num">Duración prom.</th><th class="num">Vistas por live</th><th class="num">Pico prom.</th></tr></thead>
-        <tbody id="c-empresas"></tbody>
-      </table></div>
+      <div class="vh"><h2>Lives: Cresa vs competencia por cadena</h2><div class="vctl" data-ctl="mL2"></div></div>
+      <div class="tablewrap" id="mL2"></div>
     </div>
-
     <div class="grid2b">
-      <div class="card"><h2>¿Cuándo hacemos live? <small>nosotros</small></h2><div class="tablewrap"><div class="heat" id="c-heat-us"></div></div></div>
+      <div class="card"><h2>¿Cuándo hacemos live? <small>Cresa</small></h2><div class="tablewrap"><div class="heat" id="c-heat-us"></div></div></div>
       <div class="card"><h2>¿Cuándo hace live la competencia? <small>competencia</small></h2><div class="tablewrap"><div class="heat" id="c-heat-them"></div></div></div>
-    </div>
-
-    <div class="card">
-      <h2>Top cuentas <small>nosotros y competencia, por horas en live</small></h2>
-      <div class="tablewrap"><table>
-        <thead><tr><th>#</th><th>Cuenta</th><th></th><th>Cadena / empresa</th><th>Agencia</th><th class="num">Lives</th><th class="num">Horas</th><th class="num">Vistas</th><th class="num">Vistas por live</th><th>Estado</th></tr></thead>
-        <tbody id="c-top"></tbody>
-      </table></div>
     </div>
 
     <h2 class="seccion" style="margin-top:22px">Contenido (posts y seguidores)</h2>
@@ -266,13 +306,13 @@
         </table></div>
       </div>
       <div class="card">
-        <h2>Engagement por cadena / empresa <small>interacciones ÷ views</small></h2>
-        <div class="chartbox" style="height:360px"><canvas id="chart4"></canvas></div>
+        <div class="vh"><h2>Contenido en el tiempo</h2><div class="vctl"><select id="gC2-met"></select><select id="gC2-gran"><option value="dia">por día</option><option value="semana">por semana</option><option value="mes">por mes</option></select><span data-ctl="gC2"></span></div></div>
+        <div class="chartbox" style="height:340px"><canvas id="gC2"></canvas></div>
       </div>
     </div>
     <div class="card section">
-      <h2>Contenido por cadena / empresa <small>suma de todas sus cuentas</small></h2>
-      <div class="tablewrap"><table id="c-cont-cad-t"><tbody id="c-cont-cad"></tbody></table></div>
+      <div class="vh"><h2>Contenido: Cresa vs competencia por cadena</h2><div class="vctl" data-ctl="mC2"></div></div>
+      <div class="tablewrap" id="mC2"></div>
     </div>
   </section>
 
@@ -320,6 +360,7 @@
     </div>
   </section>
 
+
   <section id="p-cont" hidden>
     <div class="aviso-ig" id="s-aviso-ig" hidden><b>Instagram:</b> de las cuentas oficiales propias (conectadas a Meta) se ven todas las métricas. De vendedores y competencia, Instagram solo comparte seguidores, publicaciones, likes y comentarios, y únicamente si son cuentas de empresa o creador; views, guardados y compartidos aparecen como "—". El engagement se calcula solo con publicaciones que tienen views.</div>
     <div class="card section" id="s-vacio" hidden>
@@ -338,45 +379,27 @@
       <div class="card kpi"><div class="l">Guardados</div><div class="v" id="s-sav">–</div><div class="s" id="s-sav-s"></div></div>
       <div class="card kpi hot"><div class="l">Engagement</div><div class="v" id="s-er">–</div><div class="s">interacciones ÷ views</div></div>
     </div>
-
     <div class="grid2">
       <div class="card">
-        <h2>Publicaciones <select id="s-agrupar" style="font-size:12.5px;padding:4px 8px">
-          <option value="dia">por día</option><option value="semana" selected>por semana</option><option value="mes">por mes</option></select></h2>
-        <div class="chartbox"><canvas id="chart3"></canvas></div>
+        <div class="vh"><h2>Contenido en el tiempo</h2><div class="vctl"><select id="gC-met"></select><select id="gC-gran"><option value="dia">por día</option><option value="semana" selected>por semana</option><option value="mes">por mes</option></select><span data-ctl="gC"></span></div></div>
+        <div class="chartbox" style="height:320px"><canvas id="gC"></canvas></div>
       </div>
       <div class="card">
         <h2>¿Cuándo publican? <small>publicaciones por día y hora</small></h2>
         <div class="tablewrap"><div class="heat" id="s-heat" style="grid-template-columns:34px repeat(24,minmax(8px,1fr))"></div></div>
       </div>
     </div>
-
     <div class="card section">
-      <h2>Por cadena <small>suma de todas las cuentas de cada cadena / empresa</small></h2>
-      <div class="tablewrap"><table id="s-cadenas-t"><tbody id="s-cadenas"></tbody></table></div>
+      <div class="vh"><h2>Contenido por cadena, agencia y cuenta</h2><div class="vctl" data-ctl="mC"></div></div>
+      <div class="tablewrap" id="mC"></div>
     </div>
-
-    <div class="card section">
-      <h2>Por cuenta <small>publicaciones del periodo; seguidores al día de hoy</small></h2>
-      <div class="tablewrap"><table>
-        <thead><tr><th>Cuenta</th><th></th><th>Cadena / empresa</th><th>Agencia</th><th class="num">Seguidores</th><th class="num">Δ periodo</th><th class="num">Posts</th><th class="num">Por día</th><th class="num">Por semana</th><th class="num">Por mes</th><th class="num">Views</th><th class="num">Views/post</th><th class="num">Likes</th><th class="num">Coment.</th><th class="num">Compart.</th><th class="num">Guard.</th><th class="num">Engagement</th><th>Último post</th></tr></thead>
-        <tbody id="s-cuentas"></tbody>
-      </table></div>
-    </div>
-
     <div class="card">
       <h2>Publicaciones del periodo <small id="s-top-sub"></small></h2>
-      <div class="row" style="margin:-4px 0 8px"><span class="hint">Ordenar por</span>
-        <select id="s-orden" style="font-size:12.5px;padding:4px 8px">
-          <option value="vistas">Views</option><option value="er">Engagement</option><option value="likes">Likes</option><option value="comentarios">Comentarios</option><option value="compartidos">Compartidos</option><option value="guardados">Guardados</option><option value="creado">Más recientes</option>
-        </select></div>
-      <div class="tablewrap"><table>
-        <thead><tr><th>Publicado</th><th>Cuenta</th><th>Cadena / empresa</th><th>Descripción</th><th class="num">Views</th><th class="num">Likes</th><th class="num">Coment.</th><th class="num">Compart.</th><th class="num">Guard.</th><th class="num">Engagement</th><th></th></tr></thead>
-        <tbody id="s-posts-t"></tbody>
-      </table></div>
+      <div class="tablewrap" id="s-posts-t"></div>
       <p class="hint" style="margin-top:10px">Se actualiza cada hora. TikTok permite leer gratis las ~13 publicaciones más recientes de cada cuenta, así que el historial anterior al inicio del monitoreo es parcial; desde ahora cada publicación nueva queda registrada. Las métricas de cada post se siguen actualizando durante 45 días.</p>
     </div>
   </section>
+  </main>
 </div>
 
 <div class="modal" id="detalle" onclick="if(event.target===this)cerrarDetalle()">
@@ -476,179 +499,6 @@ async function ultimoSha() {
 }
 const urlDatos = (sha, archivo) => 'https://raw.githubusercontent.com/' + REPO + '/' + (sha || 'data') + '/data/' + archivo + (sha ? '' : '?t=' + Date.now());
 
-async function cargar() {
-  if (new URLSearchParams(location.search).has('demo')) {
-    RAW = demo(); SOC = demoSocial(RAW.vendedores); ENC = demoEnc(); $('#modo').hidden = false; prepararFiltros(); pagina(); return;
-  }
-  try {
-    const sha = await ultimoSha();
-    if (sha && sha === SHA && RAW) return;            // no hay datos nuevos
-    const r = await fetch(urlDatos(sha, 'data.json'), {cache: 'no-store'});
-    RAW = r.status === 404 ? VACIO : await r.json();
-    if (!r.ok && r.status !== 404) throw new Error('HTTP ' + r.status);
-    try { const rs = await fetch(urlDatos(sha, 'social.json'), {cache: 'no-store'}); if (rs.ok) SOC = await rs.json(); } catch (e) {}
-    try { const re_ = await fetch(urlDatos(sha, 'encuesta/datos.json'), {cache: 'no-store'}); if (re_.ok) ENC = await re_.json(); } catch (e) {}
-    SHA = sha;
-  } catch (e) {
-    if (!RAW) RAW = VACIO;
-    $('#actualizado').textContent = 'No se pudieron cargar los datos (' + e.message + '). Reintentando…';
-  }
-  prepararFiltros(); pagina();
-  if ($('#modal').classList.contains('open')) renderPanel();
-  if ($('#detalle').classList.contains('open') && DETALLE) abrirDetalle(DETALLE);
-}
-
-const CADENAS = {CRECOS: 'Crecos', ORVE: 'Orve Hogar', JAPON: 'Japón', 'JAPÓN': 'Japón', MOTOZONE: 'Motozone', PAGAMENOS: 'Pagamenos', PAGA: 'Pagamenos', SAMSUNG: 'Samsung', MULTINIVEL: 'Multinivel'};
-const cadenaDe = a => CADENAS[String(a || '').trim().split(/\s+/)[0].toUpperCase()] || 'Otra';
-function opciones(sel, todos, valores) {
-  const actual = sel.value;
-  sel.innerHTML = `<option value="">${todos}</option>` + valores.map(z => `<option${z === actual ? ' selected' : ''}>${esc(z)}</option>`).join('');
-  if (actual && !valores.includes(actual)) sel.value = '';
-}
-function prepararFiltros() {
-  RAW.vendedores.forEach(v => { v.tipo = v.tipo || 'propio'; v.cadena = v.cadena || cadenaDe(v.agencia || v.zona || ''); v.agencia = v.cadena === 'Multinivel' ? '' : (v.agencia || v.zona || 'SIN AGENCIA');
-    v.plataforma = v.plataforma || (String(v.usuario).startsWith('ig:') ? 'instagram' : 'tiktok'); v.handle = v.handle || String(v.usuario).replace(/^ig:/, ''); v.rol = v.rol || 'vendedor'; });
-  const tipo = $('#tipo').value, deTipo = RAW.vendedores.filter(v => (!tipo || v.tipo === tipo) && pasaGlobal(v));
-  opciones($('#cadena'), tipo === 'competencia' ? 'Todas las empresas' : tipo ? 'Todas las cadenas' : 'Todas las cadenas y empresas', [...new Set(deTipo.map(v => v.cadena))].sort());
-  const cad = $('#cadena').value;
-  opciones($('#agencia'), tipo === 'competencia' ? 'Todas las cuentas' : 'Todas las agencias', [...new Set(deTipo.filter(v => (!cad || v.cadena === cad) && v.agencia).map(v => v.agencia))].sort());
-}
-
-function render() {
-  const ahora = Date.now();
-  const dias = +$('#periodo').value;
-  const hoy0 = new Date(); hoy0.setHours(0, 0, 0, 0);
-  const desde = hoy0.getTime() - (dias - 1) * 86400000;
-  const tipo = $('#tipo').value, cad = $('#cadena').value, agencia = $('#agencia').value, q = $('#buscar').value.trim().toLowerCase();
-
-  const vend = RAW.vendedores.filter(v => v.activo !== false && pasaGlobal(v) && (!tipo || v.tipo === tipo) && (!cad || v.cadena === cad) && (!agencia || v.agencia === agencia) &&
-    (!q || v.nombre.toLowerCase().includes(q) || v.handle.includes(q) || v.agencia.toLowerCase().includes(q)));
-  const permit = new Set(vend.map(v => v.usuario));
-  const porUsuario = Object.fromEntries(RAW.vendedores.map(v => [v.usuario, v]));
-  const conDatos = l => { const v = porUsuario[l.usuario] || {}; return {...l, nombre: v.nombre || l.nombre, agencia: v.agencia || l.agencia || l.zona || '', cadena: v.cadena || l.cadena || '', d: dur(l)}; };
-
-  const dur = l => l.estado === 'EN VIVO' ? Math.max(1, (ahora - l.inicio) / 60000) : (l.min || (l.fin ? (l.fin - l.inicio) / 60000 : 0));
-  const lives = RAW.lives.filter(l => permit.has(l.usuario) && l.inicio >= desde).map(conDatos);
-  ULTIMOS = lives;
-
-  // En vivo ahora
-  const enVivo = RAW.lives.filter(l => l.estado === 'EN VIVO' && permit.has(l.usuario)).map(conDatos).sort((a, b) => b.d - a.d);
-
-  // KPIs
-  const totMin = lives.reduce((s, l) => s + l.d, 0);
-  const activos = new Set(lives.map(l => l.usuario));
-  $('#k-vivo').textContent = enVivo.length;
-  $('#k-vivo-s').textContent = 'de ' + vend.length + (tipo === 'propio' ? ' vendedores' : ' cuentas');
-  $('#k-lives').textContent = lives.length.toLocaleString('es-EC');
-  $('#k-lives-s').textContent = (lives.length / dias).toLocaleString('es-EC', {maximumFractionDigits: 1}) + ' por día';
-  $('#k-horas').textContent = fmtH(totMin);
-  $('#k-horas-s').textContent = activos.size ? fmtH(totMin / activos.size) + ' h por vendedor activo' : '';
-  $('#k-prom').textContent = lives.length ? fmtDur(totMin / lives.length) : '—';
-  const conVis = lives.filter(l => l.vistas != null), totVis = conVis.reduce((s, l) => s + l.vistas, 0);
-  $('#k-vis').textContent = conVis.length ? fmtN(totVis) : '—';
-  $('#k-vis-s').textContent = conVis.length ? fmtN(totVis / conVis.length) + ' por live' : 'se registra en cada live';
-  $('#k-act').textContent = activos.size + ' / ' + vend.length;
-  $('#k-act-s').textContent = vend.length ? Math.round(activos.size / vend.length * 100) + '% del equipo' : '';
-
-  // Lista en vivo
-  $('#vivo-sub').textContent = enVivo.length ? enVivo.length + ' transmitiendo' : '';
-  $('#vivos').innerHTML = enVivo.length ? enVivo.map(l => `
-    <a class="live-item" href="${urlLive(porUsuario[l.usuario] || {usuario: l.usuario})}" target="_blank" rel="noopener">
-      <span class="dot"></span>
-      <div><div class="n">${esc(l.nombre)}</div><div class="m">${esc(hdl(porUsuario[l.usuario] || {usuario: l.usuario}))}${redBadge(porUsuario[l.usuario] || {})} · ${esc(l.agencia || '—')}</div></div>
-      <span class="t">${l.actual != null ? '👁 ' + fmtN(l.actual) + ' viendo · ' : ''}${fmtDur(l.d)} · desde ${new Date(l.inicio).toLocaleTimeString('es-EC', {hour: '2-digit', minute: '2-digit'})}</span>
-    </a>`).join('') : '<div class="empty">Nadie está en vivo en este momento.</div>';
-
-  // Gráfico por día
-  const porDia = {}; const labels = [];
-  for (let t = desde; t <= hoy0.getTime(); t += 86400000) { const k = diaKey(new Date(t)); porDia[k] = 0; labels.push(k); }
-  lives.forEach(l => { const k = diaKey(new Date(l.inicio)); if (k in porDia) porDia[k] += l.d / 60; });
-  const etiquetas = labels.map(k => { const [y, m, d] = k.split('-'); return new Date(y, m - 1, d).toLocaleDateString('es-EC', {day: '2-digit', month: 'short'}); });
-  $('#chart-sub').textContent = dias === 1 ? 'hoy' : dias + ' días';
-  dibujarGrafico(etiquetas, labels.map(k => +porDia[k].toFixed(2)));
-
-  // Ranking
-  const agg = {};
-  vend.forEach(v => agg[v.usuario] = {v, n: 0, min: 0, ult: null, vis: 0, nVis: 0});
-  lives.forEach(l => { const a = agg[l.usuario]; if (!a) return; a.n++; a.min += l.d; if (l.vistas != null) { a.vis += l.vistas; a.nVis++; } if (!a.ult || l.inicio > a.ult) a.ult = l.inicio; });
-  const vivoSet = new Set(enVivo.map(l => l.usuario));
-  const filas = Object.values(agg).sort((a, b) => b.min - a.min || a.v.nombre.localeCompare(b.v.nombre));
-  const maxMin = Math.max(1, ...filas.map(f => f.min));
-  $('#ranking').innerHTML = filas.map((f, i) => `
-    <tr class="click ${f.n ? '' : 'zero'}" data-u="${esc(f.v.usuario)}" title="Ver detalle de sus lives">
-      <td>${f.n ? i + 1 : '–'}</td>
-      <td>${cuentaHtml(f.v)}${f.v.tipo === 'competencia' ? ' <span class="pill them">competencia</span>' : ''}</td>
-      <td>${esc(f.v.cadena)}</td>
-      <td>${esc(f.v.agencia || '—')}</td>
-      <td class="num">${f.n}</td>
-      <td class="num">${fmtH(f.min)}</td>
-      <td><span class="bar"><i style="width:${(f.min / maxMin * 100).toFixed(1)}%"></i></span></td>
-      <td class="num">${f.n ? fmtDur(f.min / f.n) : '—'}</td>
-      <td class="num">${f.nVis ? fmtN(f.vis) : '—'}</td>
-      <td class="num">${f.nVis ? fmtN(f.vis / f.nVis) : '—'}</td>
-      <td>${f.ult ? fmtF(f.ult) + ' <span class="ver">ver detalle ›</span>' : 'Sin lives en el periodo'}</td>
-      <td>${vivoSet.has(f.v.usuario) ? '<span class="pill live">EN VIVO</span>' : '<span class="pill off">offline</span>'}</td>
-    </tr>`).join('') || '<tr><td colspan="12" class="empty">No hay vendedores con esos filtros.</td></tr>';
-
-  // Por cadena
-  const cd = {};
-  filas.forEach(f => {
-    const c = cd[f.v.tipo + '|' + f.v.cadena] ||= {cadena: f.v.cadena, tipo: f.v.tipo, cuentas: 0, act: 0, n: 0, min: 0, vis: 0, nVis: 0, vivo: 0};
-    c.cuentas++; c.n += f.n; c.min += f.min; c.vis += f.vis; c.nVis += f.nVis; if (f.n) c.act++; if (vivoSet.has(f.v.usuario)) c.vivo++;
-  });
-  const cds = Object.values(cd).sort((a, b) => b.min - a.min || a.cadena.localeCompare(b.cadena));
-  const maxCd = Math.max(1, ...cds.map(c => c.min / c.cuentas));
-  $('#cadenas-l').innerHTML = cds.map(c => `
-    <tr class="${c.n ? '' : 'zero'}">
-      <td><b>${esc(c.cadena)}</b></td><td>${pillTipo(c.tipo)}</td>
-      <td class="num">${c.cuentas}</td><td class="num">${c.act} <span class="hint">(${Math.round(c.act / c.cuentas * 100)}%)</span></td>
-      <td class="num">${c.n}</td><td class="num">${fmtH(c.min)}</td><td class="num"><b>${fmtH(c.min / c.cuentas)}</b></td>
-      <td><span class="bar"><i style="width:${(c.min / c.cuentas / maxCd * 100).toFixed(1)}%;${c.tipo === 'competencia' ? 'background:var(--them)' : ''}"></i></span></td>
-      <td class="num">${c.n ? fmtDur(c.min / c.n) : '—'}</td>
-      <td class="num">${c.nVis ? fmtN(c.vis) : '—'}</td><td class="num">${c.nVis ? fmtN(c.vis / c.nVis) : '—'}</td>
-      <td class="num">${c.vivo ? '<span class="pill live">' + c.vivo + '</span>' : '0'}</td>
-    </tr>`).join('') || '<tr><td colspan="12" class="empty">Sin cuentas con esos filtros.</td></tr>';
-
-  // Resumen por agencia
-  const ag = {};
-  filas.forEach(f => {
-    const a = ag[f.v.agencia] ||= {agencia: f.v.agencia, cadena: f.v.cadena, vend: 0, act: 0, n: 0, min: 0, vis: 0, nVis: 0};
-    a.vend++; a.n += f.n; a.min += f.min; a.vis += f.vis; a.nVis += f.nVis; if (f.n) a.act++;
-  });
-  const ags = Object.values(ag).sort((a, b) => b.min - a.min || a.agencia.localeCompare(b.agencia));
-  const maxAg = Math.max(1, ...ags.map(a => a.min));
-  $('#agencias').innerHTML = ags.map(a => `
-    <tr class="${a.n ? '' : 'zero'}">
-      <td><b>${a.agencia ? esc(a.agencia) : '— <span class="hint">(sin agencia: ' + esc(a.cadena) + ')</span>'}</b></td><td>${esc(a.cadena)}</td>
-      <td class="num">${a.vend}</td><td class="num">${a.act} <span class="hint">(${Math.round(a.act / a.vend * 100)}%)</span></td>
-      <td class="num">${a.n}</td><td class="num">${fmtH(a.min)}</td>
-      <td><span class="bar"><i style="width:${(a.min / maxAg * 100).toFixed(1)}%"></i></span></td>
-      <td class="num">${fmtH(a.min / a.vend)}</td>
-      <td class="num">${a.nVis ? fmtN(a.vis) : '—'}</td>
-    </tr>`).join('') || '<tr><td colspan="9" class="empty">Sin agencias con esos filtros.</td></tr>';
-
-  // Mapa de calor día × hora (minutos)
-  $('#heat').innerHTML = mapaCalor(lives, '254,44,85');
-
-  // Historial
-  const hist = [...lives].sort((a, b) => b.inicio - a.inicio);
-  $('#hist-sub').textContent = hist.length > 200 ? 'mostrando los 200 más recientes de ' + hist.length : hist.length + ' lives';
-  $('#historial').innerHTML = hist.slice(0, 200).map(l => `
-    <tr class="click" data-u="${esc(l.usuario)}" title="Ver detalle del vendedor">
-      <td><b>${esc(l.nombre)}</b></td><td>${esc(l.cadena)}</td><td>${esc(l.agencia || '—')}</td>
-      <td>${fmtF(l.inicio)}</td>
-      <td>${l.estado === 'EN VIVO' ? '<span class="pill live">EN VIVO</span>' : fmtF(l.fin)}</td>
-      <td class="num">${fmtDur(l.d)}</td>
-      <td class="num">${fmtN(l.vistas)}</td>
-      <td class="num">${fmtN(l.pico)}</td>
-      <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis">${esc(l.titulo)}</td>
-    </tr>`).join('') || '<tr><td colspan="9" class="empty">Sin lives en el periodo.</td></tr>';
-
-  $('#sinvendedores').hidden = RAW.vendedores.some(v => (v.tipo || 'propio') === 'propio');
-  const rev = Math.max(0, ...(RAW.estado || []).map(e => e.ultimaRev || 0));
-  $('#actualizado').textContent = 'Revisión cada ' + RAW.intervalo + ' min · última revisión: ' + (rev ? fmtF(rev) : '—') + ' · se actualiza solo';
-}
-
 function mapaCalor(lives, rgb) {
   const H = Array.from({length: 7}, () => Array(24).fill(0));
   lives.forEach(l => {
@@ -666,152 +516,6 @@ function mapaCalor(lives, rgb) {
   return html;
 }
 
-/* ---------- Página: Nosotros vs Competencia ---------- */
-let chart2 = null;
-function renderComp() {
-  const ahora = Date.now(), dias = +$('#periodo').value;
-  const hoy0 = new Date(); hoy0.setHours(0, 0, 0, 0);
-  const desde = hoy0.getTime() - (dias - 1) * 86400000;
-  const dur = l => l.estado === 'EN VIVO' ? Math.max(1, (ahora - l.inicio) / 60000) : (l.min || (l.fin ? (l.fin - l.inicio) / 60000 : 0));
-  const vend = RAW.vendedores.filter(v => v.activo !== false && pasaGlobal(v));
-  const porU = Object.fromEntries(vend.map(v => [v.usuario, v]));
-  const lives = RAW.lives.filter(l => porU[l.usuario] && l.inicio >= desde).map(l => ({...l, d: dur(l), v: porU[l.usuario]}));
-  const hayComp = vend.some(v => v.tipo === 'competencia');
-  $('#c-vacio').hidden = hayComp;
-
-  const resumen = tipo => {
-    const cs = vend.filter(v => v.tipo === tipo), ls = lives.filter(l => l.v.tipo === tipo);
-    const min = ls.reduce((s, l) => s + l.d, 0), act = new Set(ls.map(l => l.usuario)).size;
-    const lv = ls.filter(l => l.vistas != null), vis = lv.reduce((s, l) => s + l.vistas, 0);
-    const lp = ls.filter(l => l.pico != null);
-    return {cuentas: cs.length, act, lives: ls.length, min, vis, nVis: lv.length,
-      pico: lp.length ? lp.reduce((s, l) => s + l.pico, 0) / lp.length : null,
-      vivo: ls.filter(l => l.estado === 'EN VIVO').length};
-  };
-  const A = resumen('propio'), B = resumen('competencia');
-  const div = (a, b) => b ? a / b : null;
-  const filas = [
-    ['Cuentas monitoreadas', A.cuentas, B.cuentas, fmtN, false],
-    ['En vivo ahora', A.vivo, B.vivo, fmtN, true],
-    ['% de cuentas que hicieron live', div(A.act * 100, A.cuentas), div(B.act * 100, B.cuentas), x => x == null ? '—' : Math.round(x) + '%', true],
-    ['Lives', A.lives, B.lives, fmtN, true],
-    ['Lives por cuenta', div(A.lives, A.cuentas), div(B.lives, B.cuentas), x => x == null ? '—' : x.toLocaleString('es-EC', {maximumFractionDigits: 1}), true],
-    ['Horas en live', A.min, B.min, x => fmtH(x), true],
-    ['Horas por cuenta', div(A.min, A.cuentas), div(B.min, B.cuentas), x => x == null ? '—' : fmtH(x), true],
-    ['Duración promedio por live', div(A.min, A.lives), div(B.min, B.lives), x => x == null ? '—' : fmtDur(x), true],
-    ['Vistas totales', A.nVis ? A.vis : null, B.nVis ? B.vis : null, fmtN, true],
-    ['Vistas por live', div(A.vis, A.nVis), div(B.vis, B.nVis), fmtN, true],
-    ['Pico promedio de espectadores', A.pico, B.pico, fmtN, true],
-  ];
-  $('#c-vs').innerHTML = filas.map(([k, a, b, f, cmp]) => {
-    const gana = !cmp || a == null || b == null || a === b ? '' : a > b ? '<span class="gana" style="color:var(--us)">▲ ganamos</span>' : '<span class="gana" style="color:var(--them)">▼ nos ganan</span>';
-    return `<tr><td>${k}<br>${gana}</td><td class="us">${f(a)}</td><td class="them">${f(b)}</td></tr>`;
-  }).join('');
-
-  // tendencia diaria (horas por cuenta)
-  const labels = []; const us = {}, them = {};
-  for (let t = desde; t <= hoy0.getTime(); t += 86400000) { const k = diaKey(new Date(t)); labels.push(k); us[k] = 0; them[k] = 0; }
-  lives.forEach(l => { const k = diaKey(new Date(l.inicio)); if (k in us) (l.v.tipo === 'competencia' ? them : us)[k] += l.d / 60; });
-  const et = labels.map(k => { const [y, m, d] = k.split('-'); return new Date(y, m - 1, d).toLocaleDateString('es-EC', {day: '2-digit', month: 'short'}); });
-  const serie = (o, n) => labels.map(k => n ? +(o[k] / n).toFixed(2) : 0);
-  if (window.Chart) {
-    const css = getComputedStyle(document.documentElement), mute = css.getPropertyValue('--mute').trim(), line = css.getPropertyValue('--line').trim();
-    const data = {labels: et, datasets: [
-      {label: 'Nosotros', data: serie(us, A.cuentas), borderColor: '#14b8c4', backgroundColor: 'rgba(20,184,196,.12)', fill: true, tension: .3, pointRadius: dias > 31 ? 0 : 3},
-      {label: 'Competencia', data: serie(them, B.cuentas), borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,.10)', fill: true, tension: .3, pointRadius: dias > 31 ? 0 : 3}]};
-    if (chart2) { chart2.data = data; chart2.update(); }
-    else chart2 = new Chart($('#chart2'), {type: dias === 1 ? 'bar' : 'line', data, options: {responsive: true, maintainAspectRatio: false, interaction: {mode: 'index', intersect: false},
-      plugins: {legend: {position: 'bottom', labels: {color: mute, boxWidth: 10}}, tooltip: {callbacks: {label: c => c.dataset.label + ': ' + c.parsed.y.toLocaleString('es-EC', {maximumFractionDigits: 2}) + ' h por cuenta'}}},
-      scales: {x: {ticks: {color: mute, maxRotation: 0, autoSkip: true}, grid: {display: false}}, y: {beginAtZero: true, ticks: {color: mute}, grid: {color: line}}}}});
-  }
-
-  // por empresa
-  const emp = {};
-  vend.forEach(v => { const e = emp[v.tipo + '|' + v.cadena] ||= {nombre: v.cadena, tipo: v.tipo, cuentas: 0, act: new Set(), n: 0, min: 0, vis: 0, nVis: 0, pico: 0, nPico: 0}; e.cuentas++; });
-  lives.forEach(l => { const e = emp[l.v.tipo + '|' + l.v.cadena]; e.n++; e.min += l.d; e.act.add(l.usuario);
-    if (l.vistas != null) { e.vis += l.vistas; e.nVis++; } if (l.pico != null) { e.pico += l.pico; e.nPico++; } });
-  const es = Object.values(emp).sort((a, b) => b.min / b.cuentas - a.min / a.cuentas || a.nombre.localeCompare(b.nombre));
-  const maxE = Math.max(1, ...es.map(e => e.min / e.cuentas));
-  $('#c-empresas').innerHTML = es.map(e => `
-    <tr class="${e.n ? '' : 'zero'}">
-      <td><b>${esc(e.nombre)}</b></td>
-      <td>${e.tipo === 'competencia' ? '<span class="pill them">competencia</span>' : '<span class="pill us">nosotros</span>'}</td>
-      <td class="num">${e.cuentas}</td><td class="num">${e.act.size} <span class="hint">(${Math.round(e.act.size / e.cuentas * 100)}%)</span></td>
-      <td class="num">${e.n}</td><td class="num">${fmtH(e.min)}</td><td class="num"><b>${fmtH(e.min / e.cuentas)}</b></td>
-      <td><span class="bar"><i style="width:${(e.min / e.cuentas / maxE * 100).toFixed(1)}%;background:${e.tipo === 'competencia' ? 'var(--them)' : 'var(--us)'}"></i></span></td>
-      <td class="num">${e.n ? fmtDur(e.min / e.n) : '—'}</td>
-      <td class="num">${e.nVis ? fmtN(e.vis / e.nVis) : '—'}</td>
-      <td class="num">${e.nPico ? fmtN(e.pico / e.nPico) : '—'}</td>
-    </tr>`).join('') || '<tr><td colspan="11" class="empty">Sin cuentas.</td></tr>';
-
-  $('#c-heat-us').innerHTML = mapaCalor(lives.filter(l => l.v.tipo !== 'competencia'), '20,184,196');
-  $('#c-heat-them').innerHTML = mapaCalor(lives.filter(l => l.v.tipo === 'competencia'), '139,92,246');
-
-  // top cuentas
-  const ac = {};
-  vend.forEach(v => ac[v.usuario] = {v, n: 0, min: 0, vis: 0, nVis: 0, vivo: false});
-  lives.forEach(l => { const a = ac[l.usuario]; a.n++; a.min += l.d; if (l.vistas != null) { a.vis += l.vistas; a.nVis++; } if (l.estado === 'EN VIVO') a.vivo = true; });
-  const top = Object.values(ac).filter(a => a.n).sort((a, b) => b.min - a.min).slice(0, 15);
-  $('#c-top').innerHTML = top.map((a, i) => `
-    <tr class="click" data-u="${esc(a.v.usuario)}">
-      <td>${i + 1}</td><td>${cuentaHtml(a.v, false)}</td>
-      <td>${a.v.tipo === 'competencia' ? '<span class="pill them">competencia</span>' : '<span class="pill us">nosotros</span>'}</td>
-      <td>${esc(a.v.cadena)}</td><td>${esc(a.v.agencia || '—')}</td><td class="num">${a.n}</td><td class="num">${fmtH(a.min)}</td>
-      <td class="num">${a.nVis ? fmtN(a.vis) : '—'}</td><td class="num">${a.nVis ? fmtN(a.vis / a.nVis) : '—'}</td>
-      <td>${a.vivo ? '<span class="pill live">EN VIVO</span>' : '<span class="pill off">offline</span>'}</td>
-    </tr>`).join('') || '<tr><td colspan="10" class="empty">Sin lives en el periodo.</td></tr>';
-
-  // ---- Contenido: nosotros vs competencia
-  const sc = statsContenido(vend, desde);
-  const lado = t => {
-    const cs = sc.cuentas.filter(a => a.v.tipo === t), g = agruparContenido(cs, () => 'x')[0] || {cuentas: 0, seg: 0, conSeg: 0, delta: 0, conDelta: 0, n: 0, V: 0, L: 0, C: 0, S: 0, G: 0, activas: 0};
-    return g;
-  };
-  const X = lado('propio'), Y = lado('competencia');
-  const pp = (g, k) => k === 'V' ? (g.nV ? g.V / g.nV : null) : g.n ? g[k] / g.n : null;
-  const filasC = [
-    ['Cuentas monitoreadas', X.cuentas, Y.cuentas, fmtN, false],
-    ['Seguidores totales', X.conSeg ? X.seg : null, Y.conSeg ? Y.seg : null, fmtN, true],
-    ['Seguidores por cuenta', X.conSeg ? X.seg / X.conSeg : null, Y.conSeg ? Y.seg / Y.conSeg : null, fmtN, true],
-    ['Seguidores ganados en el periodo', X.conDelta ? X.delta : null, Y.conDelta ? Y.delta : null, fmtN, true],
-    ['Publicaciones', X.n, Y.n, fmtN, true],
-    ['Posts por semana, por cuenta', X.cuentas ? X.n / X.cuentas / dias * 7 : null, Y.cuentas ? Y.n / Y.cuentas / dias * 7 : null, f1, true],
-    ['% de cuentas que publicaron', X.cuentas ? X.activas / X.cuentas * 100 : null, Y.cuentas ? Y.activas / Y.cuentas * 100 : null, x => x == null ? '—' : Math.round(x) + '%', true],
-    ['Views por post', pp(X, 'V'), pp(Y, 'V'), fmtN, true],
-    ['Likes por post', pp(X, 'L'), pp(Y, 'L'), fmtN, true],
-    ['Comentarios por post', pp(X, 'C'), pp(Y, 'C'), f1, true],
-    ['Compartidos por post', pp(X, 'S'), pp(Y, 'S'), f1, true],
-    ['Guardados por post', pp(X, 'G'), pp(Y, 'G'), f1, true],
-    ['Engagement', X.V ? X.IE / X.V : null, Y.V ? Y.IE / Y.V : null, pct, true],
-  ];
-  $('#c-cont-vs').innerHTML = filasC.map(([k, a, b, f, cmp]) => {
-    const gana = !cmp || a == null || b == null || a === b ? '' : a > b ? '<span class="gana" style="color:var(--us)">▲ ganamos</span>' : '<span class="gana" style="color:var(--them)">▼ nos ganan</span>';
-    return `<tr><td>${k}<br>${gana}</td><td class="us">${f(a)}</td><td class="them">${f(b)}</td></tr>`;
-  }).join('');
-  const gruposC = agruparContenido(sc.cuentas, a => a.v.tipo + '|' + a.v.cadena);
-  $('#c-cont-cad-t').innerHTML = CAB_CADENA_CONT + '<tbody id="c-cont-cad">' + filasCadenaContenido(gruposC, dias) + '</tbody>';
-  if (window.Chart) {
-    const gs = gruposC.filter(g => g.V).map(g => ({...g, er: g.IE / g.V})).sort((a, b) => b.er - a.er);
-    const css = getComputedStyle(document.documentElement), mute = css.getPropertyValue('--mute').trim(), line = css.getPropertyValue('--line').trim();
-    const data = {labels: gs.map(g => g.cadena), datasets: [{label: 'Engagement', data: gs.map(g => +(g.er * 100).toFixed(2)),
-      backgroundColor: gs.map(g => g.tipo === 'competencia' ? '#8b5cf6' : '#14b8c4'), borderRadius: 4, maxBarThickness: 26}]};
-    if (chart4) { chart4.data = data; chart4.update(); }
-    else chart4 = new Chart($('#chart4'), {type: 'bar', data, options: {indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: {legend: {display: false}, tooltip: {callbacks: {label: c => c.parsed.x.toLocaleString('es-EC', {maximumFractionDigits: 1}) + '% engagement'}}},
-      scales: {x: {beginAtZero: true, ticks: {color: mute, callback: v => v + '%'}, grid: {color: line}}, y: {ticks: {color: mute}, grid: {display: false}}}}});
-  }
-}
-let chart4 = null;
-
-/* ---------- Navegación entre páginas ---------- */
-function pagina() {
-  const p = {'#competencia': 'comp', '#contenido': 'cont', '#encuesta': 'enc'}[location.hash] || 'resumen';
-  [['resumen', 'resumen'], ['comp', 'comp'], ['cont', 'cont'], ['enc', 'enc']].forEach(([k]) => { $('#p-' + k).hidden = p !== k; $('#t-' + k).classList.toggle('on', p === k); });
-  document.querySelectorAll('.solo-resumen').forEach(el => el.style.display = p === 'resumen' ? '' : 'none');
-  document.querySelectorAll('.f-cuentas').forEach(el => el.style.display = p === 'comp' || p === 'enc' ? 'none' : '');
-  document.querySelectorAll('.no-enc').forEach(el => el.style.display = p === 'enc' ? 'none' : '');
-  if (RAW) p === 'comp' ? renderComp() : p === 'cont' ? renderContenido() : p === 'enc' ? renderEncuesta() : render();
-}
 
 /* ---------- Página: Encuesta (en vivo) ---------- */
 const ENC_LINK = 'https://cdizquierdoc-hub.github.io/monitor-lives-tiktok/encuesta/';
@@ -869,106 +573,535 @@ const norm = s => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toL
 $('#e-buscar').addEventListener('input', renderEncuesta);
 $('#e-faltan').addEventListener('change', renderEncuesta);
 
-/* ---------- Página: Contenido (posts y seguidores) ---------- */
-let chart3 = null;
 const pct = x => x == null || !isFinite(x) ? '—' : (x * 100).toLocaleString('es-EC', {maximumFractionDigits: 1}) + '%';
 const interacciones = p => (p.likes || 0) + (p.comentarios || 0) + (p.compartidos || 0) + (p.guardados || 0);
 const f1 = x => x == null || !isFinite(x) ? '—' : x.toLocaleString('es-EC', {maximumFractionDigits: 1});
-function statsContenido(cuentas, desde) {
-  const porU = Object.fromEntries(cuentas.map(v => [v.usuario, v]));
-  const posts = Object.entries(SOC.posts || {}).map(([id, p]) => ({id, ...p})).filter(p => porU[p.usuario] && p.creado >= desde);
-  posts.forEach(p => p.er = p.vistas ? interacciones(p) / p.vistas : null);
-  const desdeKey = diaKey(new Date(desde));
-  const ac = Object.fromEntries(cuentas.map(v => {
-    const c = (SOC.cuentas || {})[v.usuario], h = c?.historial || [];
-    const base = [...h].reverse().find(x => x.d <= desdeKey) || h[0];
-    const seg = c?.seguidores ?? null;
-    return [v.usuario, {v, seg, delta: base && seg != null && base.seguidores != null && h.length > 1 ? seg - base.seguidores : null,
-      err: c?.error, alcance: c?.alcance, n: 0, V: 0, L: 0, C: 0, S: 0, G: 0, nV: 0, IE: 0, ult: null}];
-  }));
-  posts.forEach(p => { const a = ac[p.usuario]; a.n++; a.V += p.vistas || 0; a.L += p.likes || 0; a.C += p.comentarios || 0; a.S += p.compartidos || 0; a.G += p.guardados || 0;
-    if (p.vistas != null) { a.nV++; a.IE += interacciones(p); } });
-  Object.values(SOC.posts || {}).forEach(p => { const a = ac[p.usuario]; if (a && (!a.ult || p.creado > a.ult)) a.ult = p.creado; });
-  return {porU, posts, cuentas: Object.values(ac)};
-}
-function agruparContenido(filas, clave) {
-  const g = {};
-  filas.forEach(a => {
-    const k = clave(a), x = g[k] ||= {cadena: a.v.cadena, tipo: a.v.tipo, cuentas: 0, seg: 0, conSeg: 0, delta: 0, conDelta: 0, n: 0, V: 0, L: 0, C: 0, S: 0, G: 0, nV: 0, IE: 0, activas: 0};
-    x.cuentas++; if (a.seg != null) { x.seg += a.seg; x.conSeg++; } if (a.delta != null) { x.delta += a.delta; x.conDelta++; }
-    x.n += a.n; x.V += a.V; x.L += a.L; x.C += a.C; x.S += a.S; x.G += a.G; x.nV += a.nV; x.IE += a.IE; if (a.n) x.activas++;
-  });
-  return Object.values(g);
-}
-function filasCadenaContenido(grupos, dias) {
-  const orden = [...grupos].sort((a, b) => b.seg - a.seg || a.cadena.localeCompare(b.cadena));
-  return orden.map(x => `
-    <tr class="${x.n ? '' : 'zero'}">
-      <td><b>${esc(x.cadena)}</b></td><td>${pillTipo(x.tipo)}</td>
-      <td class="num">${x.cuentas}</td>
-      <td class="num"><b>${x.conSeg ? fmtN(x.seg) : '—'}</b></td>
-      <td class="num">${x.conDelta ? (x.delta >= 0 ? '<span class="ok">+' : '<span class="err">') + fmtN(x.delta) + '</span>' : '—'}</td>
-      <td class="num">${x.n}</td><td class="num">${f1(x.n / dias * 7)}</td><td class="num">${f1(x.n / x.cuentas / dias * 7)}</td>
-      <td class="num">${x.nV ? fmtN(x.V) : '—'}</td><td class="num">${x.nV ? fmtN(x.V / x.nV) : '—'}</td>
-      <td class="num">${x.n ? fmtN(x.L) : '—'}</td><td class="num">${x.n ? fmtN(x.C) : '—'}</td><td class="num">${x.n ? fmtN(x.S) : '—'}</td><td class="num">${x.n ? fmtN(x.G) : '—'}</td>
-      <td class="num"><b>${x.V ? pct(x.IE / x.V) : '—'}</b></td>
-    </tr>`).join('') || '<tr><td colspan="15" class="empty">Sin cuentas.</td></tr>';
-}
-const CAB_CADENA_CONT = '<thead><tr><th>Cadena / empresa</th><th></th><th class="num">Cuentas</th><th class="num">Seguidores</th><th class="num">Δ periodo</th><th class="num">Posts</th><th class="num">Posts / semana</th><th class="num">Posts / semana por cuenta</th><th class="num">Views</th><th class="num">Views / post</th><th class="num">Likes</th><th class="num">Coment.</th><th class="num">Compart.</th><th class="num">Guard.</th><th class="num">Engagement</th></tr></thead>';
 
+/* ======================================================================
+   Carga de datos
+   ====================================================================== */
+async function cargar() {
+  if (new URLSearchParams(location.search).has('demo')) {
+    RAW = demo(); SOC = demoSocial(RAW.vendedores); ENC = demoEnc(); $('#modo').hidden = false; prepararFiltros(); pagina(); return;
+  }
+  try {
+    const sha = await ultimoSha();
+    if (sha && sha === SHA && RAW) return;            // no hay datos nuevos
+    const r = await fetch(urlDatos(sha, 'data.json'), {cache: 'no-store'});
+    RAW = r.status === 404 ? VACIO : await r.json();
+    if (!r.ok && r.status !== 404) throw new Error('HTTP ' + r.status);
+    try { const rs = await fetch(urlDatos(sha, 'social.json'), {cache: 'no-store'}); if (rs.ok) SOC = await rs.json(); } catch (e) {}
+    try { const re_ = await fetch(urlDatos(sha, 'encuesta/datos.json'), {cache: 'no-store'}); if (re_.ok) ENC = await re_.json(); } catch (e) {}
+    SHA = sha;
+  } catch (e) {
+    if (!RAW) RAW = VACIO;
+    $('#actualizado').textContent = 'No se pudieron cargar los datos (' + e.message + '). Reintentando…';
+  }
+  prepararFiltros(); pagina();
+  if ($('#modal').classList.contains('open')) renderPanel();
+  if ($('#detalle').classList.contains('open') && DETALLE) abrirDetalle(DETALLE);
+}
+
+/* ======================================================================
+   Filtros (panel izquierdo)
+   ====================================================================== */
+const CADENAS = {CRECOS: 'Crecos', ORVE: 'Orve Hogar', JAPON: 'Japón', 'JAPÓN': 'Japón', MOTOZONE: 'Motozone', PAGAMENOS: 'Pagamenos', PAGA: 'Pagamenos', SAMSUNG: 'Samsung', MULTINIVEL: 'Multinivel'};
+const cadenaDe = a => CADENAS[String(a || '').trim().split(/\s+/)[0].toUpperCase()] || 'Otra';
+const FILT = {cadenas: new Set()};
+function opciones(sel, todos, valores) {
+  const actual = sel.value;
+  sel.innerHTML = `<option value="">${todos}</option>` + valores.map(z => `<option${z === actual ? ' selected' : ''}>${esc(z)}</option>`).join('');
+  if (actual && !valores.includes(actual)) sel.value = '';
+}
+const paginaActual = () => ({'#competencia': 'comp', '#contenido': 'cont', '#encuesta': 'enc'}[location.hash] || 'resumen');
+function prepararFiltros() {
+  RAW.vendedores.forEach(v => { v.tipo = v.tipo || 'propio'; v.cadena = v.cadena || cadenaDe(v.agencia || v.zona || ''); v.agencia = v.cadena === 'Multinivel' ? '' : (v.agencia || v.zona || 'SIN AGENCIA');
+    v.plataforma = v.plataforma || (String(v.usuario).startsWith('ig:') ? 'instagram' : 'tiktok'); v.handle = v.handle || String(v.usuario).replace(/^ig:/, ''); v.rol = v.rol || 'vendedor'; });
+  const tipo = paginaActual() === 'comp' ? '' : $('#tipo').value;
+  const deTipo = RAW.vendedores.filter(v => (!tipo || v.tipo === tipo) && pasaGlobal(v));
+  const grupos = {};
+  deTipo.forEach(v => (grupos[grupoDe(v)] ||= new Set()).add(v.cadena));
+  [...FILT.cadenas].forEach(c => { if (!deTipo.some(v => v.cadena === c)) FILT.cadenas.delete(c); });
+  $('#f-cadenas').innerHTML = ['Cresa', 'Competencia'].filter(g => grupos[g]).map(g => `<div class="grp">${g}</div>` +
+    [...grupos[g]].sort().map(c => `<label><input type="checkbox" value="${esc(c)}"${FILT.cadenas.has(c) ? ' checked' : ''}>${esc(c)}</label>`).join('')).join('') || '<span class="hint">Sin cuentas</span>';
+  $('#f-cad-n').textContent = FILT.cadenas.size ? '(' + FILT.cadenas.size + ')' : '';
+  opciones($('#agencia'), 'Todas las agencias', [...new Set(deTipo.filter(v => (!FILT.cadenas.size || FILT.cadenas.has(v.cadena)) && v.agencia).map(v => v.agencia))].sort());
+}
+/** Cuentas que pasan los filtros del panel izquierdo. */
+function cuentasFiltradas(ignorarGrupo = false) {
+  const tipo = ignorarGrupo ? '' : $('#tipo').value, agencia = $('#agencia').value, q = norm($('#buscar').value.trim());
+  return RAW.vendedores.filter(v => v.activo !== false && pasaGlobal(v) && (!tipo || v.tipo === tipo) &&
+    (!FILT.cadenas.size || FILT.cadenas.has(v.cadena)) && (!agencia || v.agencia === agencia) &&
+    (!q || norm(v.nombre).includes(q) || norm(v.handle).includes(q) || norm(v.agencia).includes(q)));
+}
+function periodo() {
+  const dias = +$('#periodo').value, hoy0 = new Date(); hoy0.setHours(0, 0, 0, 0);
+  return {dias, hoy0: hoy0.getTime(), desde: hoy0.getTime() - (dias - 1) * 86400000};
+}
+
+/* ======================================================================
+   Jerarquía Grupo → Cadena → Agencia → Cuenta, drill y selección cruzada
+   ====================================================================== */
+const NIV = ['Grupo', 'Cadena / empresa', 'Agencia', 'Cuenta'];
+const grupoDe = v => v.tipo === 'competencia' ? 'Competencia' : 'Cresa';
+const claveN = (v, i) => [grupoDe(v), v.cadena, v.agencia || '—', v.usuario].slice(0, i + 1).join(' › ');
+const etqN = (v, i) => [grupoDe(v), v.cadena, v.agencia || '— (' + v.cadena + ')', v.nombre][i];
+const VIS = {};
+const NIVEL_INICIAL = {gL: 1, mL: 1, gL2: 1, mL2: 1, gC2: 1, mC2: 1, gC: 1, mC: 1};
+const vis = id => VIS[id] ||= {nivel: NIVEL_INICIAL[id] ?? 1, ruta: [], drill: false};
+let SEL = null;   // {vis, nivel, claves:Set, etq:Map}
+
+const enRuta = (v, st) => st.ruta.every(r => claveN(v, r.nivel) === r.clave);
+/** Aplica la selección hecha en otro visual (filtro cruzado). */
+const cruzar = (visId, cuentas) => !SEL || SEL.vis === visId ? cuentas : cuentas.filter(v => SEL.claves.has(claveN(v, SEL.nivel)));
+function miembros(cuentas, st) {
+  const m = new Map();
+  cuentas.filter(v => enRuta(v, st)).forEach(v => {
+    const k = claveN(v, st.nivel);
+    if (!m.has(k)) m.set(k, {clave: k, etq: etqN(v, st.nivel), v, cs: []});
+    m.get(k).cs.push(v);
+  });
+  return [...m.values()];
+}
+function controles(id) {
+  const st = vis(id), el = document.querySelector(`[data-ctl="${id}"]`);
+  if (!el) return;
+  const ruta = st.ruta.map(r => esc(r.etq)).join(' › ');
+  el.innerHTML = `<span class="nivel">${ruta ? ruta + ' › ' : ''}<b>${NIV[st.nivel]}</b></span>` +
+    `<button type="button" class="ic" data-vis="${id}" data-acc="up" title="Subir un nivel (más resumido)"${st.nivel > 0 ? '' : ' disabled'}>↑</button>` +
+    `<button type="button" class="ic${st.drill ? ' on' : ''}" data-vis="${id}" data-acc="drill" aria-pressed="${st.drill}" title="Modo detalle: activa y haz clic en una fila para ver solo su detalle"${st.nivel < 3 ? '' : ' disabled'}>↓</button>` +
+    `<button type="button" class="ic" data-vis="${id}" data-acc="next" title="Bajar al siguiente nivel mostrando todo"${st.nivel < 3 ? '' : ' disabled'}>⇊</button>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('button[data-acc]');
+  if (!b) return;
+  const id = b.dataset.vis, st = vis(id);
+  if (b.dataset.acc === 'up') {
+    if (st.ruta.length && st.ruta[st.ruta.length - 1].nivel >= st.nivel - 1) st.ruta.pop();
+    st.nivel = Math.max(0, st.nivel - 1);
+  } else if (b.dataset.acc === 'drill') st.drill = !st.drill;
+  else if (b.dataset.acc === 'next') st.nivel = Math.min(3, st.nivel + 1);
+  if (SEL?.vis === id) SEL = null;
+  renderPagina();
+});
+/** Clic en una fila o serie: entra al detalle (modo ↓) o selecciona para filtrar la página. */
+function elegir(id, clave, etq, multi) {
+  const st = vis(id);
+  if (st.drill && st.nivel < 3) {
+    st.ruta.push({nivel: st.nivel, clave, etq}); st.nivel++;
+    if (SEL?.vis === id) SEL = null;
+    return renderPagina();
+  }
+  if (!SEL || SEL.vis !== id || SEL.nivel !== st.nivel) SEL = {vis: id, nivel: st.nivel, claves: new Set(), etq: new Map()};
+  if (multi) {
+    if (SEL.claves.has(clave)) { SEL.claves.delete(clave); SEL.etq.delete(clave); } else { SEL.claves.add(clave); SEL.etq.set(clave, etq); }
+  } else if (SEL.claves.size === 1 && SEL.claves.has(clave)) SEL.claves.clear();
+  else { SEL.claves = new Set([clave]); SEL.etq = new Map([[clave, etq]]); }
+  if (!SEL.claves.size) SEL = null;
+  renderPagina();
+}
+document.addEventListener('click', e => {
+  if (e.target.closest('a,button')) return;
+  const tr = e.target.closest('tr[data-fv]');
+  if (!tr) return;
+  elegir(tr.dataset.fv, tr.dataset.fk, tr.dataset.fe, e.ctrlKey || e.metaKey || e.shiftKey || !!e.target.closest('.ck'));
+});
+function cajaSeleccion() {
+  const box = $('#sel-box');
+  if (!SEL) { box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = `<b>Filtrando por selección (${SEL.claves.size})</b>${[...SEL.etq.values()].map(esc).join(', ')}<br><button type="button" class="link" id="sel-quitar" style="padding:4px 0 0">✕ Quitar selección</button>`;
+  $('#sel-quitar').onclick = () => { SEL = null; renderPagina(); };
+}
+
+/* ======================================================================
+   Estadísticas por cuenta (se calculan una vez por render)
+   ====================================================================== */
+const durLive = (l, ahora) => l.estado === 'EN VIVO' ? Math.max(1, (ahora - l.inicio) / 60000) : (l.min || (l.fin ? (l.fin - l.inicio) / 60000 : 0));
+function statsLives(desde) {
+  const ahora = Date.now(), S = {};
+  RAW.lives.forEach(l => {
+    if (l.inicio < desde) return;
+    const s = S[l.usuario] ||= {n: 0, min: 0, vis: 0, nVis: 0, picoSum: 0, nPico: 0, vivo: false, ult: 0, dia: {}};
+    const d = durLive(l, ahora), k = diaKey(new Date(l.inicio));
+    s.n++; s.min += d; if (l.vistas != null) { s.vis += l.vistas; s.nVis++; } if (l.pico != null) { s.picoSum += l.pico; s.nPico++; }
+    if (l.estado === 'EN VIVO') s.vivo = true; s.ult = Math.max(s.ult, l.inicio);
+    const dd = s.dia[k] ||= {min: 0, n: 0, vis: 0}; dd.min += d; dd.n++; dd.vis += l.vistas || 0;
+  });
+  return S;
+}
+function aggLives(cuentas, S) {
+  const a = {cuentas: cuentas.length, act: 0, n: 0, min: 0, vis: 0, nVis: 0, picoSum: 0, nPico: 0, vivo: 0, ult: 0};
+  cuentas.forEach(v => { const s = S[v.usuario]; if (!s) return; if (s.n) a.act++; a.n += s.n; a.min += s.min; a.vis += s.vis; a.nVis += s.nVis;
+    a.picoSum += s.picoSum; a.nPico += s.nPico; if (s.vivo) a.vivo++; a.ult = Math.max(a.ult, s.ult); });
+  return a;
+}
+function statsCont(desde) {
+  const S = {}, desdeKey = diaKey(new Date(desde));
+  Object.entries(SOC.cuentas || {}).forEach(([u, c]) => {
+    const h = c.historial || [], base = [...h].reverse().find(x => x.d <= desdeKey) || h[0];
+    S[u] = {seg: c.seguidores ?? null, delta: base && c.seguidores != null && base.seguidores != null && h.length > 1 ? c.seguidores - base.seguidores : null,
+      err: c.error, n: 0, V: 0, L: 0, C: 0, S: 0, G: 0, nV: 0, IE: 0, ult: 0};
+  });
+  const posts = [];
+  Object.entries(SOC.posts || {}).forEach(([id, p]) => {
+    const s = S[p.usuario] ||= {seg: null, delta: null, n: 0, V: 0, L: 0, C: 0, S: 0, G: 0, nV: 0, IE: 0, ult: 0};
+    s.ult = Math.max(s.ult, p.creado || 0);
+    if (p.creado < desde) return;
+    s.n++; s.V += p.vistas || 0; s.L += p.likes || 0; s.C += p.comentarios || 0; s.S += p.compartidos || 0; s.G += p.guardados || 0;
+    if (p.vistas != null) { s.nV++; s.IE += interacciones(p); }
+    posts.push({id, ...p, er: p.vistas ? interacciones(p) / p.vistas : null});
+  });
+  return {S, posts};
+}
+function aggCont(cuentas, S) {
+  const a = {cuentas: cuentas.length, seg: 0, conSeg: 0, delta: 0, conDelta: 0, n: 0, V: 0, L: 0, C: 0, S: 0, G: 0, nV: 0, IE: 0, act: 0, ult: 0};
+  cuentas.forEach(v => { const s = S[v.usuario]; if (!s) return;
+    if (s.seg != null) { a.seg += s.seg; a.conSeg++; } if (s.delta != null) { a.delta += s.delta; a.conDelta++; }
+    ['n', 'V', 'L', 'C', 'S', 'G', 'nV', 'IE'].forEach(k => a[k] += s[k]); if (s.n) a.act++; a.ult = Math.max(a.ult, s.ult); });
+  return a;
+}
+
+/* ======================================================================
+   Tabla genérica ordenable
+   ====================================================================== */
+const ORD = {};
+document.addEventListener('click', e => {
+  const th = e.target.closest('th[data-ot]');
+  if (!th) return;
+  const o = ORD[th.dataset.ot] ||= {};
+  o.dir = o.k === th.dataset.k ? -o.dir : (th.dataset.num ? -1 : 1); o.k = th.dataset.k;
+  renderPagina();
+});
+/** cols: [{k, t, num, v(row), h(row)}]; opts: {orden:{k,dir}, fila(row)->attrs, pie:[rows], clase} */
+function tabla(el, id, cols, filas, opts = {}) {
+  const o = ORD[id] ||= {...(opts.orden || {k: cols[0].k, dir: 1})};
+  const col = cols.find(c => c.k === o.k) || cols[0];
+  const val = r => { const x = col.v ? col.v(r) : r[col.k]; return x == null || (typeof x === 'number' && !isFinite(x)) ? null : x; };
+  const ord = [...filas].sort((a, b) => { const x = val(a), y = val(b);
+    if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
+    return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y), 'es')) * o.dir; });
+  const td = (c, r) => `<td${c.num ? ' class="num"' : ''}>${c.h ? c.h(r) : esc(r[c.k] ?? '')}</td>`;
+  el.innerHTML = `<table class="mx ${opts.clase || ''}"><thead><tr>${cols.map(c =>
+      `<th data-ot="${id}" data-k="${c.k}"${c.num ? ' data-num="1" class="num"' : ''} title="Ordenar">${c.t}${c.k === o.k ? `<span class="o">${o.dir > 0 ? '▲' : '▼'}</span>` : ''}</th>`).join('')}</tr></thead>
+    <tbody>${ord.map(r => `<tr ${opts.fila ? opts.fila(r) : ''}>${cols.map(c => td(c, r)).join('')}</tr>`).join('') ||
+      `<tr><td colspan="${cols.length}" class="empty">${opts.vacio || 'Sin datos con estos filtros.'}</td></tr>`}</tbody>
+    ${opts.pie?.length ? `<tfoot>${opts.pie.map(r => `<tr class="${r._clase || ''}">${cols.map(c => td(c, r)).join('')}</tr>`).join('')}</tfoot>` : ''}</table>`;
+}
+
+/* ======================================================================
+   Matrices jerárquicas (lives y contenido)
+   ====================================================================== */
+function celdaNombre(r, st, conDetalle) {
+  const v = r.v;
+  if (r._pie) return `<b>${esc(r.etq)}</b>`;
+  const ck = '<span class="ck" title="Agregar a la selección">✓</span> ';
+  if (st.nivel === 0) return `${ck}<b>${esc(r.etq)}</b>`;
+  if (st.nivel === 1) return `${ck}<b>${esc(r.etq)}</b> ${pillTipo(v.tipo)}`;
+  if (st.nivel === 2) return `${ck}<b>${esc(r.etq)}</b> <span class="hint">${esc(v.cadena)}</span>`;
+  return `${ck}${cuentaHtml(v)}${conDetalle ? ` <a class="ver" href="#" data-detalle="${esc(v.usuario)}">lives ›</a>` : ''}`;
+}
+const filaAttrs = (id, st) => r => `class="${SEL?.vis === id && SEL.claves.has(r.clave) ? 'sel' : ''}" data-fv="${id}" data-fk="${esc(r.clave)}" data-fe="${esc(r.etq)}"`;
+function pieMatriz(id, filas, total, agg) {
+  const pie = [{...total, etq: 'Total', _pie: true}];
+  if (SEL?.vis === id) {
+    const sel = filas.filter(r => SEL.claves.has(r.clave));
+    if (sel.length) pie.push({...agg(sel.flatMap(r => r.cs)), etq: 'Selección (' + sel.length + ')', _pie: true, _clase: 'seltot'});
+  }
+  return pie;
+}
+function matrizLives(id, cuentas, S) {
+  const st = vis(id); controles(id);
+  const ms = miembros(cuentas, st).map(m => ({...m, ...aggLives(m.cs, S)}));
+  const maxHc = Math.max(1, ...ms.map(m => m.min / m.cuentas));
+  const p = x => x == null || !isFinite(x) ? null : x;
+  const cols = [
+    {k: 'etq', t: NIV[st.nivel], h: r => celdaNombre(r, st, true)},
+    {k: 'cuentas', t: 'Cuentas', num: 1},
+    {k: 'act', t: 'Hicieron live', num: 1, h: r => `${r.act} <span class="hint">(${r.cuentas ? Math.round(r.act / r.cuentas * 100) : 0}%)</span>`},
+    {k: 'n', t: 'Lives', num: 1},
+    {k: 'min', t: 'Horas', num: 1, h: r => fmtH(r.min)},
+    {k: 'hc', t: 'Horas por cuenta', num: 1, v: r => p(r.min / r.cuentas), h: r => `<b>${fmtH(r.min / (r.cuentas || 1))}</b> ${r._pie ? '' : `<span class="bar"><i style="width:${(r.min / r.cuentas / maxHc * 100).toFixed(1)}%;${r.v?.tipo === 'competencia' && st.nivel ? 'background:var(--them)' : ''}"></i></span>`}`},
+    {k: 'dur', t: 'Duración prom.', num: 1, v: r => p(r.min / r.n), h: r => r.n ? fmtDur(r.min / r.n) : '—'},
+    {k: 'vis', t: 'Vistas', num: 1, v: r => r.nVis ? r.vis : null, h: r => r.nVis ? fmtN(r.vis) : '—'},
+    {k: 'vpl', t: 'Vistas por live', num: 1, v: r => p(r.vis / r.nVis), h: r => r.nVis ? fmtN(r.vis / r.nVis) : '—'},
+    {k: 'pico', t: 'Pico prom.', num: 1, v: r => p(r.picoSum / r.nPico), h: r => r.nPico ? fmtN(r.picoSum / r.nPico) : '—'},
+    {k: 'vivo', t: 'En vivo', num: 1, h: r => r.vivo ? `<span class="pill live">${r.vivo}</span>` : '0'},
+    {k: 'ult', t: 'Último live', v: r => r.ult || null, h: r => r.ult ? fmtF(r.ult) : '—'},
+  ];
+  const total = aggLives(cuentas.filter(v => enRuta(v, st)), S);
+  tabla($('#' + id), id, cols, ms, {orden: {k: 'hc', dir: -1}, fila: filaAttrs(id, st), clase: st.drill ? 'drill' : '',
+    pie: pieMatriz(id, ms, total, c => aggLives(c, S)), vacio: 'No hay cuentas con estos filtros.'});
+}
+function matrizCont(id, cuentas, S, dias) {
+  const st = vis(id); controles(id);
+  const ms = miembros(cuentas, st).map(m => ({...m, ...aggCont(m.cs, S)}));
+  const p = x => x == null || !isFinite(x) ? null : x;
+  const cols = [
+    {k: 'etq', t: NIV[st.nivel], h: r => celdaNombre(r, st, false)},
+    {k: 'cuentas', t: 'Cuentas', num: 1},
+    {k: 'seg', t: 'Seguidores', num: 1, v: r => r.conSeg ? r.seg : null, h: r => r.conSeg ? `<b>${fmtN(r.seg)}</b>` : (r.cuentas === 1 && S[r.v?.usuario]?.err ? `<span class="err" title="${esc(S[r.v.usuario].err)}">⚠</span>` : '—')},
+    {k: 'delta', t: 'Δ periodo', num: 1, v: r => r.conDelta ? r.delta : null, h: r => r.conDelta ? (r.delta >= 0 ? '<span class="ok">+' : '<span class="err">') + fmtN(r.delta) + '</span>' : '—'},
+    {k: 'n', t: 'Posts', num: 1},
+    {k: 'ps', t: 'Posts / semana', num: 1, v: r => r.n / dias * 7, h: r => f1(r.n / dias * 7)},
+    {k: 'psc', t: 'Posts / sem. por cuenta', num: 1, v: r => p(r.n / r.cuentas / dias * 7), h: r => f1(r.n / (r.cuentas || 1) / dias * 7)},
+    {k: 'V', t: 'Views', num: 1, v: r => r.nV ? r.V : null, h: r => r.nV ? fmtN(r.V) : '—'},
+    {k: 'vp', t: 'Views / post', num: 1, v: r => p(r.V / r.nV), h: r => r.nV ? fmtN(r.V / r.nV) : '—'},
+    {k: 'L', t: 'Likes', num: 1, h: r => r.n ? fmtN(r.L) : '—'},
+    {k: 'C', t: 'Coment.', num: 1, h: r => r.n ? fmtN(r.C) : '—'},
+    {k: 'S', t: 'Compart.', num: 1, h: r => r.n ? fmtN(r.S) : '—'},
+    {k: 'G', t: 'Guard.', num: 1, h: r => r.n ? fmtN(r.G) : '—'},
+    {k: 'er', t: 'Engagement', num: 1, v: r => p(r.IE / r.V), h: r => `<b>${r.V ? pct(r.IE / r.V) : '—'}</b>`},
+    {k: 'ult', t: 'Último post', v: r => r.ult || null, h: r => r.ult ? fmtF(r.ult) : '—'},
+  ];
+  const total = aggCont(cuentas.filter(v => enRuta(v, st)), S);
+  tabla($('#' + id), id, cols, ms, {orden: {k: 'seg', dir: -1}, fila: filaAttrs(id, st), clase: st.drill ? 'drill' : '',
+    pie: pieMatriz(id, ms, total, c => aggCont(c, S)), vacio: 'No hay cuentas con estos filtros.'});
+}
+
+/* ======================================================================
+   Gráficos jerárquicos por día / semana / mes
+   ====================================================================== */
+const GRAF = {};
+const PALETA = ['#14b8c4', '#fe2c55', '#f59e0b', '#22c55e', '#3b82f6', '#ec4899', '#a3a3a3', '#84cc16', '#06b6d4', '#f97316'];
+const PAL_COMP = ['#8b5cf6', '#6366f1', '#a855f7', '#c084fc', '#7c3aed', '#818cf8'];
+function cubetas(desde, hoy0, gran) {
+  const clave = t => { const d = new Date(t); if (gran === 'mes') return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    if (gran === 'semana') { const l = new Date(d); l.setHours(0, 0, 0, 0); l.setDate(l.getDate() - (l.getDay() + 6) % 7); return diaKey(l); } return diaKey(d); };
+  const keys = [];
+  for (let t = desde; t <= hoy0; t += 86400000) { const k = clave(t); if (!keys.includes(k)) keys.push(k); }
+  const etq = keys.map(k => { const [y, m, d] = k.split('-'); return gran === 'mes' ? new Date(y, m - 1, 1).toLocaleDateString('es-EC', {month: 'short', year: '2-digit'})
+    : (gran === 'semana' ? 'sem. ' : '') + new Date(y, m - 1, d).toLocaleDateString('es-EC', {day: '2-digit', month: 'short'}); });
+  return {keys, etq, clave};
+}
+/** valor(cuentasDelMiembro, claveCubeta) → número | null */
+function grafico(id, cuentas, cub, valor, fmtY) {
+  const st = vis(id); controles(id);
+  if (!window.Chart) return;
+  let ms = miembros(cuentas, st).map(m => ({...m, serie: cub.keys.map(k => valor(m.cs, k))}));
+  ms.forEach(m => m.tot = m.serie.reduce((s, x) => s + (x || 0), 0));
+  ms.sort((a, b) => b.tot - a.tot);
+  if (ms.length > 9) {   // las 8 más grandes + "Otras"
+    const resto = ms.slice(8), cs = resto.flatMap(m => m.cs);
+    ms = ms.slice(0, 8).concat([{clave: null, etq: 'Otras (' + resto.length + ')', cs, v: {tipo: ''}, serie: cub.keys.map(k => valor(cs, k))}]);
+  }
+  let iu = 0, ic = 0;
+  const selDeEste = SEL?.vis === id;
+  const ds = ms.map(m => {
+    const comp = m.v.tipo === 'competencia';
+    const color = st.nivel === 0 ? (comp ? '#8b5cf6' : '#14b8c4') : m.clave == null ? '#94a3b8' : comp ? PAL_COMP[ic++ % PAL_COMP.length] : PALETA[iu++ % PALETA.length];
+    const atenuar = selDeEste && !SEL.claves.has(m.clave);
+    return {label: m.etq, data: m.serie, _clave: m.clave, borderColor: atenuar ? color + '40' : color, backgroundColor: atenuar ? color + '20' : color + '33',
+      borderWidth: selDeEste && !atenuar ? 3.5 : 2, borderDash: comp && st.nivel > 0 ? [6, 4] : [], tension: .3, fill: st.nivel === 0 && !atenuar,
+      pointRadius: cub.keys.length > 31 ? 0 : 3, spanGaps: true};
+  });
+  const css = getComputedStyle(document.documentElement), mute = css.getPropertyValue('--mute').trim(), line = css.getPropertyValue('--line').trim();
+  const tipo = cub.keys.length === 1 ? 'bar' : 'line';
+  const alClic = (dsIdx, ev) => { const d = ds[dsIdx]; if (d && d._clave) elegir(id, d._clave, d.label, ev?.ctrlKey || ev?.metaKey || ev?.shiftKey); };
+  const opciones_ = {responsive: true, maintainAspectRatio: false, interaction: {mode: 'nearest', intersect: false},
+    onClick: (e, els, ch) => { const p = ch.getElementsAtEventForMode(e, 'nearest', {intersect: false}, true)[0]; if (p) alClic(p.datasetIndex, e.native); },
+    plugins: {legend: {position: 'bottom', labels: {color: mute, boxWidth: 12, usePointStyle: true}, onClick: (e, item) => alClic(item.datasetIndex, e.native)},
+      tooltip: {mode: 'index', callbacks: {label: c => c.dataset.label + ': ' + fmtY(c.parsed.y)}}},
+    scales: {x: {ticks: {color: mute, maxRotation: 0, autoSkip: true}, grid: {display: false}},
+      y: {beginAtZero: true, ticks: {color: mute, callback: v => fmtY(v)}, grid: {color: line}}}};
+  const g = GRAF[id];
+  if (g && g.config.type === tipo) { g.data = {labels: cub.etq, datasets: ds}; g.options = opciones_; g.update(); }
+  else { g?.destroy(); GRAF[id] = new Chart($('#' + id), {type: tipo, data: {labels: cub.etq, datasets: ds}, options: opciones_}); }
+}
+const MET_LIVES = {
+  horas: {f: (s, n) => s.min / 60, y: x => f1(x) + ' h'},
+  horasCuenta: {f: (s, n) => s.min / 60 / n, y: x => f1(x) + ' h'},
+  lives: {f: (s, n) => s.n, y: x => fmtN(x)},
+  vistas: {f: (s, n) => s.vis, y: x => fmtN(x)},
+};
+function graficoLives(id, cuentas, S) {
+  const {desde, hoy0} = periodo(), cub = cubetas(desde, hoy0, 'dia'), met = MET_LIVES[$('#' + id + '-met').value];
+  grafico(id, cuentas, cub, (cs, k) => {
+    const s = {min: 0, n: 0, vis: 0};
+    cs.forEach(v => { const d = S[v.usuario]?.dia[k]; if (d) { s.min += d.min; s.n += d.n; s.vis += d.vis; } });
+    return met.f(s, cs.length || 1);
+  }, met.y);
+}
+const MET_CONT = {
+  vistas: ['Views', s => s.nV ? s.V : null, x => fmtN(x)],
+  engagement: ['Engagement %', s => s.V ? s.IE / s.V * 100 : null, x => x == null ? '—' : f1(x) + '%'],
+  posts: ['Publicaciones', s => s.n, x => fmtN(x)],
+  vistasPost: ['Views por post', s => s.nV ? s.V / s.nV : null, x => fmtN(x)],
+  likes: ['Likes', s => s.L, x => fmtN(x)],
+  comentarios: ['Comentarios', s => s.C, x => fmtN(x)],
+  compartidos: ['Compartidos', s => s.S, x => fmtN(x)],
+  guardados: ['Guardados', s => s.G, x => fmtN(x)],
+  seguidores: ['Seguidores (total)', null, x => fmtN(x)],
+};
+['gC-met', 'gC2-met'].forEach(id => { $('#' + id).innerHTML = Object.entries(MET_CONT).map(([k, [t]]) => `<option value="${k}">${t}</option>`).join(''); });
+$('#gC2-met').value = 'engagement';
+function graficoCont(id, cuentas) {
+  const {desde, hoy0} = periodo(), cub = cubetas(desde, hoy0, $('#' + id + '-gran').value);
+  const metK = $('#' + id + '-met').value, [, f, fy] = MET_CONT[metK];
+  // estadísticas por cuenta y cubeta
+  const B = {};
+  Object.values(SOC.posts || {}).forEach(p => {
+    if (p.creado < desde) return;
+    const k = cub.clave(p.creado), s = (B[p.usuario] ||= {})[k] ||= {n: 0, V: 0, L: 0, C: 0, S: 0, G: 0, nV: 0, IE: 0};
+    s.n++; s.V += p.vistas || 0; s.L += p.likes || 0; s.C += p.comentarios || 0; s.S += p.compartidos || 0; s.G += p.guardados || 0;
+    if (p.vistas != null) { s.nV++; s.IE += interacciones(p); }
+  });
+  grafico(id, cuentas, cub, (cs, k) => {
+    if (metK === 'seguidores') {
+      let tot = 0, hay = false;
+      cs.forEach(v => { const h = (SOC.cuentas?.[v.usuario]?.historial || []).filter(x => cub.clave(new Date(x.d + 'T12:00').getTime()) === k && x.seguidores != null);
+        if (h.length) { tot += h[h.length - 1].seguidores; hay = true; } });
+      return hay ? tot : null;
+    }
+    const s = {n: 0, V: 0, L: 0, C: 0, S: 0, G: 0, nV: 0, IE: 0};
+    cs.forEach(v => { const b = B[v.usuario]?.[k]; if (b) Object.keys(s).forEach(x => s[x] += b[x]); });
+    return f(s);
+  }, fy);
+}
+
+/* ======================================================================
+   Páginas
+   ====================================================================== */
+function renderPagina() {
+  cajaSeleccion();
+  const p = paginaActual();
+  p === 'comp' ? renderComp() : p === 'cont' ? renderContenido() : p === 'enc' ? renderEncuesta() : render();
+}
+function pagina() {
+  const p = paginaActual();
+  if (pagina._ult !== p) { SEL = null; pagina._ult = p; }
+  [['resumen', 'resumen'], ['comp', 'comp'], ['cont', 'cont'], ['enc', 'enc']].forEach(([k]) => { $('#p-' + k).hidden = p !== k; $('#t-' + k).classList.toggle('on', p === k); });
+  document.querySelectorAll('.solo-resumen').forEach(el => el.style.display = p === 'resumen' ? '' : 'none');
+  document.querySelectorAll('.no-enc').forEach(el => el.style.display = p === 'enc' ? 'none' : '');
+  $('#lbl-tipo').style.opacity = p === 'comp' ? .45 : 1; $('#tipo').disabled = p === 'comp';
+  if (RAW) { prepararFiltros(); renderPagina(); }
+}
+window.addEventListener('hashchange', pagina);
+
+/* ---------- Lives ---------- */
+function render() {
+  const ahora = Date.now(), {dias, desde} = periodo();
+  const base = cuentasFiltradas(), S = statsLives(desde);
+  const porU = Object.fromEntries(RAW.vendedores.map(v => [v.usuario, v]));
+  const kp = cruzar('kpi', base), set = new Set(kp.map(v => v.usuario));
+  const A = aggLives(kp, S);
+  $('#k-vivo').textContent = A.vivo; $('#k-vivo-s').textContent = 'de ' + kp.length + ' cuentas';
+  $('#k-lives').textContent = fmtN(A.n); $('#k-lives-s').textContent = f1(A.n / dias) + ' por día';
+  $('#k-horas').textContent = fmtH(A.min); $('#k-horas-s').textContent = A.act ? fmtH(A.min / A.act) + ' h por cuenta activa' : '';
+  $('#k-prom').textContent = A.n ? fmtDur(A.min / A.n) : '—';
+  $('#k-vis').textContent = A.nVis ? fmtN(A.vis) : '—'; $('#k-vis-s').textContent = A.nVis ? fmtN(A.vis / A.nVis) + ' por live' : 'se registra en cada live';
+  $('#k-act').textContent = A.act + ' / ' + kp.length; $('#k-act-s').textContent = kp.length ? Math.round(A.act / kp.length * 100) + '% de las cuentas' : '';
+
+  graficoLives('gL', cruzar('gL', base), S);
+  matrizLives('mL', cruzar('mL', base), S);
+
+  // En vivo ahora
+  const enVivo = RAW.lives.filter(l => l.estado === 'EN VIVO' && set.has(l.usuario)).map(l => ({...l, d: durLive(l, ahora), v: porU[l.usuario]})).sort((a, b) => b.d - a.d);
+  $('#vivo-sub').textContent = enVivo.length ? enVivo.length + ' transmitiendo' : '';
+  $('#vivos').innerHTML = enVivo.length ? enVivo.map(l => `
+    <a class="live-item" href="${urlLive(l.v)}" target="_blank" rel="noopener">
+      <span class="dot"></span>
+      <div><div class="n">${esc(l.v.nombre)}</div><div class="m">${esc(hdl(l.v))}${redBadge(l.v)} · ${esc(l.v.cadena)} · ${esc(l.v.agencia || '—')}</div></div>
+      <span class="t">${l.actual != null ? '👁 ' + fmtN(l.actual) + ' viendo · ' : ''}${fmtDur(l.d)} · desde ${new Date(l.inicio).toLocaleTimeString('es-EC', {hour: '2-digit', minute: '2-digit'})}</span>
+    </a>`).join('') : '<div class="empty">Nadie está en vivo en este momento.</div>';
+
+  const lives = RAW.lives.filter(l => set.has(l.usuario) && l.inicio >= desde).map(l => ({...l, d: durLive(l, ahora), v: porU[l.usuario]}));
+  ULTIMOS = lives.map(l => ({...l, nombre: l.v.nombre, agencia: l.v.agencia}));
+  $('#heat').innerHTML = mapaCalor(lives, '254,44,85');
+  tabla($('#historial'), 'hist', [
+    {k: 'nombre', t: 'Cuenta', v: l => l.v.nombre, h: l => cuentaHtml(l.v, false)},
+    {k: 'cadena', t: 'Cadena', v: l => l.v.cadena, h: l => esc(l.v.cadena)},
+    {k: 'agencia', t: 'Agencia', v: l => l.v.agencia, h: l => esc(l.v.agencia || '—')},
+    {k: 'inicio', t: 'Inicio', h: l => fmtF(l.inicio)},
+    {k: 'fin', t: 'Fin', v: l => l.fin || Infinity, h: l => l.estado === 'EN VIVO' ? '<span class="pill live">EN VIVO</span>' : fmtF(l.fin)},
+    {k: 'd', t: 'Duración', num: 1, h: l => fmtDur(l.d)},
+    {k: 'vistas', t: 'Vistas', num: 1, h: l => fmtN(l.vistas)},
+    {k: 'pico', t: 'Pico', num: 1, h: l => fmtN(l.pico)},
+    {k: 'titulo', t: 'Título', h: l => `<span style="display:inline-block;max-width:260px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom">${esc(l.titulo || '')}</span>`},
+  ], lives.slice().sort((a, b) => b.inicio - a.inicio).slice(0, 300), {orden: {k: 'inicio', dir: -1}, fila: l => `class="click" data-detalle-fila="${esc(l.usuario)}"`, vacio: 'Sin lives en el periodo.'});
+
+  $('#sinvendedores').hidden = RAW.vendedores.some(v => v.tipo === 'propio');
+  const rev = Math.max(0, ...(RAW.estado || []).map(e => e.ultimaRev || 0));
+  $('#actualizado').textContent = 'Revisión cada ' + RAW.intervalo + ' min · última revisión: ' + (rev ? fmtF(rev) : '—') + ' · se actualiza solo';
+}
+
+/* ---------- Nosotros vs Competencia ---------- */
+function filasVs(el, filas) {
+  $(el).innerHTML = filas.map(([k, a, b, f, cmp]) => {
+    const gana = !cmp || a == null || b == null || a === b ? '' : a > b ? '<span class="gana" style="color:var(--us)">▲ ganamos</span>' : '<span class="gana" style="color:var(--them)">▼ nos ganan</span>';
+    return `<tr><td>${k}<br>${gana}</td><td class="us">${f(a)}</td><td class="them">${f(b)}</td></tr>`;
+  }).join('');
+}
+function renderComp() {
+  const {dias, desde} = periodo();
+  const base = cuentasFiltradas(true), SL = statsLives(desde), {S: SC} = statsCont(desde);
+  $('#c-vacio').hidden = base.some(v => v.tipo === 'competencia');
+  const kp = cruzar('kpi', base);
+  const div = (a, b) => b ? a / b : null, pctf = x => x == null ? '—' : Math.round(x) + '%';
+  const A = aggLives(kp.filter(v => v.tipo !== 'competencia'), SL), B = aggLives(kp.filter(v => v.tipo === 'competencia'), SL);
+  filasVs('#c-vs', [
+    ['Cuentas monitoreadas', A.cuentas, B.cuentas, fmtN, false],
+    ['En vivo ahora', A.vivo, B.vivo, fmtN, true],
+    ['% de cuentas que hicieron live', div(A.act * 100, A.cuentas), div(B.act * 100, B.cuentas), pctf, true],
+    ['Lives', A.n, B.n, fmtN, true],
+    ['Lives por cuenta', div(A.n, A.cuentas), div(B.n, B.cuentas), f1, true],
+    ['Horas en live', A.min, B.min, x => fmtH(x), true],
+    ['Horas por cuenta', div(A.min, A.cuentas), div(B.min, B.cuentas), x => x == null ? '—' : fmtH(x), true],
+    ['Duración promedio por live', div(A.min, A.n), div(B.min, B.n), x => x == null ? '—' : fmtDur(x), true],
+    ['Vistas totales', A.nVis ? A.vis : null, B.nVis ? B.vis : null, fmtN, true],
+    ['Vistas por live', div(A.vis, A.nVis), div(B.vis, B.nVis), fmtN, true],
+    ['Pico promedio de espectadores', div(A.picoSum, A.nPico), div(B.picoSum, B.nPico), fmtN, true],
+  ]);
+  const X = aggCont(kp.filter(v => v.tipo !== 'competencia'), SC), Y = aggCont(kp.filter(v => v.tipo === 'competencia'), SC);
+  filasVs('#c-cont-vs', [
+    ['Cuentas monitoreadas', X.cuentas, Y.cuentas, fmtN, false],
+    ['Seguidores totales', X.conSeg ? X.seg : null, Y.conSeg ? Y.seg : null, fmtN, true],
+    ['Seguidores por cuenta', div(X.seg, X.conSeg), div(Y.seg, Y.conSeg), fmtN, true],
+    ['Seguidores ganados en el periodo', X.conDelta ? X.delta : null, Y.conDelta ? Y.delta : null, fmtN, true],
+    ['Publicaciones', X.n, Y.n, fmtN, true],
+    ['Posts por semana, por cuenta', X.cuentas ? X.n / X.cuentas / dias * 7 : null, Y.cuentas ? Y.n / Y.cuentas / dias * 7 : null, f1, true],
+    ['% de cuentas que publicaron', div(X.act * 100, X.cuentas), div(Y.act * 100, Y.cuentas), pctf, true],
+    ['Views por post', div(X.V, X.nV), div(Y.V, Y.nV), fmtN, true],
+    ['Likes por post', div(X.L, X.n), div(Y.L, Y.n), fmtN, true],
+    ['Comentarios por post', div(X.C, X.n), div(Y.C, Y.n), f1, true],
+    ['Compartidos por post', div(X.S, X.n), div(Y.S, Y.n), f1, true],
+    ['Guardados por post', div(X.G, X.n), div(Y.G, Y.n), f1, true],
+    ['Engagement', div(X.IE, X.V), div(Y.IE, Y.V), pct, true],
+  ]);
+  graficoLives('gL2', cruzar('gL2', base), SL);
+  matrizLives('mL2', cruzar('mL2', base), SL);
+  graficoCont('gC2', cruzar('gC2', base));
+  matrizCont('mC2', cruzar('mC2', base), SC, dias);
+  const ahora = Date.now(), porU = Object.fromEntries(kp.map(v => [v.usuario, v]));
+  const lives = RAW.lives.filter(l => porU[l.usuario] && l.inicio >= desde).map(l => ({...l, d: durLive(l, ahora), v: porU[l.usuario]}));
+  $('#c-heat-us').innerHTML = mapaCalor(lives.filter(l => l.v.tipo !== 'competencia'), '20,184,196');
+  $('#c-heat-them').innerHTML = mapaCalor(lives.filter(l => l.v.tipo === 'competencia'), '139,92,246');
+  $('#actualizado').textContent = 'Comparativo Cresa vs competencia · ' + $('#periodo').selectedOptions[0].textContent.toLowerCase();
+}
+
+/* ---------- Contenido ---------- */
 function renderContenido() {
-  const dias = +$('#periodo').value;
-  const hoy0 = new Date(); hoy0.setHours(0, 0, 0, 0);
-  const desde = hoy0.getTime() - (dias - 1) * 86400000;
-  const tipo = $('#tipo').value, cad = $('#cadena').value, agencia = $('#agencia').value, q = $('#buscar').value.trim().toLowerCase();
-  const cuentas = RAW.vendedores.filter(v => v.activo !== false && pasaGlobal(v) && (!tipo || v.tipo === tipo) && (!cad || v.cadena === cad) && (!agencia || v.agencia === agencia) &&
-    (!q || v.nombre.toLowerCase().includes(q) || v.handle.includes(q) || v.agencia.toLowerCase().includes(q)));
-  const hayIg = cuentas.some(v => v.plataforma === 'instagram');
-  $('#s-aviso-ig').hidden = !hayIg;
-  const st = statsContenido(cuentas, desde), porU = st.porU, posts = st.posts;
+  const {dias, desde} = periodo();
+  const base = cuentasFiltradas(), {S, posts: todos} = statsCont(desde);
   $('#s-vacio').hidden = Object.keys(SOC.cuentas || {}).length > 0;
-  let segTot = 0, segDelta = 0, conDelta = 0;
-  st.cuentas.forEach(a => { if (a.seg != null) segTot += a.seg; if (a.delta != null) { segDelta += a.delta; conDelta++; } });
-  const sum = k => posts.reduce((s, p) => s + (p[k] || 0), 0);
-  const V = sum('vistas'), L = sum('likes'), C = sum('comentarios'), S = sum('compartidos'), G = sum('guardados');
-  const np = posts.length || 1, conV = posts.filter(p => p.vistas != null), IE = conV.reduce((s, p) => s + interacciones(p), 0);
-  $('#s-seg').textContent = fmtN(segTot);
-  $('#s-seg-s').innerHTML = conDelta ? (segDelta >= 0 ? '<span class="ok">+' : '<span class="err">') + fmtN(segDelta) + '</span> en el periodo' : cuentas.length + ' cuentas';
-  $('#s-posts').textContent = fmtN(posts.length);
-  $('#s-posts-s').textContent = (posts.length / dias * 7).toLocaleString('es-EC', {maximumFractionDigits: 1}) + ' por semana';
-  const nCampo = k => posts.filter(p => p[k] != null).length;
-  [['vis', V, 'vistas'], ['lik', L, 'likes'], ['com', C, 'comentarios'], ['sha', S, 'compartidos'], ['sav', G, 'guardados']].forEach(([k, val, campo]) => {
-    const nc = nCampo(campo);
+  $('#s-aviso-ig').hidden = !base.some(v => v.plataforma === 'instagram');
+  const kp = cruzar('kpi', base), set = new Set(kp.map(v => v.usuario)), porU = Object.fromEntries(kp.map(v => [v.usuario, v]));
+  const posts = todos.filter(p => set.has(p.usuario));
+  const A = aggCont(kp, S);
+  $('#s-seg').textContent = A.conSeg ? fmtN(A.seg) : '—';
+  $('#s-seg-s').innerHTML = A.conDelta ? (A.delta >= 0 ? '<span class="ok">+' : '<span class="err">') + fmtN(A.delta) + '</span> en el periodo' : kp.length + ' cuentas';
+  $('#s-posts').textContent = fmtN(A.n); $('#s-posts-s').textContent = f1(A.n / dias * 7) + ' por semana';
+  const nC = k => posts.filter(p => p[k] != null).length;
+  [['vis', A.V, 'vistas'], ['lik', A.L, 'likes'], ['com', A.C, 'comentarios'], ['sha', A.S, 'compartidos'], ['sav', A.G, 'guardados']].forEach(([k, val, campo]) => {
+    const nc = nC(campo);
     $('#s-' + k).textContent = nc ? fmtN(val) : '—';
     $('#s-' + k + '-s').textContent = nc ? fmtN(val / nc) + ' por post' + (nc < posts.length ? ' (' + nc + ' con dato)' : '') : '';
   });
-  $('#s-er').textContent = V ? pct(IE / V) : '—';
+  $('#s-er').textContent = A.V ? pct(A.IE / A.V) : '—';
 
-  // publicaciones por día / semana / mes
-  const modo = $('#s-agrupar').value;
-  const clave = t => { const d = new Date(t); if (modo === 'dia') return diaKey(d);
-    if (modo === 'mes') return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-    const l = new Date(d); l.setHours(0, 0, 0, 0); l.setDate(l.getDate() - (l.getDay() + 6) % 7); return diaKey(l); };
-  const keys = []; const paso = modo === 'dia' ? 1 : 1;
-  for (let t = desde; t <= hoy0.getTime(); t += 86400000 * paso) { const k = clave(t); if (!keys.includes(k)) keys.push(k); }
-  const us = Object.fromEntries(keys.map(k => [k, 0])), them = Object.fromEntries(keys.map(k => [k, 0]));
-  posts.forEach(p => { const k = clave(p.creado); if (k in us) (porU[p.usuario].tipo === 'competencia' ? them : us)[k]++; });
-  const etq = keys.map(k => { const [y, m, d] = k.split('-'); return modo === 'mes' ? new Date(y, m - 1, 1).toLocaleDateString('es-EC', {month: 'short', year: '2-digit'})
-    : (modo === 'semana' ? 'sem. ' : '') + new Date(y, m - 1, d).toLocaleDateString('es-EC', {day: '2-digit', month: 'short'}); });
-  if (window.Chart) {
-    const css = getComputedStyle(document.documentElement), mute = css.getPropertyValue('--mute').trim(), line = css.getPropertyValue('--line').trim();
-    const ds = [];
-    if (tipo !== 'competencia') ds.push({label: 'Nosotros', data: keys.map(k => us[k]), backgroundColor: '#14b8c4', borderRadius: 4, maxBarThickness: 30});
-    if (tipo !== 'propio') ds.push({label: 'Competencia', data: keys.map(k => them[k]), backgroundColor: '#8b5cf6', borderRadius: 4, maxBarThickness: 30});
-    const data = {labels: etq, datasets: ds};
-    if (chart3) { chart3.data = data; chart3.options.plugins.legend.display = ds.length > 1; chart3.update(); }
-    else chart3 = new Chart($('#chart3'), {type: 'bar', data, options: {responsive: true, maintainAspectRatio: false,
-      plugins: {legend: {display: ds.length > 1, position: 'bottom', labels: {color: mute, boxWidth: 10}}},
-      scales: {x: {stacked: false, ticks: {color: mute, maxRotation: 0, autoSkip: true}, grid: {display: false}},
-               y: {beginAtZero: true, ticks: {color: mute, precision: 0}, grid: {color: line}}}}});
-  }
+  graficoCont('gC', cruzar('gC', base));
+  matrizCont('mC', cruzar('mC', base), S, dias);
 
-  // cuándo publican (conteo de posts)
   const H = Array.from({length: 7}, () => Array(24).fill(0));
   posts.forEach(p => { const d = new Date(p.creado); H[(d.getDay() + 6) % 7][d.getHours()]++; });
   const maxH = Math.max(1, ...H.flat());
@@ -976,61 +1109,42 @@ function renderContenido() {
   H.forEach((f, di) => { hh += `<div>${DIAS[di]}</div>` + f.map((c, h) => `<div class="c" title="${DIAS[di]} ${h}:00 · ${c} post${c === 1 ? '' : 's'}" style="${c ? `background:rgba(254,44,85,${(0.15 + c / maxH * 0.85).toFixed(2)})` : ''}"></div>`).join(''); });
   $('#s-heat').innerHTML = hh;
 
-  // por cadena
-  $('#s-cadenas-t').innerHTML = CAB_CADENA_CONT + '<tbody id="s-cadenas">' + filasCadenaContenido(agruparContenido(st.cuentas, a => a.v.tipo + '|' + a.v.cadena), dias) + '</tbody>';
-
-  // por cuenta
-  const filas = [...st.cuentas].sort((a, b) => (b.seg ?? -1) - (a.seg ?? -1));
-  $('#s-cuentas').innerHTML = filas.map(a => `
-    <tr>
-      <td>${cuentaHtml(a.v)}</td>
-      <td>${pillTipo(a.v.tipo)}</td>
-      <td>${esc(a.v.cadena)}</td><td>${esc(a.v.agencia || '—')}</td>
-      <td class="num"><b>${a.seg == null ? (a.err ? '<span class="err" title="' + esc(a.err) + '">⚠</span>' : '<span class="hint">pendiente</span>') : fmtN(a.seg)}</b></td>
-      <td class="num">${a.delta == null ? '—' : (a.delta >= 0 ? '<span class="ok">+' : '<span class="err">') + fmtN(a.delta) + '</span>'}</td>
-      <td class="num">${a.n}</td><td class="num">${f1(a.n / dias)}</td><td class="num">${f1(a.n / dias * 7)}</td><td class="num">${f1(a.n / dias * 30)}</td>
-      <td class="num">${a.nV ? fmtN(a.V) : '—'}</td><td class="num">${a.nV ? fmtN(a.V / a.nV) : '—'}</td>
-      <td class="num">${a.n ? fmtN(a.L) : '—'}</td><td class="num">${a.n ? fmtN(a.C) : '—'}</td><td class="num">${a.n ? fmtN(a.S) : '—'}</td><td class="num">${a.n ? fmtN(a.G) : '—'}</td>
-      <td class="num"><b>${a.V ? pct(a.IE / a.V) : a.n && a.v.plataforma === 'instagram' ? '<span class="hint" title="Instagram no entrega views de cuentas ajenas">n/d</span>' : '—'}</b></td>
-      <td>${a.ult ? fmtF(a.ult) : '—'}</td>
-    </tr>`).join('') || '<tr><td colspan="18" class="empty">No hay cuentas con esos filtros.</td></tr>';
-
-  // publicaciones
-  const orden = $('#s-orden').value;
-  const lista = [...posts].sort((a, b) => (b[orden] ?? -1) - (a[orden] ?? -1)).slice(0, 100);
-  $('#s-top-sub').textContent = posts.length > 100 ? 'mostrando 100 de ' + posts.length : posts.length + ' publicaciones';
-  $('#s-posts-t').innerHTML = lista.map(p => { const v = porU[p.usuario]; return `
-    <tr>
-      <td>${new Date(p.creado).toLocaleString('es-EC', {weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'})}</td>
-      <td>${cuentaHtml(v, false)} ${v.tipo === 'competencia' ? '<span class="pill them">comp.</span>' : ''}</td>
-      <td>${esc(v.cadena)}</td>
-      <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis" title="${esc(p.desc)}">${esc(p.desc) || '<span class="hint">sin descripción</span>'}</td>
-      <td class="num"><b>${fmtN(p.vistas)}</b></td><td class="num">${fmtN(p.likes)}</td><td class="num">${fmtN(p.comentarios)}</td>
-      <td class="num">${fmtN(p.compartidos)}</td><td class="num">${fmtN(p.guardados)}</td><td class="num"><b>${pct(p.er)}</b></td>
-      <td><a class="u" href="${urlPost(p, v)}" target="_blank" rel="noopener">ver ↗</a></td>
-    </tr>`; }).join('') || '<tr><td colspan="11" class="empty">Sin publicaciones en el periodo.</td></tr>';
-
-  const gen = SOC.generado;
-  $('#actualizado').textContent = 'Métricas de contenido cada hora · última actualización: ' + (gen ? fmtF(gen) : '—');
+  $('#s-top-sub').textContent = posts.length > 200 ? 'mostrando 200 de ' + posts.length : posts.length + ' publicaciones';
+  tabla($('#s-posts-t'), 'posts', [
+    {k: 'creado', t: 'Publicado', h: p => new Date(p.creado).toLocaleString('es-EC', {weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'})},
+    {k: 'cuenta', t: 'Cuenta', v: p => porU[p.usuario].nombre, h: p => cuentaHtml(porU[p.usuario], false)},
+    {k: 'cadena', t: 'Cadena / empresa', v: p => porU[p.usuario].cadena, h: p => esc(porU[p.usuario].cadena)},
+    {k: 'desc', t: 'Descripción', h: p => `<span style="display:inline-block;max-width:280px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom" title="${esc(p.desc)}">${esc(p.desc) || '<span class="hint">sin descripción</span>'}</span>`},
+    {k: 'vistas', t: 'Views', num: 1, h: p => `<b>${fmtN(p.vistas)}</b>`},
+    {k: 'likes', t: 'Likes', num: 1, h: p => fmtN(p.likes)},
+    {k: 'comentarios', t: 'Coment.', num: 1, h: p => fmtN(p.comentarios)},
+    {k: 'compartidos', t: 'Compart.', num: 1, h: p => fmtN(p.compartidos)},
+    {k: 'guardados', t: 'Guard.', num: 1, h: p => fmtN(p.guardados)},
+    {k: 'er', t: 'Engagement', num: 1, h: p => `<b>${pct(p.er)}</b>`},
+    {k: 'link', t: '', v: () => 0, h: p => `<a class="u" href="${urlPost(p, porU[p.usuario])}" target="_blank" rel="noopener">ver ↗</a>`},
+  ], posts.slice().sort((a, b) => (b.vistas ?? -1) - (a.vistas ?? -1)).slice(0, 200), {orden: {k: 'vistas', dir: -1}, vacio: 'Sin publicaciones en el periodo.'});
+  $('#actualizado').textContent = 'Métricas de contenido cada hora · última actualización: ' + (SOC.generado ? fmtF(SOC.generado) : '—');
 }
-window.addEventListener('hashchange', pagina);
 
-function dibujarGrafico(labels, data) {
-  if (!window.Chart) return;
-  const css = getComputedStyle(document.documentElement);
-  const mute = css.getPropertyValue('--mute').trim(), line = css.getPropertyValue('--line').trim();
-  if (chart) { chart.data.labels = labels; chart.data.datasets[0].data = data; chart.update(); return; }
-  chart = new Chart($('#chart'), {
-    type: 'bar',
-    data: {labels, datasets: [{label: 'Horas en live', data, backgroundColor: '#fe2c55', borderRadius: 5, maxBarThickness: 34}]},
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {legend: {display: false}, tooltip: {callbacks: {label: c => c.parsed.y.toLocaleString('es-EC', {maximumFractionDigits: 1}) + ' h'}}},
-      scales: {x: {ticks: {color: mute, maxRotation: 0, autoSkip: true}, grid: {display: false}},
-               y: {beginAtZero: true, ticks: {color: mute}, grid: {color: line}}}
-    }
-  });
-}
+/* ---------- detalle de una cuenta desde tablas ---------- */
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-detalle]');
+  if (a) { e.preventDefault(); abrirDetalle(a.dataset.detalle); return; }
+  const tr = e.target.closest('tr[data-detalle-fila]');
+  if (tr && !e.target.closest('a')) abrirDetalle(tr.dataset.detalleFila);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { cerrarDetalle(); if (SEL) { SEL = null; renderPagina(); } } });
+
+/* ---------- eventos de filtros ---------- */
+const alFiltrar = () => { SEL = null; prepararFiltros(); renderPagina(); };
+['periodo', 'tipo', 'red', 'rol', 'agencia'].forEach(id => $('#' + id).addEventListener('change', alFiltrar));
+$('#buscar').addEventListener('input', () => { SEL = null; renderPagina(); });
+$('#f-cadenas').addEventListener('change', e => { const c = e.target.value; e.target.checked ? FILT.cadenas.add(c) : FILT.cadenas.delete(c); $('#agencia').value = ''; alFiltrar(); });
+$('#f-limpiar').addEventListener('click', () => { ['tipo', 'red', 'rol', 'agencia'].forEach(id => $('#' + id).value = ''); $('#periodo').value = '7'; $('#buscar').value = ''; FILT.cadenas.clear(); alFiltrar(); });
+['gL-met', 'gL2-met', 'gC-met', 'gC-gran', 'gC2-met', 'gC2-gran'].forEach(id => $('#' + id).addEventListener('change', renderPagina));
+$('#btn-filtros').addEventListener('click', () => $('#side').classList.toggle('abierto'));
+document.addEventListener('click', e => { if ($('#side').classList.contains('abierto') && !e.target.closest('#side,#btn-filtros')) $('#side').classList.remove('abierto'); });
+$('#exportar').addEventListener('click', exportarCSV);
 
 function exportarCSV() {
   const enc = ['Usuario', 'Nombre', 'Agencia', 'Inicio', 'Fin', 'Duracion_min', 'Vistas', 'Pico', 'Promedio_viendo', 'Estado', 'Titulo'];
@@ -1087,12 +1201,6 @@ function abrirDetalle(usuario) {
   $('#detalle').classList.add('open');
 }
 function cerrarDetalle() { $('#detalle').classList.remove('open'); DETALLE = null; }
-document.addEventListener('click', e => {
-  if (e.target.closest('a')) return;
-  const tr = e.target.closest('tr[data-u]');
-  if (tr && !e.target.closest('#detalle')) abrirDetalle(tr.dataset.u);
-});
-document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarDetalle(); });
 
 /* Panel de vendedores */
 function tipoPanel() { return document.querySelector('input[name=ptipo]:checked').value; }
@@ -1260,15 +1368,6 @@ function demo() {
   return {generado: ahora, intervalo: 5, vendedores, lives, estado: vendedores.map(v => ({usuario: v.usuario, ultimaRev: ahora - 2 * 60000}))};
 }
 
-$('#periodo').addEventListener('change', pagina);
-$('#tipo').addEventListener('change', () => { $('#cadena').value = ''; $('#agencia').value = ''; prepararFiltros(); pagina(); });
-$('#agencia').addEventListener('change', pagina);
-['red', 'rol'].forEach(id => $('#' + id).addEventListener('change', () => { $('#cadena').value = ''; $('#agencia').value = ''; prepararFiltros(); pagina(); }));
-$('#s-agrupar').addEventListener('change', renderContenido);
-$('#s-orden').addEventListener('change', renderContenido);
-$('#cadena').addEventListener('change', () => { prepararFiltros(); pagina(); });
-$('#buscar').addEventListener('input', pagina);
-$('#exportar').addEventListener('click', exportarCSV);
 pagina();
 cargar();
 setInterval(cargar, 70 * 1000);
