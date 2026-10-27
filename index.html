@@ -160,6 +160,7 @@
   table.mx tfoot tr.seltot td{color:var(--accent2)}
   .ck{width:16px;height:16px;border:1.5px solid var(--mute);border-radius:4px;display:inline-grid;place-items:center;font-size:11px;color:transparent;vertical-align:-3px}
   tr.sel .ck{background:var(--accent2);border-color:var(--accent2);color:#fff}
+  .pm{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:0;flex:none}
   .vh-hint{font-size:11.5px;color:var(--mute);margin:-4px 0 8px}
   header > div:first-child{min-width:0;flex:1 1 320px;max-width:100%}
   .tabs{max-width:100%}
@@ -626,7 +627,7 @@ function prepararFiltros() {
   deTipo.forEach(v => (grupos[grupoDe(v)] ||= new Set()).add(v.cadena));
   [...FILT.cadenas].forEach(c => { if (!deTipo.some(v => v.cadena === c)) FILT.cadenas.delete(c); });
   $('#f-cadenas').innerHTML = ['Cresa', 'Competencia'].filter(g => grupos[g]).map(g => `<div class="grp">${g}</div>` +
-    [...grupos[g]].sort().map(c => `<label><input type="checkbox" value="${esc(c)}"${FILT.cadenas.has(c) ? ' checked' : ''}>${esc(c)}</label>`).join('')).join('') || '<span class="hint">Sin cuentas</span>';
+    [...grupos[g]].sort().map(c => `<label><input type="checkbox" value="${esc(c)}"${FILT.cadenas.has(c) ? ' checked' : ''}>${puntoMarca(c)}${esc(c)}</label>`).join('')).join('') || '<span class="hint">Sin cuentas</span>';
   $('#f-cad-n').textContent = FILT.cadenas.size ? '(' + FILT.cadenas.size + ')' : '';
   opciones($('#agencia'), 'Todas las agencias', [...new Set(deTipo.filter(v => (!FILT.cadenas.size || FILT.cadenas.has(v.cadena)) && v.agencia).map(v => v.agencia))].sort());
 }
@@ -800,8 +801,8 @@ function celdaNombre(r, st, conDetalle) {
   if (r._pie) return `<b>${esc(r.etq)}</b>`;
   const ck = '<span class="ck" title="Agregar a la selección">✓</span> ';
   if (st.nivel === 0) return `${ck}<b>${esc(r.etq)}</b>`;
-  if (st.nivel === 1) return `${ck}<b>${esc(r.etq)}</b> ${pillTipo(v.tipo)}`;
-  if (st.nivel === 2) return `${ck}<b>${esc(r.etq)}</b> <span class="hint">${esc(v.cadena)}</span>`;
+  if (st.nivel === 1) return `${ck}${puntoMarca(v.cadena)}<b>${esc(r.etq)}</b> ${pillTipo(v.tipo)}`;
+  if (st.nivel === 2) return `${ck}${puntoMarca(v.cadena)}<b>${esc(r.etq)}</b> <span class="hint">${esc(v.cadena)}</span>`;
   return `${ck}${cuentaHtml(v)}${conDetalle ? ` <a class="ver" href="#" data-detalle="${esc(v.usuario)}">lives ›</a>` : ''}`;
 }
 const filaAttrs = (id, st) => r => `class="${SEL?.vis === id && SEL.claves.has(r.clave) ? 'sel' : ''}" data-fv="${id}" data-fk="${esc(r.clave)}" data-fe="${esc(r.etq)}"`;
@@ -824,7 +825,7 @@ function matrizLives(id, cuentas, S) {
     {k: 'act', t: 'Hicieron live', num: 1, h: r => `${r.act} <span class="hint">(${r.cuentas ? Math.round(r.act / r.cuentas * 100) : 0}%)</span>`},
     {k: 'n', t: 'Lives', num: 1},
     {k: 'min', t: 'Horas', num: 1, h: r => fmtH(r.min)},
-    {k: 'hc', t: 'Horas por cuenta', num: 1, v: r => p(r.min / r.cuentas), h: r => `<b>${fmtH(r.min / (r.cuentas || 1))}</b> ${r._pie ? '' : `<span class="bar"><i style="width:${(r.min / r.cuentas / maxHc * 100).toFixed(1)}%;${r.v?.tipo === 'competencia' && st.nivel ? 'background:var(--them)' : ''}"></i></span>`}`},
+    {k: 'hc', t: 'Horas por cuenta', num: 1, v: r => p(r.min / r.cuentas), h: r => `<b>${fmtH(r.min / (r.cuentas || 1))}</b> ${r._pie ? '' : `<span class="bar"><i style="width:${(r.min / r.cuentas / maxHc * 100).toFixed(1)}%;${st.nivel ? 'background:' + colorMarca(r.v?.cadena) : ''}"></i></span>`}`},
     {k: 'dur', t: 'Duración prom.', num: 1, v: r => p(r.min / r.n), h: r => r.n ? fmtDur(r.min / r.n) : '—'},
     {k: 'vis', t: 'Vistas', num: 1, v: r => r.nVis ? r.vis : null, h: r => r.nVis ? fmtN(r.vis) : '—'},
     {k: 'vpl', t: 'Vistas por live', num: 1, v: r => p(r.vis / r.nVis), h: r => r.nVis ? fmtN(r.vis / r.nVis) : '—'},
@@ -866,8 +867,32 @@ function matrizCont(id, cuentas, S, dias) {
    Gráficos jerárquicos por día / semana / mes
    ====================================================================== */
 const GRAF = {};
-const PALETA = ['#14b8c4', '#fe2c55', '#f59e0b', '#22c55e', '#3b82f6', '#ec4899', '#a3a3a3', '#84cc16', '#06b6d4', '#f97316'];
-const PAL_COMP = ['#8b5cf6', '#6366f1', '#a855f7', '#c084fc', '#7c3aed', '#818cf8'];
+/* Colores de marca (ajustados para distinguirse entre sí). Cresa = línea continua, competencia = punteada.
+   Cada valor: [modo claro, modo oscuro]. */
+const MARCA = {
+  'crecos': ['#EF4637', '#FF6B5C'], 'orve hogar': ['#E9A800', '#FFC933'], 'japón': ['#1F2937', '#E5E7EB'],
+  'pagamenos': ['#139FB0', '#2CC6D8'], 'samsung': ['#1428A0', '#5B7CFF'], 'motozone': ['#8A5A2B', '#C08A55'],
+  'independientes': ['#7B8494', '#A3ACBB'],
+  'artefacta': ['#C2185B', '#F0629B'], 'marcimex': ['#1FAE6A', '#4ADE96'], 'comandato': ['#0B4C9A', '#4D8BE0'],
+  'jaher': ['#2E95D8', '#6BBDF0'], 'la ganga': ['#C9B000', '#F2DC2E'], 'almacenes españa': ['#2E7D32', '#5DBB63'],
+  'almacenes al precio': ['#7E57C2', '#A88BE6'], 'almacenes tía': ['#E4572E', '#F58A6A'], 'tventas': ['#00897B', '#2BC2B2'],
+};
+const PALETA = ['#0EA5E9', '#F97316', '#84CC16', '#EC4899', '#14B8A6', '#A855F7', '#EAB308', '#64748B'];
+const oscuro = () => { const t = document.documentElement.dataset.theme; return t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches); };
+function colorMarca(cadena) {
+  const m = MARCA[String(cadena || '').toLowerCase()];
+  if (m) return m[oscuro() ? 1 : 0];
+  let h = 0; for (const ch of String(cadena)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return PALETA[h % PALETA.length];
+}
+/** Variación de tono de un color (para agencias/cuentas dentro de una misma cadena). */
+function tono(hex, i) {
+  if (!i) return hex;
+  const t = [0, .32, -.25, .52, -.42, .66, .18, -.12][i % 8], n = parseInt(hex.slice(1), 16);
+  const mez = c => Math.round(t > 0 ? c + (255 - c) * t : c * (1 + t));
+  return '#' + [n >> 16, (n >> 8) & 255, n & 255].map(c => mez(c).toString(16).padStart(2, '0')).join('');
+}
+const puntoMarca = c => `<i class="pm" style="background:${colorMarca(c)}"></i>`;
 function cubetas(desde, hoy0, gran) {
   const clave = t => { const d = new Date(t); if (gran === 'mes') return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
     if (gran === 'semana') { const l = new Date(d); l.setHours(0, 0, 0, 0); l.setDate(l.getDate() - (l.getDay() + 6) % 7); return diaKey(l); } return diaKey(d); };
@@ -888,11 +913,12 @@ function grafico(id, cuentas, cub, valor, fmtY) {
     const resto = ms.slice(8), cs = resto.flatMap(m => m.cs);
     ms = ms.slice(0, 8).concat([{clave: null, etq: 'Otras (' + resto.length + ')', cs, v: {tipo: ''}, serie: cub.keys.map(k => valor(cs, k))}]);
   }
-  let iu = 0, ic = 0;
+  const porCadena = {};
   const selDeEste = SEL?.vis === id;
   const ds = ms.map(m => {
     const comp = m.v.tipo === 'competencia';
-    const color = st.nivel === 0 ? (comp ? '#8b5cf6' : '#14b8c4') : m.clave == null ? '#94a3b8' : comp ? PAL_COMP[ic++ % PAL_COMP.length] : PALETA[iu++ % PALETA.length];
+    const color = st.nivel === 0 ? (comp ? '#8b5cf6' : '#14b8c4') : m.clave == null ? '#94a3b8'
+      : tono(colorMarca(m.v.cadena), st.nivel === 1 ? 0 : (porCadena[m.v.cadena] = (porCadena[m.v.cadena] ?? -1) + 1));
     const atenuar = selDeEste && !SEL.claves.has(m.clave);
     return {label: m.etq, data: m.serie, _clave: m.clave, borderColor: atenuar ? color + '40' : color, backgroundColor: atenuar ? color + '20' : color + '33',
       borderWidth: selDeEste && !atenuar ? 3.5 : 2, borderDash: comp && st.nivel > 0 ? [6, 4] : [], tension: .3, fill: st.nivel === 0 && !atenuar,
@@ -903,7 +929,7 @@ function grafico(id, cuentas, cub, valor, fmtY) {
   const alClic = (dsIdx, ev) => { const d = ds[dsIdx]; if (d && d._clave) elegir(id, d._clave, d.label, ev?.ctrlKey || ev?.metaKey || ev?.shiftKey); };
   const opciones_ = {responsive: true, maintainAspectRatio: false, interaction: {mode: 'nearest', intersect: false},
     onClick: (e, els, ch) => { const p = ch.getElementsAtEventForMode(e, 'nearest', {intersect: false}, true)[0]; if (p) alClic(p.datasetIndex, e.native); },
-    plugins: {legend: {position: 'bottom', labels: {color: mute, boxWidth: 12, usePointStyle: true}, onClick: (e, item) => alClic(item.datasetIndex, e.native)},
+    plugins: {legend: {position: 'bottom', labels: {color: mute, boxWidth: 12, usePointStyle: true, generateLabels: ch => Chart.defaults.plugins.legend.labels.generateLabels(ch).map(i => ({...i, fillStyle: i.strokeStyle}))}, onClick: (e, item) => alClic(item.datasetIndex, e.native)},
       tooltip: {mode: 'index', callbacks: {label: c => c.dataset.label + ': ' + fmtY(c.parsed.y)}}},
     scales: {x: {ticks: {color: mute, maxRotation: 0, autoSkip: true}, grid: {display: false}},
       y: {beginAtZero: true, ticks: {color: mute, callback: v => fmtY(v)}, grid: {color: line}}}};
