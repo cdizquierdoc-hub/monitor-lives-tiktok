@@ -1310,7 +1310,7 @@ document.querySelectorAll('input[name=pred],input[name=prol]').forEach(r => r.ad
 function ayudaPanel() {
   const comp = tipoPanel() === 'competencia';
   $('#p-ayuda').innerHTML = comp
-    ? 'Pega una cuenta por línea: <b>usuario y empresa</b> (ej. <code>"@vendedora.x" "ARTEFACTA KIA"</code>). Se agrupan solas por empresa: Artefacta, Marcimex, Almacenes España, Comandato, Jaher, Almacenes Al Precio, La Ganga… Cualquier otra empresa también funciona. Sirve con comillas, comas, @usuario, el link del perfil o columnas de Excel.'
+    ? 'Pega una cuenta por línea: <b>usuario y empresa</b> (ej. <code>"@vendedora.x" "ARTEFACTA KIA"</code>). Se agrupan solas por empresa: Artefacta, Marcimex, Comandato, Jaher, La Ganga, Almacenes España, Al Precio, Point, Bodega del Ahorro, Casa Hogar, Más Moto, Sukasa, Todo Hogar… Si la empresa no está en la lista, SAPO separa la cadena de la ubicación (ej. <code>POINT MALL DEL NORTE</code> → cadena Point). Sirve con comillas, comas, @usuario, el link del perfil o columnas de Excel.'
     : 'Elige arriba la red (TikTok o Instagram; un link de instagram.com se detecta solo) y si son vendedores o cuentas oficiales. Pega uno por línea: <b>usuario y agencia</b> (el nombre del vendedor es opcional, al final). La cadena se toma del inicio de la agencia: <b>CRECOS, ORVE HOGAR, JAPON, MOTOZONE, PAGAMENOS o SAMSUNG</b>. Para <b>independientes</b> escribe solo <code>INDEPENDIENTE</code> (no llevan agencia). Si la agencia es de un competidor conocido (ej. ARTEFACTA…), la cuenta se marca sola como competencia.';
   $('#nuevos').placeholder = comp
     ? '"@comandato.ofertas" "COMANDATO"\n@artefacta.ec, ARTEFACTA\nhttps://www.tiktok.com/@marcimex.ec, MARCIMEX'

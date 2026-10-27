@@ -112,8 +112,58 @@ COMPETIDORES = [
     ("ALMACENES ESPAÑA", "Almacenes España"), ("ALMACENES ESPANA", "Almacenes España"), ("ESPAÑA", "Almacenes España"),
     ("ALMACENES AL PRECIO", "Almacenes Al Precio"), ("AL PRECIO", "Almacenes Al Precio"),
     ("ARTEFACTA", "Artefacta"), ("MARCIMEX", "Marcimex"), ("COMANDATO", "Comandato"), ("JAHER", "Jaher"),
-    ("LA GANGA", "La Ganga"), ("ALMACENES TIA", "Almacenes Tía"), ("TVENTAS", "Tventas"),
+    ("ALMACENES JAHER", "Jaher"), ("LA GANGA", "La Ganga"), ("ALMACENES LA GANGA", "La Ganga"),
+    ("ALMACENES TIA", "Almacenes Tía"), ("ALMACENES TÍA", "Almacenes Tía"), ("TIA", "Almacenes Tía"), ("TÍA", "Almacenes Tía"),
+    ("TVENTAS", "Tventas"),
+    # agregadas: indicadas por Mercadeo y principales cadenas del gremio (Asadelec) y del mercado
+    ("POINT", "Point"), ("BODEGA DEL AHORRO", "Bodega del Ahorro"), ("LA BODEGA DEL AHORRO", "Bodega del Ahorro"),
+    ("CASA HOGAR", "Casa Hogar"), ("MAS MOTO", "Más Moto"), ("MÁS MOTO", "Más Moto"), ("MASMOTO", "Más Moto"),
+    ("SUKASA", "Sukasa"), ("TODO HOGAR", "Todo Hogar"), ("TODOHOGAR", "Todo Hogar"), ("GRAN HOGAR", "Gran Hogar"),
+    ("MI BODEGA", "Mi Bodega"), ("BESTPC", "BestPC"), ("BEST PC", "BestPC"), ("COMPUTRON", "Computron"),
+    ("NOVICOMPU", "Novicompu"), ("MI MOTO", "Mi Moto"), ("ALMACENES MI MOTO", "Mi Moto"),
 ]
+
+# ---- Separar "CADENA + UBICACIÓN" cuando la cadena no está en las listas (ej. "POINT MALL DEL NORTE")
+CIUDADES = """GUAYAQUIL QUITO CUENCA MACHALA MANTA PORTOVIEJO AMBATO LOJA ESMERALDAS IBARRA RIOBAMBA LATACUNGA BABAHOYO
+QUEVEDO MILAGRO DURAN DURÁN DAULE SALINAS LIBERTAD PLAYAS CHONE SAMBORONDON SAMBORONDÓN TULCAN TULCÁN NUEVA LOJA LAGO AGRIO
+COCA TENA PUYO MACAS ZAMORA AZOGUES GUARANDA OTAVALO CAYAMBE SANGOLQUI SANGOLQUÍ PASAJE HUAQUILLAS JIPIJAPA MONTECRISTI
+BAHIA BAHÍA PEDERNALES NARANJAL NARANJITO EMPALME TRONCAL VINCES VENTANAS BALZAR NOBOL PIÑAS PINAS ROSA SANTO DOMINGO
+CONCORDIA QUININDE QUININDÉ CALCETA SUCRE MACHACHI TUMBACO CUMBAYA CUMBAYÁ CALDERON CALDERÓN CARAPUNGO CONOCOTO
+GUAMANI GUAMANÍ CHILLOGALLO QUITUMBE SUR NORTE CENTRO ESTE OESTE MATRIZ SUCURSAL AGENCIA LOCAL MALL
+SHOPPING CC C.C. CENTRO COMERCIAL PASEO RIOCENTRO QUICENTRO POLICENTRO SAN MARINO RECREO CONDADO SCALA BOMBOLI
+PORTAL ALBORADA URDESA GUASMO PORTETE PROSPERINA SAUCES AV AV. AVENIDA CALLE KM KM. VIA VÍA""".split()
+
+
+def _lugares_aprendidos():
+    """Ubicaciones completas aprendidas de las agencias de Cresa (ej. 'MALL DEL NORTE', 'NUEVA AURORA', 'EL RECREO')."""
+    frases = set()
+    try:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "encuesta", "agencias.json"), encoding="utf-8") as f:
+            for a in json.load(f):
+                for p, _ in sorted(CADENAS_CRESA, key=lambda x: -len(x[0])):
+                    if a.startswith(p + " "):
+                        resto = re.sub(r"(\s+\d+)+$", "", a[len(p) + 1:].strip())   # sin el número de local
+                        if resto:
+                            frases.add(resto)
+                        break
+    except Exception:
+        pass
+    return frases
+
+
+LUGARES = set(CIUDADES)
+LUGAR_FRASES = sorted(_lugares_aprendidos(), key=len, reverse=True)
+
+
+def separar_cadena(agencia):
+    """'POINT MALL DEL NORTE' → ('Point', 'MALL DEL NORTE'). Si no encuentra ubicación, todo es la cadena."""
+    palabras = agencia.split()
+    for i in range(1, len(palabras)):
+        resto = " ".join(palabras[i:])
+        w = palabras[i].strip(".,-")
+        if w in LUGARES or w.isdigit() or any(resto == f or resto.startswith(f + " ") for f in LUGAR_FRASES):
+            return " ".join(palabras[:i]).title(), resto
+    return agencia.title(), ""
 
 
 def _prefijo(agencia, lista):
@@ -158,10 +208,13 @@ def clasificar(agencia, tipo_txt):
 
 
 def cadena_de(agencia, tipo="propio"):
-    """Nuestras: Japón / Crecos / Orve según la 1.ª palabra. Competencia: la empresa completa."""
-    if tipo == "competencia":
-        return agencia.title() if agencia != "SIN AGENCIA" else "Competencia"
-    return _prefijo(agencia, CADENAS_CRESA)[0] or "Otra"
+    """Cadenas Cresa por prefijo conocido; si no se conoce, se separa la cadena de la ubicación."""
+    if agencia == "SIN AGENCIA":
+        return "Competencia" if tipo == "competencia" else "Otra"
+    conocida = _prefijo(agencia, CADENAS_CRESA)[0]
+    if conocida and tipo != "competencia":
+        return conocida
+    return separar_cadena(agencia)[0]
 
 
 ENCUESTA_CSV = os.path.join(DATA_DIR, "encuesta", "cuentas_sapo.csv")
