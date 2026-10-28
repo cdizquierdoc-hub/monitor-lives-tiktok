@@ -31,6 +31,8 @@ jobs:
             IG_TOKEN="${{ secrets.IG_TOKEN }}" python3 probar_meta.py ${{ github.event.inputs.usuarios }} 2>&1 | tee /tmp/out/resultado.txt
           elif [ "${{ github.event.inputs.modo }}" = "explorar_ig" ]; then
             python3 explorar_ig.py ${{ github.event.inputs.usuarios }} 2>&1 | tee /tmp/out/resultado.txt
+          elif [ "${{ github.event.inputs.modo }}" = "perfil_crudo" ]; then
+            python3 diag_perfil.py ${{ github.event.inputs.usuarios }} 2>&1 | tee /tmp/out/resultado.txt
           elif [ "${{ github.event.inputs.modo }}" = "explorar" ]; then
             python3 explorar.py ${{ github.event.inputs.usuarios }} 2>&1 | tee /tmp/out/resultado.txt
           else
