@@ -119,6 +119,16 @@ def verificar(usuario, cache):
     return c
 
 
+def _palabras(t):
+    t = unicodedata.normalize("NFD", str(t or "")).encode("ascii", "ignore").decode().lower()
+    return {w for w in re.findall(r"[a-z]+", t) if len(w) >= 3}
+
+
+def nombre_coincide(nombre_vendedor, nick):
+    """¿El nombre visible de la cuenta tiene alguna palabra del nombre del vendedor? (ej. 'Jenny Herrera')"""
+    return bool(_palabras(nombre_vendedor) & _palabras(nick))
+
+
 def nombre_empresa(texto):
     """Nombre oficial de la empresa (ej. 'Samandi Guayaquil' → 'Samadi Motos', 'Best pc' → 'BestPC')."""
     from monitor import clasificar
@@ -198,7 +208,7 @@ def procesar(respuestas, cache):
             "fecha": fecha(x["_t"]), "nombre": x.get("nombre", ""), "cadena": x.get("cadena", ""),
             "agencia": x.get("agencia") or ("(sin agencia)" if x.get("cadena") in INDEP else ""),
             "tiktok": tt, "existe": v.get("existe") if tt else None, "nick": v.get("nick", ""), "videos": v.get("videos"),
-            "dudosa": bool(tt and v.get("existe") and v.get("videos") == 0 and not man),
+            "dudosa": bool(tt and v.get("existe") and v.get("videos") == 0 and not man and not nombre_coincide(x.get("nombre"), v.get("nick"))),
             "seguidores": v.get("seguidores"), "lives": x.get("lives", ""),
             "instagram": (x.get("instagram") or "").lower(), "veces": x["_veces"], "ids": x["_ids"],
             "ya_en_sapo": bool(man)})
