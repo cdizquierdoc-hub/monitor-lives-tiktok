@@ -82,7 +82,7 @@ def clave_cuenta(handle, plataforma):
 # Cadenas de Cresa: se reconocen por el inicio de la agencia (ej. "JAPON PARQUE CALIFORNIA")
 CADENAS_CRESA = [
     ("ALMACENES JAPON", "Japón"), ("ALMACENES JAPÓN", "Japón"), ("JAPON", "Japón"), ("JAPÓN", "Japón"),
-    ("CRECOS", "Crecos"), ("ORVE HOGAR", "Orve Hogar"), ("ORVE", "Orve Hogar"),
+    ("CRECOS", "Crecos"), ("CREDITO ECONOMICO", "Crecos"), ("CREDITOS ECONOMICOS", "Crecos"), ("ORVE HOGAR", "Orve Hogar"), ("ORVE", "Orve Hogar"),
     ("MOTOZONE", "Motozone"), ("MOTO ZONE", "Motozone"), ("PAGA MENOS", "Pagamenos"), ("PAGAMENOS", "Pagamenos"),
     ("SAMSUNG", "Samsung"), ("INDEPENDIENTES", "Independientes"), ("INDEPENDIENTE", "Independientes"),
     ("MULTINIVEL", "Independientes"), ("MULTI NIVEL", "Independientes"),
@@ -168,10 +168,16 @@ def separar_cadena(agencia):
     return agencia.title(), ""
 
 
+def _sin_tildes(t):
+    import unicodedata
+    return unicodedata.normalize("NFD", str(t)).encode("ascii", "ignore").decode()
+
+
 def _prefijo(agencia, lista):
     """(nombre, coincide_exacto) del primer prefijo que calce, o (None, False)."""
-    a = agencia.upper()
+    a = _sin_tildes(agencia).upper()
     for prefijo, nombre in lista:
+        prefijo = _sin_tildes(prefijo)
         if a == prefijo:
             return nombre, True
         if a.startswith(prefijo + " "):
@@ -214,7 +220,7 @@ def cadena_de(agencia, tipo="propio"):
     if agencia == "SIN AGENCIA":
         return "Competencia" if tipo == "competencia" else "Otra"
     conocida = _prefijo(agencia, CADENAS_CRESA)[0]
-    if conocida and tipo != "competencia":
+    if conocida:
         return conocida
     return separar_cadena(agencia)[0]
 

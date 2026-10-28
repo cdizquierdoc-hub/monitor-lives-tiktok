@@ -136,6 +136,10 @@ def motivo_descarte(empresa, v):
     """Cuentas de competencia que no parecen del negocio (usuarios genéricos como @no, @bestpc, @gmotos)."""
     if not v.get("existe"):
         return ""
+    from monitor import _prefijo, CADENAS_CRESA
+    propia = _prefijo(empresa, CADENAS_CRESA)[0] if empresa else None
+    if propia:
+        return "es de Cresa (%s), no competencia" % propia
     if (v.get("seguidores") or 0) < MIN_SEGUIDORES_COMP:
         return "muy pocos seguidores"
     if not empresa:
