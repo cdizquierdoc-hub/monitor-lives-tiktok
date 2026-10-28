@@ -365,7 +365,7 @@
       <h2>Competencia reportada <small id="e-comp-sub"></small></h2>
       <div class="filtros-t">
         <select id="ec-empresa"><option value="">Todas las empresas</option></select>
-        <select id="ec-estado"><option value="">Todos los estados</option><option value="ok">✓ Existe</option><option value="no">✗ No existe</option></select>
+        <select id="ec-estado"><option value="">Todos los estados</option><option value="ok">✓ Existe</option><option value="no">✗ No existe</option><option value="desc">Descartada (no es del negocio)</option></select>
         <select id="ec-cont"><option value="">Qué publica: todo</option><option>Lives</option><option>Videos</option><option>Ambos</option></select>
         <select id="ec-sapo"><option value="">En SAPO: todas</option><option value="ya">Ya estaba en SAPO</option><option value="agr">Agregada por la encuesta</option><option value="no">No está en SAPO</option></select>
       </div>
@@ -563,7 +563,7 @@ function renderEncuesta() {
   $('#actualizado').textContent = 'Encuesta en vivo · se refresca sola cada minuto';
   const llenar = (sel, vals, todos) => { const el = $(sel), act = el.value; el.innerHTML = `<option value="">${todos}</option>` + [...new Set(vals.filter(Boolean))].sort().map(v => `<option${v === act ? ' selected' : ''}>${esc(v)}</option>`).join(''); };
   const estadoCresa = f => !f.tiktok ? 'sin' : f.corregido?.existe ? 'corr' : f.dudosa ? 'dud' : f.existe ? 'ok' : f.existe === false ? 'pend' : 'ver';
-  const enSapo = f => f.ya_en_sapo ? 'ya' : f.corregido?.existe ? 'corr' : (f.existe && !f.dudosa) ? 'agr' : 'no';
+  const enSapo = f => f.ya_en_sapo ? 'ya' : f.corregido?.existe ? 'corr' : (f.existe && !f.dudosa && !f.descartada) ? 'agr' : 'no';
   llenar('#ef-cadena', d.cresa.map(f => f.cadena), 'Todas las cadenas');
   llenar('#ef-agencia', d.cresa.filter(f => !$('#ef-cadena').value || f.cadena === $('#ef-cadena').value).map(f => f.agencia), 'Todas las agencias');
   const fe = $('#ef-estado').value, fc = $('#ef-cadena').value, fa = $('#ef-agencia').value, fs = $('#ef-sapo').value, fl = $('#ef-lives').value;
@@ -598,13 +598,13 @@ function renderEncuesta() {
   llenar('#ec-empresa', d.competencia.map(f => f.empresa), 'Todas las empresas');
   const ce = $('#ec-empresa').value, cs = $('#ec-estado').value, cc = $('#ec-cont').value, cp = $('#ec-sapo').value;
   const co = d.competencia.filter(f => pasa(f.tiktok, f.empresa, ...(f.por || []), ...(f.agencias || [])) && (!ce || f.empresa === ce) &&
-    (!cs || (cs === 'ok' ? f.existe : f.existe === false)) && (!cc || f.contenido === cc) && (!cp || enSapo(f) === cp));
+    (!cs || (cs === 'desc' ? !!f.descartada : cs === 'ok' ? f.existe && !f.descartada : f.existe === false)) && (!cc || f.contenido === cc) && (!cp || enSapo(f) === cp));
   $('#e-comp-sub').textContent = co.length + ' de ' + d.competencia.length + ' cuentas';
   tabla($('#e-competencia'), 'e-comp', [
     {k: 'tiktok', t: 'Usuario TikTok', h: f => ttLink(f.tiktok)},
     {k: 'empresa', t: 'Empresa', h: f => puntoMarca(f.empresa) + esc(f.empresa)},
     {k: 'contenido', t: 'Qué publica'},
-    {k: 'existe', t: '¿Existe?', v: f => f.existe === false ? 0 : f.existe ? 2 : 1, h: f => existePill(f.existe)},
+    {k: 'existe', t: '¿Existe?', v: f => f.existe === false ? 0 : f.existe ? 2 : 1, h: f => f.descartada ? `<span class="hint" title="${esc(f.descartada)}">descartada · ${esc(f.descartada)}</span>` : existePill(f.existe)},
     {k: 'seguidores', t: 'Seguidores', num: 1, h: f => fmtN(f.seguidores)},
     {k: 'veces', t: 'Vendedores que la reportaron', num: 1},
     {k: 'por', t: 'Reportada por', v: f => (f.por || []).join(', '), h: f => `<span style="display:inline-block;max-width:240px;white-space:normal">${esc((f.por || []).join(', '))}</span>`},

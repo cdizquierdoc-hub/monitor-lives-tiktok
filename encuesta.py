@@ -129,6 +129,20 @@ def nombre_coincide(nombre_vendedor, nick):
     return bool(_palabras(nombre_vendedor) & _palabras(nick))
 
 
+MIN_SEGUIDORES_COMP = 100   # una cuenta de negocio real de la competencia tiene al menos esto
+
+
+def motivo_descarte(empresa, v):
+    """Cuentas de competencia que no parecen del negocio (usuarios genéricos como @no, @bestpc, @gmotos)."""
+    if not v.get("existe"):
+        return ""
+    if (v.get("seguidores") or 0) < MIN_SEGUIDORES_COMP:
+        return "muy pocos seguidores"
+    if not empresa:
+        return "no se sabe de qué empresa es"
+    return ""
+
+
 def nombre_empresa(texto):
     """Nombre oficial de la empresa (ej. 'Samandi Guayaquil' → 'Samadi Motos', 'Best pc' → 'BestPC')."""
     from monitor import clasificar
@@ -144,6 +158,8 @@ def existe_txt(v):
     if c:
         estado = {True: "sí existe", False: "TAMPOCO EXISTE – revisar", None: "sin verificar"}[c.get("existe")]
         return "Corregida → @%s (%s)" % (c["tiktok"], estado)
+    if v.get("descartada"):
+        return "Descartada – no parece del negocio (%s)" % v["descartada"]
     if v.get("dudosa"):
         return "NO – existe pero sin videos, revisar si es su cuenta"
     return {True: "Sí", False: "NO EXISTE – revisar", None: "Sin verificar"}[v.get("existe")]
@@ -246,8 +262,10 @@ def procesar(respuestas, cache):
     filas_comp = []
     for u, x in sorted(comp.items(), key=lambda kv: (-len(kv[1]["por"]), -kv[1]["ultima"])):
         v = verificar(u, cache)
+        empresa = nombre_empresa(max(x["empresas"], key=x["empresas"].get)) if x["empresas"] else ""
         filas_comp.append({
-            "tiktok": u, "empresa": nombre_empresa(max(x["empresas"], key=x["empresas"].get)) if x["empresas"] else "",
+            "descartada": motivo_descarte(empresa, v),
+            "tiktok": u, "empresa": empresa,
             "contenido": max(x["contenido"], key=x["contenido"].get) if x["contenido"] else "",
             "existe": v.get("existe"), "nick": v.get("nick", ""), "seguidores": v.get("seguidores"),
             "veces": max(1, len(x["por"])), "por": x["por"], "agencias": sorted(a for a in x["agencias"] if a),
@@ -327,7 +345,7 @@ def escribir_cuentas_sapo(filas_cresa, filas_comp):
             agencia = "INDEPENDIENTE" if f["cadena"] in INDEP else f["agencia"]
             filas.append([f["instagram"], agencia, f["nombre"], "SI", "propio", "vendedor", "instagram"])
     for f in filas_comp:
-        if f["existe"] and not f["ya_en_sapo"]:
+        if f["existe"] and not f["ya_en_sapo"] and not f.get("descartada"):
             filas.append([f["tiktok"], (f["empresa"] or "COMPETENCIA").upper(), "", "SI", "competencia", "vendedor", "tiktok"])
     with open(os.path.join(CARPETA, "cuentas_sapo.csv"), "w", encoding="utf-8", newline="") as fh:
         w = csv.writer(fh)
