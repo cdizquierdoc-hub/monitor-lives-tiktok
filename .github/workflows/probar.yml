@@ -21,7 +21,9 @@ jobs:
       - name: Probar
         run: |
           mkdir -p /tmp/out
-          if [ "${{ github.event.inputs.modo }}" = "ntfy" ]; then
+          if [ "${{ github.event.inputs.modo }}" = "oembed" ]; then
+            for u in ${{ github.event.inputs.usuarios }}; do echo "== $u"; curl -s -i -m 20 -H "Origin: https://cdizquierdoc-hub.github.io" "https://www.tiktok.com/oembed?url=https://www.tiktok.com/@$u" | grep -iE "^HTTP|access-control|^\{" | cut -c1-400; echo; done 2>&1 | tee /tmp/out/resultado.txt
+          elif [ "${{ github.event.inputs.modo }}" = "ntfy" ]; then
             T="${{ github.event.inputs.usuarios }}"
             { curl -s -i -X POST -H "Origin: https://cdizquierdoc-hub.github.io" -H "Content-Type: text/plain" -d '{"prueba":true,"nombre":"Ñandú Pérez"}' "https://ntfy.sh/$T" | head -20; echo; sleep 2;
               curl -s "https://ntfy.sh/$T/json?poll=1&since=all"; } 2>&1 | tee /tmp/out/resultado.txt
