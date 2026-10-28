@@ -330,6 +330,32 @@ def consultar_html(usuario):
             "espectadores": None, "vistas": None}
 
 
+_perfiles = {}
+
+
+def perfil_tiktok(usuario, max_edad=6 * 3600):
+    """Existencia real de una cuenta según su página de perfil (la API de lives solo conoce
+    cuentas con lives habilitados). Devuelve {existe, nick, seguidores, videos} o None si no se pudo consultar."""
+    c = _perfiles.get(usuario)
+    if c and time.time() - c["_t"] < max_edad:
+        return c
+    try:
+        _, html = http_get("https://www.tiktok.com/@" + urllib.parse.quote(usuario), timeout=25)
+    except Exception:
+        return c
+    m = re.search(r'<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>(.*?)</script>', html, re.S)
+    if not m:
+        return c
+    det = json.loads(m.group(1)).get("__DEFAULT_SCOPE__", {}).get("webapp.user-detail", {})
+    ui = det.get("userInfo") or {}
+    u, st = ui.get("user") or {}, ui.get("statsV2") or ui.get("stats") or {}
+    existe = det.get("statusCode", 0) == 0 and bool(u.get("uniqueId") or u.get("id"))
+    c = {"existe": existe, "nick": u.get("nickname", ""), "seguidores": int(st["followerCount"]) if st.get("followerCount") is not None else None,
+         "videos": int(st["videoCount"]) if st.get("videoCount") is not None else None, "codigo": det.get("statusCode"), "_t": time.time()}
+    _perfiles[usuario] = c
+    return c
+
+
 # ------------------------------------------------------------------ Instagram (API oficial de Meta)
 
 IG_CADA_MIN = 5            # la API de Meta tiene límite de llamadas: los lives de Instagram se revisan cada 5 min
@@ -368,6 +394,10 @@ def consultar(usuario):
             r["metodo"] = fn.__name__
             return r
         except LookupError as e:
+            p = perfil_tiktok(usuario)
+            if p and p["existe"]:   # existe, pero sin lives habilitados → no es un error
+                return {"enVivo": False, "roomId": "", "inicio": None, "titulo": "", "espectadores": None, "vistas": None,
+                        "metodo": "perfil", "nota": "sin lives habilitados"}
             return {"error": str(e)}
         except Exception as e:  # red, bloqueo, JSON inválido
             errores.append("%s: %s" % (fn.__name__, str(e)[:120]))
@@ -553,6 +583,11 @@ def main():
                 print("  data keys:", sorted(d.keys()))
             except Exception as e:
                 print(u, "ERROR", e)
+        return
+
+    if len(sys.argv) > 1 and sys.argv[1] == "perfil":
+        for u in sys.argv[2:]:
+            print(u, json.dumps(perfil_tiktok(limpiar_usuario(u)), ensure_ascii=False))
         return
 
     if len(sys.argv) > 1 and sys.argv[1] == "probar":

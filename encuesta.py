@@ -100,23 +100,22 @@ def leer_exclusiones():
 
 
 def verificar(usuario, cache):
-    """Comprueba en TikTok que el usuario exista; guarda nombre visible y seguidores."""
+    """Comprueba en TikTok que el usuario exista (por su página de perfil, que conoce todas las cuentas,
+    no solo las que tienen lives habilitados); guarda nombre visible y seguidores."""
+    from monitor import perfil_tiktok
     c = cache.get(usuario)
     ahora = time.time()
-    if c and (c["existe"] and ahora - c["t"] < 7 * 86400 or c["existe"] is False and ahora - c["t"] < 6 * 3600):
+    if c and c.get("v") == 2 and (c["existe"] and ahora - c["t"] < 7 * 86400 or c["existe"] is False and ahora - c["t"] < 6 * 3600):
         return c
-    q = urllib.parse.urlencode({"aid": "1988", "sourceType": "54", "uniqueId": usuario})
-    try:
-        _, txt = http_get("https://www.tiktok.com/api-live/user/room/?" + q)
-        d = json.loads(txt).get("data") or {}
-        u, st = d.get("user") or {}, d.get("stats") or {}
-        c = {"existe": bool(u), "nick": u.get("nickname", ""), "seguidores": st.get("followerCount"), "t": ahora}
-    except Exception as e:
-        if c:
+    p = perfil_tiktok(usuario, max_edad=0)
+    if p is None:
+        if c and c.get("v") == 2:
             return c
-        c = {"existe": None, "error": str(e)[:80], "t": ahora - 7 * 86400}
+        c = {"existe": None, "error": "no se pudo consultar TikTok", "t": ahora - 7 * 86400, "v": 2}
+    else:
+        c = {"existe": p["existe"], "nick": p["nick"], "seguidores": p["seguidores"], "t": ahora, "v": 2}
     cache[usuario] = c
-    time.sleep(0.3)
+    time.sleep(0.4)
     return c
 
 
