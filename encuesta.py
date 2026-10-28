@@ -120,6 +120,12 @@ def verificar(usuario, cache):
     return c
 
 
+def nombre_empresa(texto):
+    """Nombre oficial de la empresa (ej. 'Samandi Guayaquil' → 'Samadi Motos', 'Best pc' → 'BestPC')."""
+    from monitor import clasificar
+    return clasificar(re.sub(r"\s+", " ", texto).strip().upper(), "competencia")[0]
+
+
 def fecha(t):
     return datetime.fromtimestamp(t, EC).strftime("%Y-%m-%d %H:%M")
 
@@ -229,7 +235,7 @@ def procesar(respuestas, cache):
     for u, x in sorted(comp.items(), key=lambda kv: (-len(kv[1]["por"]), -kv[1]["ultima"])):
         v = verificar(u, cache)
         filas_comp.append({
-            "tiktok": u, "empresa": max(x["empresas"], key=x["empresas"].get) if x["empresas"] else "",
+            "tiktok": u, "empresa": nombre_empresa(max(x["empresas"], key=x["empresas"].get)) if x["empresas"] else "",
             "contenido": max(x["contenido"], key=x["contenido"].get) if x["contenido"] else "",
             "existe": v.get("existe"), "nick": v.get("nick", ""), "seguidores": v.get("seguidores"),
             "veces": max(1, len(x["por"])), "por": x["por"], "agencias": sorted(a for a in x["agencias"] if a),
