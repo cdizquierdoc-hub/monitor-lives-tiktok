@@ -121,6 +121,7 @@ COMPETIDORES = [
     ("SUKASA", "Sukasa"), ("TODO HOGAR", "Todo Hogar"), ("TODOHOGAR", "Todo Hogar"), ("GRAN HOGAR", "Gran Hogar"),
     ("MI BODEGA", "Mi Bodega"), ("BESTPC", "BestPC"), ("BEST PC", "BestPC"), ("COMPUTRON", "Computron"),
     ("NOVICOMPU", "Novicompu"), ("MI MOTO", "Mi Moto"), ("ALMACENES MI MOTO", "Mi Moto"),
+    ("MASTER MOTOS", "Master Motos"), ("MASTER MOTO", "Master Motos"), ("MASTERMOTO", "Master Motos"),
     ("SAMADI MOTOS", "Samadi Motos"), ("SAMADI", "Samadi Motos"), ("SAMANDI MOTOS", "Samadi Motos"), ("SAMANDI", "Samadi Motos"),
 ]
 
