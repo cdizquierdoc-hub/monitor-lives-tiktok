@@ -14,6 +14,9 @@ Recolector de la encuesta de vendedores (encuesta/index.html).
     cuentas_sapo.csv            (cuentas verificadas que SAPO monitorea, sin duplicar las puestas a mano)
 """
 import csv
+import difflib
+import re
+import unicodedata
 import glob
 import json
 import os
@@ -122,7 +125,36 @@ def fecha(t):
 
 
 def existe_txt(v):
+    c = v.get("corregido")
+    if c:
+        estado = {True: "sí existe", False: "TAMPOCO EXISTE – revisar", None: "sin verificar"}[c.get("existe")]
+        return "Corregida → @%s (%s)" % (c["tiktok"], estado)
     return {True: "Sí", False: "NO EXISTE – revisar", None: "Sin verificar"}[v.get("existe")]
+
+
+def _ag_norm(a):
+    a = re.sub(r"\s+", " ", str(a or "").upper().replace("ALMACENES ", "")).strip()
+    return re.sub(r"^ORVE HOGAR\b", "ORVE", a)
+
+
+def _alnum(t):
+    return re.sub(r"[^a-z0-9]", "", str(t or "").lower())
+
+
+def buscar_correccion(fila, manuales_por_ag, ocupadas=()):
+    """Cuenta puesta a mano (misma agencia) que corrige un usuario de la encuesta que no existe."""
+    a = _alnum(fila["tiktok"])
+    nombres = [_alnum(p) for p in unicodedata.normalize("NFD", fila["nombre"]).encode("ascii", "ignore").decode().split() if len(p) >= 4]
+    mejor, puntaje = None, 0
+    for h in manuales_por_ag.get(_ag_norm(fila["agencia"]), []):
+        b = _alnum(h)
+        if not b or h in ocupadas:
+            continue
+        p = 1.0 if a == b else difflib.SequenceMatcher(None, a, b).ratio()
+        p += 0.5 * sum(1 for n in nombres if n and n in b)   # cada palabra del nombre que aparece en el usuario
+        if p > puntaje:
+            mejor, puntaje = h, p
+    return mejor if puntaje >= 0.55 else None
 
 
 def cadena_de(a):
@@ -162,6 +194,18 @@ def procesar(respuestas, cache):
             "seguidores": v.get("seguidores"), "lives": x.get("lives", ""),
             "instagram": (x.get("instagram") or "").lower(), "veces": x["_veces"], "ids": x["_ids"],
             "ya_en_sapo": bool(man)})
+
+    # Cuentas que no existen pero que alguien ya corrigió agregándolas a mano (misma agencia, usuario parecido)
+    manuales_por_ag = defaultdict(list)
+    for (plat, h), v in manuales.items():
+        if plat == "tiktok" and v["tipo"] == "propio":
+            manuales_por_ag[_ag_norm(v["agencia"] or "INDEPENDIENTE")].append(h)
+    ocupadas = {f["tiktok"] for f in filas_cresa if f["tiktok"] and f["existe"]}   # cuentas válidas de otros vendedores
+    for f in filas_cresa:
+        if f["tiktok"] and f["existe"] is False:
+            h = buscar_correccion(f, manuales_por_ag, ocupadas)
+            if h:
+                f["corregido"] = {"tiktok": h, "existe": verificar(h, cache).get("existe")}
 
     # ---- Competencia: una fila por cuenta (aunque la reporten varios)
     comp = {}

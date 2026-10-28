@@ -170,6 +170,8 @@
   .ins .cuando{font-weight:700;font-size:15px;white-space:nowrap}
   .ins .dato{font-size:12.5px;color:var(--mute);text-align:right}
   .ins.vacio .cuando{font-weight:500;color:var(--mute);font-size:13px}
+  .filtros-t{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+  .filtros-t select{font-size:13px;padding:6px 9px;max-width:100%}
   .vh-hint{font-size:11.5px;color:var(--mute);margin:-4px 0 8px}
   header > div:first-child{min-width:0;flex:1 1 320px;max-width:100%}
   .tabs{max-width:100%}
@@ -350,25 +352,30 @@
 
     <div class="card section">
       <h2>Cuentas Cresa <small id="e-cresa-sub"></small></h2>
-      <div class="tablewrap"><table>
-        <thead><tr><th>Última respuesta</th><th>Nombre</th><th>Cadena</th><th>Agencia</th><th>Usuario TikTok</th><th>¿Existe?</th><th class="num">Seguidores</th><th>¿Hace lives?</th><th>Instagram</th><th>En SAPO</th><th class="num">Respondió</th><th></th></tr></thead>
-        <tbody id="e-cresa"></tbody>
-      </table></div>
+      <div class="filtros-t">
+        <select id="ef-estado"><option value="">Todos los estados</option><option value="pend">✗ No existe (pendiente de corregir)</option><option value="corr">✓ Corregidas</option><option value="ok">✓ Existe</option><option value="sin">No tiene TikTok</option></select>
+        <select id="ef-cadena"><option value="">Todas las cadenas</option></select>
+        <select id="ef-agencia"><option value="">Todas las agencias</option></select>
+        <select id="ef-sapo"><option value="">En SAPO: todas</option><option value="ya">Ya estaba en SAPO</option><option value="agr">Agregada por la encuesta</option><option value="no">No está en SAPO</option></select>
+        <select id="ef-lives"><option value="">¿Hace lives?: todas</option><option>Sí, seguido</option><option>A veces</option><option>No</option></select>
+      </div>
+      <div class="tablewrap" id="e-cresa"></div>
     </div>
     <div class="card section">
       <h2>Competencia reportada <small id="e-comp-sub"></small></h2>
-      <div class="tablewrap"><table>
-        <thead><tr><th>Usuario TikTok</th><th>Empresa</th><th>Qué publica</th><th>¿Existe?</th><th class="num">Seguidores</th><th class="num">Vendedores que la reportaron</th><th>Reportada por</th><th>Agencias</th><th>En SAPO</th><th></th></tr></thead>
-        <tbody id="e-competencia"></tbody>
-      </table></div>
+      <div class="filtros-t">
+        <select id="ec-empresa"><option value="">Todas las empresas</option></select>
+        <select id="ec-estado"><option value="">Todos los estados</option><option value="ok">✓ Existe</option><option value="no">✗ No existe</option></select>
+        <select id="ec-cont"><option value="">Qué publica: todo</option><option>Lives</option><option>Videos</option><option>Ambos</option></select>
+        <select id="ec-sapo"><option value="">En SAPO: todas</option><option value="ya">Ya estaba en SAPO</option><option value="agr">Agregada por la encuesta</option><option value="no">No está en SAPO</option></select>
+      </div>
+      <div class="tablewrap" id="e-competencia"></div>
     </div>
     <div class="card">
       <h2>Avance por agencia <label class="hint" style="font-weight:500"><input type="checkbox" id="e-faltan"> solo las que faltan</label></h2>
       <div class="dk" id="e-cadenas"></div>
-      <div class="tablewrap"><table>
-        <thead><tr><th>Cadena</th><th>Agencia</th><th class="num">Vendedores que respondieron</th><th>Estado</th></tr></thead>
-        <tbody id="e-avance"></tbody>
-      </table></div>
+      <div class="filtros-t"><select id="ea-cadena"><option value="">Todas las cadenas</option></select></div>
+      <div class="tablewrap" id="e-avance"></div>
       <p class="hint" style="margin-top:10px"><b>Eliminar</b> abre GitHub con todo listo: pulsa <b>Commit changes</b> y en 1–2 minutos la cuenta desaparece de esta vista, del Excel y del monitoreo.</p>
     </div>
   </section>
@@ -554,38 +561,74 @@ function renderEncuesta() {
   $('#e-sapo').textContent = fmtN(r.agregadas_a_sapo || 0);
   $('#e-act').textContent = r.actualizado ? 'Actualizado ' + fmtF(r.actualizado) : '';
   $('#actualizado').textContent = 'Encuesta en vivo · se refresca sola cada minuto';
-  const cr = d.cresa.filter(f => pasa(f.nombre, f.tiktok, f.agencia, f.cadena, f.instagram));
-  $('#e-cresa-sub').textContent = cr.length + ' cuentas';
-  $('#e-cresa').innerHTML = cr.map(f => `
-    <tr>
-      <td style="white-space:nowrap">${esc(f.fecha.slice(5).replace('-', '/'))}</td><td><b>${esc(f.nombre)}</b></td><td>${esc(f.cadena)}</td><td>${esc(f.agencia)}</td>
-      <td>${f.tiktok ? `<a class="u" href="https://www.tiktok.com/@${encodeURIComponent(f.tiktok)}" target="_blank" rel="noopener">@${esc(f.tiktok)}</a>` : '<span class="hint">no tiene</span>'}</td>
-      <td>${f.tiktok ? existePill(f.existe) : ''}</td><td class="num">${fmtN(f.seguidores)}</td><td>${esc(f.lives)}</td>
-      <td>${f.instagram ? `<a class="u" href="https://www.instagram.com/${encodeURIComponent(f.instagram)}/" target="_blank" rel="noopener">@${esc(f.instagram)}</a>` : ''}</td>
-      <td>${f.ya_en_sapo ? '<span class="hint">ya estaba</span>' : f.existe ? '<span class="ok">agregada</span>' : '—'}</td>
-      <td class="num">${f.veces > 1 ? f.veces + ' veces' : '1'}</td>
-      <td>${f.tiktok ? linkEliminar(f.tiktok + '.txt', '@' + f.tiktok, 'Eliminar') : linkEliminar('resp-' + f.ids[0] + '.txt', f.ids.map(i => 'id:' + i).join('\n'), 'Eliminar')}</td>
-    </tr>`).join('') || '<tr><td colspan="12" class="empty">Aún no hay respuestas. Comparte el link de la encuesta.</td></tr>';
-  const co = d.competencia.filter(f => pasa(f.tiktok, f.empresa, ...(f.por || []), ...(f.agencias || [])));
-  $('#e-comp-sub').textContent = co.length + ' cuentas';
-  $('#e-competencia').innerHTML = co.map(f => `
-    <tr>
-      <td><a class="u" href="https://www.tiktok.com/@${encodeURIComponent(f.tiktok)}" target="_blank" rel="noopener">@${esc(f.tiktok)}</a></td>
-      <td>${esc(f.empresa)}</td><td>${esc(f.contenido)}</td><td>${existePill(f.existe)}</td><td class="num">${fmtN(f.seguidores)}</td>
-      <td class="num">${f.veces}</td><td style="max-width:240px;white-space:normal">${esc((f.por || []).join(', '))}</td>
-      <td style="max-width:260px;white-space:normal">${esc((f.agencias || []).join(', '))}</td>
-      <td>${f.ya_en_sapo ? '<span class="hint">ya estaba</span>' : f.existe ? '<span class="ok">agregada</span>' : '—'}</td>
-      <td>${linkEliminar(f.tiktok + '.txt', '@' + f.tiktok, 'Eliminar')}</td>
-    </tr>`).join('') || '<tr><td colspan="10" class="empty">Nadie ha reportado cuentas de la competencia todavía.</td></tr>';
+  const llenar = (sel, vals, todos) => { const el = $(sel), act = el.value; el.innerHTML = `<option value="">${todos}</option>` + [...new Set(vals.filter(Boolean))].sort().map(v => `<option${v === act ? ' selected' : ''}>${esc(v)}</option>`).join(''); };
+  const estadoCresa = f => !f.tiktok ? 'sin' : f.existe ? 'ok' : f.corregido?.existe ? 'corr' : f.existe === false ? 'pend' : 'ver';
+  const enSapo = f => f.ya_en_sapo ? 'ya' : (f.existe || f.corregido?.existe) ? 'agr' : 'no';
+  llenar('#ef-cadena', d.cresa.map(f => f.cadena), 'Todas las cadenas');
+  llenar('#ef-agencia', d.cresa.filter(f => !$('#ef-cadena').value || f.cadena === $('#ef-cadena').value).map(f => f.agencia), 'Todas las agencias');
+  const fe = $('#ef-estado').value, fc = $('#ef-cadena').value, fa = $('#ef-agencia').value, fs = $('#ef-sapo').value, fl = $('#ef-lives').value;
+  const cr = d.cresa.filter(f => pasa(f.nombre, f.tiktok, f.agencia, f.cadena, f.instagram, f.corregido?.tiktok) &&
+    (!fe || estadoCresa(f) === fe || (fe === 'pend' && estadoCresa(f) === 'pend')) && (!fc || f.cadena === fc) && (!fa || f.agencia === fa) && (!fs || enSapo(f) === fs) && (!fl || f.lives === fl));
+  const nPend = d.cresa.filter(f => estadoCresa(f) === 'pend').length;
+  $('#e-cresa-sub').textContent = cr.length + ' de ' + d.cresa.length + ' cuentas · ' + nPend + ' pendientes de corregir';
+  const ttLink = u => `<a class="u" href="https://www.tiktok.com/@${encodeURIComponent(u)}" target="_blank" rel="noopener">@${esc(u)}</a>`;
+  const estadoHtml = f => { const e = estadoCresa(f);
+    if (e === 'sin') return '<span class="hint">no tiene</span>';
+    if (e === 'ok') return '<span class="ok">✓ sí</span>';
+    if (e === 'corr') return `<span class="ok">✓ corregida → </span>${ttLink(f.corregido.tiktok)}`;
+    if (f.corregido) return `<span class="err" title="Se agregó a mano @${esc(f.corregido.tiktok)}, pero ese usuario tampoco existe en TikTok">✗ corregida, pero ${ttLink(f.corregido.tiktok)} tampoco existe</span>`;
+    return e === 'pend' ? '<span class="err" title="No existe en TikTok: revisa cómo lo escribió">✗ no existe</span>' : '<span class="hint">verificando</span>'; };
+  const ordEstado = {pend: 0, ver: 1, corr: 2, ok: 3, sin: 4};
+  tabla($('#e-cresa'), 'e-cresa', [
+    {k: 'fecha', t: 'Última respuesta', h: f => `<span style="white-space:nowrap">${esc(f.fecha.slice(5).replace('-', '/'))}</span>`},
+    {k: 'nombre', t: 'Nombre', h: f => `<b>${esc(f.nombre)}</b>`},
+    {k: 'cadena', t: 'Cadena', h: f => puntoMarca(f.cadena) + esc(f.cadena)},
+    {k: 'agencia', t: 'Agencia'},
+    {k: 'tiktok', t: 'Usuario TikTok', h: f => f.tiktok ? ttLink(f.tiktok) : '<span class="hint">no tiene</span>'},
+    {k: 'estado', t: '¿Existe?', v: f => ordEstado[estadoCresa(f)], h: estadoHtml},
+    {k: 'seguidores', t: 'Seguidores', num: 1, h: f => fmtN(f.seguidores)},
+    {k: 'lives', t: '¿Hace lives?'},
+    {k: 'instagram', t: 'Instagram', h: f => f.instagram ? `<a class="u" href="https://www.instagram.com/${encodeURIComponent(f.instagram)}/" target="_blank" rel="noopener">@${esc(f.instagram)}</a>` : ''},
+    {k: 'sapo', t: 'En SAPO', v: f => enSapo(f), h: f => ({ya: '<span class="hint">ya estaba</span>', agr: '<span class="ok">agregada</span>', no: '—'})[enSapo(f)]},
+    {k: 'veces', t: 'Respondió', num: 1, h: f => f.veces > 1 ? f.veces + ' veces' : '1'},
+    {k: 'del', t: '', v: () => 0, h: f => f.tiktok ? linkEliminar(f.tiktok + '.txt', '@' + f.tiktok, 'Eliminar') : linkEliminar('resp-' + f.ids[0] + '.txt', f.ids.map(i => 'id:' + i).join('\n'), 'Eliminar')},
+  ], cr, {orden: {k: 'fecha', dir: -1}, vacio: d.cresa.length ? 'Ninguna cuenta con estos filtros.' : 'Aún no hay respuestas. Comparte el link de la encuesta.'});
+
+  llenar('#ec-empresa', d.competencia.map(f => f.empresa), 'Todas las empresas');
+  const ce = $('#ec-empresa').value, cs = $('#ec-estado').value, cc = $('#ec-cont').value, cp = $('#ec-sapo').value;
+  const co = d.competencia.filter(f => pasa(f.tiktok, f.empresa, ...(f.por || []), ...(f.agencias || [])) && (!ce || f.empresa === ce) &&
+    (!cs || (cs === 'ok' ? f.existe : f.existe === false)) && (!cc || f.contenido === cc) && (!cp || enSapo(f) === cp));
+  $('#e-comp-sub').textContent = co.length + ' de ' + d.competencia.length + ' cuentas';
+  tabla($('#e-competencia'), 'e-comp', [
+    {k: 'tiktok', t: 'Usuario TikTok', h: f => ttLink(f.tiktok)},
+    {k: 'empresa', t: 'Empresa', h: f => puntoMarca(f.empresa) + esc(f.empresa)},
+    {k: 'contenido', t: 'Qué publica'},
+    {k: 'existe', t: '¿Existe?', v: f => f.existe === false ? 0 : f.existe ? 2 : 1, h: f => existePill(f.existe)},
+    {k: 'seguidores', t: 'Seguidores', num: 1, h: f => fmtN(f.seguidores)},
+    {k: 'veces', t: 'Vendedores que la reportaron', num: 1},
+    {k: 'por', t: 'Reportada por', v: f => (f.por || []).join(', '), h: f => `<span style="display:inline-block;max-width:240px;white-space:normal">${esc((f.por || []).join(', '))}</span>`},
+    {k: 'agencias', t: 'Agencias', v: f => (f.agencias || []).join(', '), h: f => `<span style="display:inline-block;max-width:260px;white-space:normal">${esc((f.agencias || []).join(', '))}</span>`},
+    {k: 'sapo', t: 'En SAPO', v: f => enSapo(f), h: f => ({ya: '<span class="hint">ya estaba</span>', agr: '<span class="ok">agregada</span>', no: '—'})[enSapo(f)]},
+    {k: 'del', t: '', v: () => 0, h: f => linkEliminar(f.tiktok + '.txt', '@' + f.tiktok, 'Eliminar')},
+  ], co, {orden: {k: 'veces', dir: -1}, vacio: d.competencia.length ? 'Ninguna cuenta con estos filtros.' : 'Nadie ha reportado cuentas de la competencia todavía.'});
+
   const cads = {};
   d.avance.forEach(a => { const c = cads[a.cadena] ||= {t: 0, r: 0}; c.t++; if (a.n) c.r++; });
-  $('#e-cadenas').innerHTML = Object.entries(cads).map(([c, x]) => `<div><span>${esc(c)}</span><b>${c === 'Independientes' ? (d.avance.find(a => a.cadena === 'Independientes')?.n || 0) + ' vend.' : x.r + ' / ' + x.t}</b></div>`).join('');
-  const av = d.avance.filter(a => (!$('#e-faltan').checked || !a.n) && pasa(a.agencia, a.cadena)).sort((a, b) => (a.n > 0) - (b.n > 0) || a.cadena.localeCompare(b.cadena) || a.agencia.localeCompare(b.agencia));
-  $('#e-avance').innerHTML = av.map(a => `<tr class="${a.n ? '' : 'zero'}"><td>${esc(a.cadena)}</td><td>${esc(a.agencia)}</td><td class="num">${a.n}</td><td>${a.n ? '<span class="ok">✓ respondió</span>' : '<span class="err">sin respuestas</span>'}</td></tr>`).join('');
+  $('#e-cadenas').innerHTML = Object.entries(cads).map(([c, x]) => `<div><span>${puntoMarca(c)}${esc(c)}</span><b>${c === 'Independientes' ? (d.avance.find(a => a.cadena === 'Independientes')?.n || 0) + ' vend.' : x.r + ' / ' + x.t}</b></div>`).join('');
+  llenar('#ea-cadena', d.avance.map(a => a.cadena), 'Todas las cadenas');
+  const ac = $('#ea-cadena').value;
+  const av = d.avance.filter(a => (!$('#e-faltan').checked || !a.n) && (!ac || a.cadena === ac) && pasa(a.agencia, a.cadena));
+  tabla($('#e-avance'), 'e-avance', [
+    {k: 'cadena', t: 'Cadena', h: a => puntoMarca(a.cadena) + esc(a.cadena)},
+    {k: 'agencia', t: 'Agencia'},
+    {k: 'n', t: 'Vendedores que respondieron', num: 1},
+    {k: 'est', t: 'Estado', v: a => a.n ? 1 : 0, h: a => a.n ? '<span class="ok">✓ respondió</span>' : '<span class="err">sin respuestas</span>'},
+  ], av, {orden: {k: 'n', dir: 1}, fila: a => a.n ? '' : 'class="zero"', vacio: 'Ninguna agencia con estos filtros.'});
 }
 const norm = s => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 $('#e-buscar').addEventListener('input', renderEncuesta);
 $('#e-faltan').addEventListener('change', renderEncuesta);
+['ef-estado', 'ef-cadena', 'ef-agencia', 'ef-sapo', 'ef-lives', 'ec-empresa', 'ec-estado', 'ec-cont', 'ec-sapo', 'ea-cadena'].forEach(id => $('#' + id).addEventListener('change', () => { if (id === 'ef-cadena') $('#ef-agencia').value = ''; renderEncuesta(); }));
 
 const pct = x => x == null || !isFinite(x) ? '—' : (x * 100).toLocaleString('es-EC', {maximumFractionDigits: 1}) + '%';
 const interacciones = p => (p.likes || 0) + (p.comentarios || 0) + (p.compartidos || 0) + (p.guardados || 0);
