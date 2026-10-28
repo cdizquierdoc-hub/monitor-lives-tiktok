@@ -105,15 +105,15 @@ def verificar(usuario, cache):
     from monitor import perfil_tiktok
     c = cache.get(usuario)
     ahora = time.time()
-    if c and c.get("v") == 2 and (c["existe"] and ahora - c["t"] < 7 * 86400 or c["existe"] is False and ahora - c["t"] < 6 * 3600):
+    if c and c.get("v") == 3 and (c["existe"] and ahora - c["t"] < 7 * 86400 or c["existe"] is False and ahora - c["t"] < 6 * 3600):
         return c
     p = perfil_tiktok(usuario, max_edad=0)
     if p is None:
-        if c and c.get("v") == 2:
+        if c and c.get("v") == 3:
             return c
-        c = {"existe": None, "error": "no se pudo consultar TikTok", "t": ahora - 7 * 86400, "v": 2}
+        c = {"existe": None, "error": "no se pudo consultar TikTok", "t": ahora - 7 * 86400, "v": 3}
     else:
-        c = {"existe": p["existe"], "nick": p["nick"], "seguidores": p["seguidores"], "videos": p.get("videos"), "t": ahora, "v": 2}
+        c = {"existe": p["existe"], "nick": p["nick"], "seguidores": p["seguidores"], "videos": p.get("videos"), "oculta": p.get("oculta", ""), "t": ahora, "v": 3}
     cache[usuario] = c
     time.sleep(0.4)
     return c
@@ -140,7 +140,7 @@ def motivo_descarte(empresa, v):
     propia = _prefijo(empresa, CADENAS_CRESA)[0] if empresa else None
     if propia:
         return "es de Cresa (%s), no competencia" % propia
-    if (v.get("seguidores") or 0) < MIN_SEGUIDORES_COMP:
+    if v.get("seguidores") is not None and v["seguidores"] < MIN_SEGUIDORES_COMP:
         return "muy pocos seguidores"
     if not empresa:
         return "no se sabe de qué empresa es"
@@ -166,6 +166,9 @@ def existe_txt(v):
         return "Descartada – no parece del negocio (%s)" % v["descartada"]
     if v.get("dudosa"):
         return "NO – existe pero sin videos, revisar si es su cuenta"
+    if v.get("existe") and v.get("oculta"):
+        return {"privada": "Sí, pero es PRIVADA – pedir que la ponga pública",
+                "restringida": "Sí, pero tiene el perfil RESTRINGIDO – pedir que lo abra"}[v["oculta"]]
     return {True: "Sí", False: "NO EXISTE – revisar", None: "Sin verificar"}[v.get("existe")]
 
 
@@ -228,6 +231,7 @@ def procesar(respuestas, cache):
             "fecha": fecha(x["_t"]), "nombre": x.get("nombre", ""), "cadena": x.get("cadena", ""),
             "agencia": x.get("agencia") or ("(sin agencia)" if x.get("cadena") in INDEP else ""),
             "tiktok": tt, "existe": v.get("existe") if tt else None, "nick": v.get("nick", ""), "videos": v.get("videos"),
+            "oculta": v.get("oculta", "") if tt else "",
             "dudosa": bool(tt and v.get("existe") and v.get("videos") == 0 and not man and not nombre_coincide(x.get("nombre"), v.get("nick"))),
             "seguidores": v.get("seguidores"), "lives": x.get("lives", ""),
             "instagram": (x.get("instagram") or "").lower(), "veces": x["_veces"], "ids": x["_ids"],
@@ -271,7 +275,7 @@ def procesar(respuestas, cache):
             "descartada": motivo_descarte(empresa, v),
             "tiktok": u, "empresa": empresa,
             "contenido": max(x["contenido"], key=x["contenido"].get) if x["contenido"] else "",
-            "existe": v.get("existe"), "nick": v.get("nick", ""), "seguidores": v.get("seguidores"),
+            "existe": v.get("existe"), "nick": v.get("nick", ""), "seguidores": v.get("seguidores"), "oculta": v.get("oculta", ""),
             "veces": max(1, len(x["por"])), "por": x["por"], "agencias": sorted(a for a in x["agencias"] if a),
             "primera": fecha(x["primera"]), "ya_en_sapo": bool(manuales.get(("tiktok", u)))})
 

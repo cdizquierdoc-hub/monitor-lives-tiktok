@@ -68,7 +68,7 @@
   .panel textarea{width:100%;min-height:150px;font:13px ui-monospace,SFMono-Regular,Menlo,monospace;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);resize:vertical}
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
   .hint{font-size:12.5px;color:var(--mute)}
-  .ok{color:#16a34a}.err{color:#dc2626}
+  .ok{color:#16a34a}.err{color:#dc2626}.warn{color:#d97706}
   .close{margin-left:auto;background:none;border:0;font-size:22px;line-height:1;color:var(--mute);padding:4px 8px}
   .vlist{max-height:300px;overflow:auto;margin-top:8px}
   .empty-cta{text-align:center;padding:30px 10px}
@@ -353,7 +353,7 @@
     <div class="card section">
       <h2>Cuentas Cresa <small id="e-cresa-sub"></small></h2>
       <div class="filtros-t">
-        <select id="ef-estado"><option value="">Todos los estados</option><option value="revisar">✗ Por revisar (no existe o sin videos)</option><option value="pend">✗ No existe</option><option value="dud">⚠ Existe pero sin videos</option><option value="corr">✓ Corregidas</option><option value="ok">✓ Existe</option><option value="sin">No tiene TikTok</option></select>
+        <select id="ef-estado"><option value="">Todos los estados</option><option value="revisar">✗ Por revisar (no existe, sin videos o privada)</option><option value="pend">✗ No existe</option><option value="dud">⚠ Existe pero sin videos</option><option value="oculta">🔒 Privada o restringida</option><option value="corr">✓ Corregidas</option><option value="ok">✓ Existe</option><option value="sin">No tiene TikTok</option></select>
         <select id="ef-cadena"><option value="">Todas las cadenas</option></select>
         <select id="ef-agencia"><option value="">Todas las agencias</option></select>
         <select id="ef-sapo"><option value="">En SAPO: todas</option><option value="ya">Ya estaba en SAPO</option><option value="agr">Agregada por la encuesta</option><option value="no">No está en SAPO</option></select>
@@ -542,6 +542,7 @@ function mapaCalor(lives, rgb) {
 const ENC_LINK = 'https://cdizquierdoc-hub.github.io/monitor-lives-tiktok/encuesta/';
 $('#e-link').textContent = ENC_LINK; $('#e-abrir').href = ENC_LINK;
 $('#e-copiar').addEventListener('click', () => { navigator.clipboard?.writeText(ENC_LINK).then(() => $('#e-copiar').textContent = '¡Copiado!', () => {}); });
+const ocultaPill = f => f.oculta === 'privada' ? '<span class="warn" title="La cuenta existe pero es privada: pídele que la ponga pública">🔒 privada</span>' : '<span class="warn" title="La cuenta existe pero limitó quién puede ver su perfil sin iniciar sesión: pídele que lo abra">🔒 restringida</span>';
 const existePill = x => x === true ? '<span class="ok">✓ sí</span>' : x === false ? '<span class="err" title="No existe en TikTok: revisa cómo lo escribió">✗ no existe</span>' : '<span class="hint">verificando</span>';
 function linkEliminar(nombreArchivo, contenido, texto) {
   const url = GH + '/new/main/encuesta/excluir?filename=' + encodeURIComponent(nombreArchivo) + '&value=' + encodeURIComponent(contenido + '\n# eliminado desde SAPO el ' + new Date().toLocaleString('es-EC') + '\n');
@@ -562,24 +563,25 @@ function renderEncuesta() {
   $('#e-act').textContent = r.actualizado ? 'Actualizado ' + fmtF(r.actualizado) : '';
   $('#actualizado').textContent = 'Encuesta en vivo · se refresca sola cada minuto';
   const llenar = (sel, vals, todos) => { const el = $(sel), act = el.value; el.innerHTML = `<option value="">${todos}</option>` + [...new Set(vals.filter(Boolean))].sort().map(v => `<option${v === act ? ' selected' : ''}>${esc(v)}</option>`).join(''); };
-  const estadoCresa = f => !f.tiktok ? 'sin' : f.corregido?.existe ? 'corr' : f.dudosa ? 'dud' : f.existe ? 'ok' : f.existe === false ? 'pend' : 'ver';
+  const estadoCresa = f => !f.tiktok ? 'sin' : f.corregido?.existe ? 'corr' : f.dudosa ? 'dud' : f.existe && f.oculta ? 'oculta' : f.existe ? 'ok' : f.existe === false ? 'pend' : 'ver';
   const enSapo = f => f.ya_en_sapo ? 'ya' : f.corregido?.existe ? 'corr' : (f.existe && !f.dudosa && !f.descartada) ? 'agr' : 'no';
   llenar('#ef-cadena', d.cresa.map(f => f.cadena), 'Todas las cadenas');
   llenar('#ef-agencia', d.cresa.filter(f => !$('#ef-cadena').value || f.cadena === $('#ef-cadena').value).map(f => f.agencia), 'Todas las agencias');
   const fe = $('#ef-estado').value, fc = $('#ef-cadena').value, fa = $('#ef-agencia').value, fs = $('#ef-sapo').value, fl = $('#ef-lives').value;
   const cr = d.cresa.filter(f => pasa(f.nombre, f.tiktok, f.agencia, f.cadena, f.instagram, f.corregido?.tiktok) &&
-    (!fe || estadoCresa(f) === fe || (fe === 'revisar' && ['pend', 'dud'].includes(estadoCresa(f)))) && (!fc || f.cadena === fc) && (!fa || f.agencia === fa) && (!fs || enSapo(f) === fs) && (!fl || f.lives === fl));
-  const nPend = d.cresa.filter(f => ['pend', 'dud'].includes(estadoCresa(f))).length;
+    (!fe || estadoCresa(f) === fe || (fe === 'revisar' && ['pend', 'dud', 'oculta'].includes(estadoCresa(f)))) && (!fc || f.cadena === fc) && (!fa || f.agencia === fa) && (!fs || enSapo(f) === fs) && (!fl || f.lives === fl));
+  const nPend = d.cresa.filter(f => ['pend', 'dud', 'oculta'].includes(estadoCresa(f))).length;
   $('#e-cresa-sub').textContent = cr.length + ' de ' + d.cresa.length + ' cuentas · ' + nPend + ' por revisar';
   const ttLink = u => `<a class="u" href="https://www.tiktok.com/@${encodeURIComponent(u)}" target="_blank" rel="noopener">@${esc(u)}</a>`;
   const estadoHtml = f => { const e = estadoCresa(f);
     if (e === 'sin') return '<span class="hint">no tiene</span>';
     if (e === 'ok') return '<span class="ok">✓ sí</span>';
+    if (e === 'oculta') return ocultaPill(f);
     if (e === 'dud') return `<span class="err" title="La cuenta existe pero no tiene videos (${fmtN(f.seguidores)} seguidores). Puede que haya escrito su nombre visible y no su usuario.">⚠ existe pero sin videos, ¿es su cuenta?</span>`;
     if (e === 'corr') return `<span class="ok">✓ corregida → </span>${ttLink(f.corregido.tiktok)}`;
     if (f.corregido) return `<span class="err" title="Se agregó a mano @${esc(f.corregido.tiktok)}, pero ese usuario tampoco existe en TikTok">✗ corregida, pero ${ttLink(f.corregido.tiktok)} tampoco existe</span>`;
     return e === 'pend' ? '<span class="err" title="No existe en TikTok: revisa cómo lo escribió">✗ no existe</span>' : '<span class="hint">verificando</span>'; };
-  const ordEstado = {pend: 0, dud: 1, ver: 2, corr: 3, ok: 4, sin: 5};
+  const ordEstado = {pend: 0, dud: 1, oculta: 1.5, ver: 2, corr: 3, ok: 4, sin: 5};
   tabla($('#e-cresa'), 'e-cresa', [
     {k: 'fecha', t: 'Última respuesta', h: f => `<span style="white-space:nowrap">${esc(f.fecha.slice(5).replace('-', '/'))}</span>`},
     {k: 'nombre', t: 'Nombre', h: f => `<b>${esc(f.nombre)}</b>`},
@@ -604,7 +606,7 @@ function renderEncuesta() {
     {k: 'tiktok', t: 'Usuario TikTok', h: f => ttLink(f.tiktok)},
     {k: 'empresa', t: 'Empresa', h: f => puntoMarca(f.empresa) + esc(f.empresa)},
     {k: 'contenido', t: 'Qué publica'},
-    {k: 'existe', t: '¿Existe?', v: f => f.existe === false ? 0 : f.existe ? 2 : 1, h: f => f.descartada ? `<span class="hint" title="${esc(f.descartada)}">descartada · ${esc(f.descartada)}</span>` : existePill(f.existe)},
+    {k: 'existe', t: '¿Existe?', v: f => f.existe === false ? 0 : f.existe ? 2 : 1, h: f => f.descartada ? `<span class="hint" title="${esc(f.descartada)}">descartada · ${esc(f.descartada)}</span>` : f.existe && f.oculta ? ocultaPill(f) : existePill(f.existe)},
     {k: 'seguidores', t: 'Seguidores', num: 1, h: f => fmtN(f.seguidores)},
     {k: 'veces', t: 'Vendedores que la reportaron', num: 1},
     {k: 'por', t: 'Reportada por', v: f => (f.por || []).join(', '), h: f => `<span style="display:inline-block;max-width:240px;white-space:normal">${esc((f.por || []).join(', '))}</span>`},

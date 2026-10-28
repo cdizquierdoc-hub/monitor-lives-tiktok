@@ -243,7 +243,8 @@ function pintarVerif(box, u, r, propio) {
   if (r.ok) box.innerHTML = '<span class="ok-v">✓ Encontramos a <b>' + esc(r.nombre) + '</b></span> · ' + link + '<br><span style="color:var(--mute)">' +
     (propio ? 'Si ese no es tu nombre en TikTok, revisa el usuario.' : 'Si no es la cuenta que buscabas, revisa el usuario.') + '</span>';
   else if (r.ok === false) box.innerHTML = '<span style="color:var(--err)">✗ No encontramos <b>@' + esc(u) + '</b> en TikTok. Escribe bien el usuario: es el que aparece con @ debajo de la foto del perfil' +
-    (propio ? ' (no tu nombre).' : '.') + ' También puedes pegar el link del perfil.</span>';
+    (propio ? ' (no tu nombre).' : '.') + ' También puedes pegar el link del perfil.</span>' +
+    (propio ? '<br><span style="color:var(--mute)">Si está bien escrito, tu cuenta es <b>privada</b>: ponla pública en TikTok → Perfil → ☰ → Configuración y privacidad → Privacidad → desactiva <b>Cuenta privada</b>, y vuelve a intentar.</span>' : '');
   else box.innerHTML = '<span style="color:var(--mute)">No pudimos comprobar el usuario ahora (¿sin internet?). Revisa que sea correcto: ' + link + '</span>';
 }
 function enVivo(input, box, propio) {
@@ -328,7 +329,7 @@ $('#f').addEventListener('submit', async e => {
   aRevisar.forEach(([u, inp_, box, propio], k) => { pintarVerif(box, u, res[k], propio); inp_.classList.toggle('bad', res[k].ok === false); });
   if (malos.length) {
     g.hidden = false;
-    g.textContent = 'No encontramos ' + malos.map(x => '@' + x[0]).join(', ') + ' en TikTok. Escribe bien ' + (malos.length > 1 ? 'esos usuarios' : 'el usuario') + ' antes de enviar.';
+    g.textContent = 'No encontramos ' + malos.map(x => '@' + x[0]).join(', ') + ' en TikTok. Escribe bien ' + (malos.length > 1 ? 'esos usuarios' : 'el usuario') + ' antes de enviar.' + (malos.some(x => x[3]) ? ' Si tu usuario está bien escrito, tu cuenta es privada: ponla pública y vuelve a intentar.' : '');
     malos[0][1].scrollIntoView({behavior: 'smooth', block: 'center'}); malos[0][1].focus();
     return;
   }

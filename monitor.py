@@ -356,9 +356,14 @@ def perfil_tiktok(usuario, max_edad=6 * 3600):
     det = json.loads(m.group(1)).get("__DEFAULT_SCOPE__", {}).get("webapp.user-detail", {})
     ui = det.get("userInfo") or {}
     u, st = ui.get("user") or {}, ui.get("statsV2") or ui.get("stats") or {}
-    existe = det.get("statusCode", 0) == 0 and bool(u.get("uniqueId") or u.get("id"))
-    c = {"existe": existe, "nick": u.get("nickname", ""), "seguidores": int(st["followerCount"]) if st.get("followerCount") is not None else None,
-         "videos": int(st["videoCount"]) if st.get("videoCount") is not None else None, "codigo": det.get("statusCode"), "_t": time.time()}
+    cod = det.get("statusCode", 0)
+    # 10221 = no existe · 10222 = cuenta privada · 209002 = el creador limitó quién puede ver su perfil sin iniciar sesión
+    oculta = {10222: "privada", 209002: "restringida"}.get(cod, "")
+    existe = (cod == 0 and bool(u.get("uniqueId") or u.get("id"))) or bool(oculta)
+    c = {"existe": existe, "oculta": oculta, "nick": u.get("nickname", ""),
+         "seguidores": int(st["followerCount"]) if st.get("followerCount") is not None else None,
+         "videos": None if oculta else int(st["videoCount"]) if st.get("videoCount") is not None else None,
+         "codigo": cod, "_t": time.time()}
     _perfiles[usuario] = c
     return c
 
