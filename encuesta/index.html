@@ -37,6 +37,8 @@
   .at input{padding-left:30px}
   .prev{font-size:13px;margin-top:7px;color:var(--mute);word-break:break-all}
   .prev a{color:var(--frog-ink);font-weight:600}
+  .ok-v{color:var(--frog-ink)}
+  .c-prev{margin-top:-2px}
   .bad{border-color:var(--err)!important}
   .msg-err{color:var(--err);font-size:13px;margin-top:6px}
   /* combo de agencias */
@@ -220,13 +222,43 @@ inp.addEventListener('blur', () => setTimeout(() => { lista.hidden = true; inp.s
 $('#ag-cambiar').addEventListener('click', () => { agencia = ''; $('#combo').hidden = false; $('#ag-elegida').hidden = true; inp.value = ''; inp.focus(); });
 
 /* ---------- usuario de TikTok ---------- */
-function prevTT() {
-  const u = limpiar($('#tiktok').value), box = $('#tt-prev');
-  if ($('#sin-tt').checked || !$('#tiktok').value.trim()) { box.innerHTML = ''; return; }
-  box.innerHTML = valido(u)
-    ? 'Revisa que sea tu perfil: <a href="https://www.tiktok.com/@' + encodeURIComponent(u) + '" target="_blank" rel="noopener">tiktok.com/@' + esc(u) + ' ↗</a>'
-    : '<span style="color:var(--err)">Un usuario de TikTok solo tiene letras, números, puntos o guiones bajos (sin espacios).</span>';
+/* ---------- verificación del usuario en TikTok (mientras escriben) ---------- */
+const VERIF = new Map();   // usuario → Promise<{ok: true, nombre} | {ok: false} | {ok: null}>
+function oembed(u) {
+  return fetch('https://www.tiktok.com/oembed?url=' + encodeURIComponent('https://www.tiktok.com/@' + u), {cache: 'no-store'})
+    .then(r => r.ok ? r.json() : Promise.reject(r.status));
 }
+function verificarTT(u) {
+  if (!VERIF.has(u)) VERIF.set(u, oembed(u)
+    .then(j => ({ok: true, nombre: j.author_name || ('@' + u)}))
+    // TikTok responde con error cuando el usuario no existe; para no confundirlo con una falla de internet,
+    // se comprueba con una cuenta que sí existe.
+    .catch(() => oembed('tiktok').then(() => ({ok: false}), () => ({ok: null})))
+    .then(r => { if (r.ok === null) VERIF.delete(u); return r; }));
+  return VERIF.get(u);
+}
+function pintarVerif(box, u, r, propio) {
+  const link = '<a href="https://www.tiktok.com/@' + encodeURIComponent(u) + '" target="_blank" rel="noopener">tiktok.com/@' + esc(u) + ' ↗</a>';
+  if (r === 'buscando') { box.innerHTML = '<span style="color:var(--mute)">Buscando @' + esc(u) + ' en TikTok…</span>'; return; }
+  if (r.ok) box.innerHTML = '<span class="ok-v">✓ Encontramos a <b>' + esc(r.nombre) + '</b></span> · ' + link + '<br><span style="color:var(--mute)">' +
+    (propio ? 'Si ese no es tu nombre en TikTok, revisa el usuario.' : 'Si no es la cuenta que buscabas, revisa el usuario.') + '</span>';
+  else if (r.ok === false) box.innerHTML = '<span style="color:var(--err)">✗ No encontramos <b>@' + esc(u) + '</b> en TikTok. Escribe bien el usuario: es el que aparece con @ debajo de la foto del perfil' +
+    (propio ? ' (no tu nombre).' : '.') + ' También puedes pegar el link del perfil.</span>';
+  else box.innerHTML = '<span style="color:var(--mute)">No pudimos comprobar el usuario ahora (¿sin internet?). Revisa que sea correcto: ' + link + '</span>';
+}
+function enVivo(input, box, propio) {
+  let t;
+  return () => {
+    clearTimeout(t);
+    const u = limpiar(input.value);
+    if (!u) { box.innerHTML = ''; return; }
+    if (!valido(u)) { box.innerHTML = '<span style="color:var(--err)">Un usuario de TikTok solo tiene letras, números, puntos o guiones bajos (sin espacios).</span>'; return; }
+    pintarVerif(box, u, 'buscando');
+    t = setTimeout(() => verificarTT(u).then(r => { if (limpiar(input.value) === u) { pintarVerif(box, u, r, propio); input.classList.toggle('bad', r.ok === false); } }), 600);
+  };
+}
+const prevTTvivo = enVivo($('#tiktok'), $('#tt-prev'), true);
+function prevTT() { if ($('#sin-tt').checked) { $('#tt-prev').innerHTML = ''; return; } prevTTvivo(); }
 $('#tiktok').addEventListener('input', () => { $('#tiktok').classList.remove('bad'); prevTT(); guardar(); });
 $('#sin-tt').addEventListener('change', () => { $('#tiktok').disabled = $('#sin-tt').checked; prevTT(); });
 
@@ -238,13 +270,16 @@ function agregarComp(d = {}) {
   el.className = 'comp'; el.dataset.i = i;
   el.innerHTML = '<div class="comp-head">Cuenta de la competencia<button type="button" aria-label="Quitar">Quitar ✕</button></div>' +
     '<div class="at"><span>@</span><input type="text" class="c-user" id="c-user-' + i + '" placeholder="usuario de TikTok" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="120"></div>' +
+    '<div class="prev c-prev"></div>' +
     '<select class="c-emp" id="c-emp-' + i + '"><option value="">¿De qué empresa es?</option>' + EMPRESAS.map(e => '<option>' + e + '</option>').join('') + '<option value="otra">Otra empresa…</option></select>' +
     '<input type="text" class="c-otra" id="c-otra-' + i + '" placeholder="Nombre de la empresa" hidden maxlength="60">' +
     '<div class="chips"><label><input type="radio" name="c-tipo-' + i + '" value="Lives">Hace lives</label><label><input type="radio" name="c-tipo-' + i + '" value="Videos">Publica videos</label><label><input type="radio" name="c-tipo-' + i + '" value="Ambos">Ambos</label></div>';
   el.querySelector('.comp-head button').onclick = () => { el.remove(); guardar(); $('#add-comp').hidden = false; };
   const emp = el.querySelector('.c-emp'), otra = el.querySelector('.c-otra');
   emp.onchange = () => { otra.hidden = emp.value !== 'otra'; if (!otra.hidden) otra.focus(); guardar(); };
-  el.querySelector('.c-user').value = d.usuario || ''; if (d.empresa) { if (EMPRESAS.includes(d.empresa)) emp.value = d.empresa; else { emp.value = 'otra'; otra.hidden = false; otra.value = d.empresa; } }
+  const cu = el.querySelector('.c-user'), vivo = enVivo(cu, el.querySelector('.c-prev'), false);
+  cu.addEventListener('input', () => { cu.classList.remove('bad'); vivo(); });
+  el.querySelector('.c-user').value = d.usuario || ''; if (d.usuario) setTimeout(vivo, 0); if (d.empresa) { if (EMPRESAS.includes(d.empresa)) emp.value = d.empresa; else { emp.value = 'otra'; otra.hidden = false; otra.value = d.empresa; } }
   if (d.contenido) { const r = el.querySelector('input[value="' + d.contenido + '"]'); if (r) r.checked = true; }
   el.addEventListener('input', guardar); el.addEventListener('change', guardar);
   $('#comps').appendChild(el);
@@ -284,6 +319,19 @@ $('#f').addEventListener('submit', async e => {
   if (compMal.length) errs.push('revisar el usuario de la competencia @' + compMal[0].usuario);
   const g = $('#err-global');
   if (errs.length) { g.hidden = false; g.textContent = 'Falta ' + errs.join(', ') + '.'; document.querySelector('.bad')?.scrollIntoView({behavior: 'smooth', block: 'center'}); return; }
+  // comprobar en TikTok que los usuarios existan
+  const btn0 = $('#enviar'); btn0.disabled = true; btn0.textContent = 'Comprobando usuarios en TikTok…';
+  const aRevisar = (sinTT ? [] : [[tt, $('#tiktok'), $('#tt-prev'), true]]).concat([...document.querySelectorAll('.comp')].map(el => [limpiar(el.querySelector('.c-user').value), el.querySelector('.c-user'), el.querySelector('.c-prev'), false]).filter(x => x[0]));
+  const res = await Promise.all(aRevisar.map(([u]) => verificarTT(u)));
+  btn0.disabled = false; btn0.textContent = 'Enviar respuesta';
+  const malos = aRevisar.filter((x, k) => res[k].ok === false);
+  aRevisar.forEach(([u, inp_, box, propio], k) => { pintarVerif(box, u, res[k], propio); inp_.classList.toggle('bad', res[k].ok === false); });
+  if (malos.length) {
+    g.hidden = false;
+    g.textContent = 'No encontramos ' + malos.map(x => '@' + x[0]).join(', ') + ' en TikTok. Escribe bien ' + (malos.length > 1 ? 'esos usuarios' : 'el usuario') + ' antes de enviar.';
+    malos[0][1].scrollIntoView({behavior: 'smooth', block: 'center'}); malos[0][1].focus();
+    return;
+  }
   g.hidden = true;
   const datos = {v: 1, enviado: new Date().toISOString(), nombre, agencia: multi ? '' : agencia, cadena: multi ? 'Independientes' : cadena(agencia), tiktok: sinTT ? '' : tt,
     lives: document.querySelector('input[name=lives]:checked')?.value || '', instagram: limpiar($('#instagram').value), competencia: comps};
