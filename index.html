@@ -353,7 +353,7 @@
     <div class="card section">
       <h2>Cuentas Cresa <small id="e-cresa-sub"></small></h2>
       <div class="filtros-t">
-        <select id="ef-estado"><option value="">Todos los estados</option><option value="pend">✗ No existe (pendiente de corregir)</option><option value="corr">✓ Corregidas</option><option value="ok">✓ Existe</option><option value="sin">No tiene TikTok</option></select>
+        <select id="ef-estado"><option value="">Todos los estados</option><option value="revisar">✗ Por revisar (no existe o sin videos)</option><option value="pend">✗ No existe</option><option value="dud">⚠ Existe pero sin videos</option><option value="corr">✓ Corregidas</option><option value="ok">✓ Existe</option><option value="sin">No tiene TikTok</option></select>
         <select id="ef-cadena"><option value="">Todas las cadenas</option></select>
         <select id="ef-agencia"><option value="">Todas las agencias</option></select>
         <select id="ef-sapo"><option value="">En SAPO: todas</option><option value="ya">Ya estaba en SAPO</option><option value="agr">Agregada por la encuesta</option><option value="no">No está en SAPO</option></select>
@@ -562,23 +562,24 @@ function renderEncuesta() {
   $('#e-act').textContent = r.actualizado ? 'Actualizado ' + fmtF(r.actualizado) : '';
   $('#actualizado').textContent = 'Encuesta en vivo · se refresca sola cada minuto';
   const llenar = (sel, vals, todos) => { const el = $(sel), act = el.value; el.innerHTML = `<option value="">${todos}</option>` + [...new Set(vals.filter(Boolean))].sort().map(v => `<option${v === act ? ' selected' : ''}>${esc(v)}</option>`).join(''); };
-  const estadoCresa = f => !f.tiktok ? 'sin' : f.existe ? 'ok' : f.corregido?.existe ? 'corr' : f.existe === false ? 'pend' : 'ver';
-  const enSapo = f => f.ya_en_sapo ? 'ya' : (f.existe || f.corregido?.existe) ? 'agr' : 'no';
+  const estadoCresa = f => !f.tiktok ? 'sin' : f.corregido?.existe ? 'corr' : f.dudosa ? 'dud' : f.existe ? 'ok' : f.existe === false ? 'pend' : 'ver';
+  const enSapo = f => f.ya_en_sapo ? 'ya' : f.corregido?.existe ? 'corr' : (f.existe && !f.dudosa) ? 'agr' : 'no';
   llenar('#ef-cadena', d.cresa.map(f => f.cadena), 'Todas las cadenas');
   llenar('#ef-agencia', d.cresa.filter(f => !$('#ef-cadena').value || f.cadena === $('#ef-cadena').value).map(f => f.agencia), 'Todas las agencias');
   const fe = $('#ef-estado').value, fc = $('#ef-cadena').value, fa = $('#ef-agencia').value, fs = $('#ef-sapo').value, fl = $('#ef-lives').value;
   const cr = d.cresa.filter(f => pasa(f.nombre, f.tiktok, f.agencia, f.cadena, f.instagram, f.corregido?.tiktok) &&
-    (!fe || estadoCresa(f) === fe || (fe === 'pend' && estadoCresa(f) === 'pend')) && (!fc || f.cadena === fc) && (!fa || f.agencia === fa) && (!fs || enSapo(f) === fs) && (!fl || f.lives === fl));
-  const nPend = d.cresa.filter(f => estadoCresa(f) === 'pend').length;
-  $('#e-cresa-sub').textContent = cr.length + ' de ' + d.cresa.length + ' cuentas · ' + nPend + ' pendientes de corregir';
+    (!fe || estadoCresa(f) === fe || (fe === 'revisar' && ['pend', 'dud'].includes(estadoCresa(f)))) && (!fc || f.cadena === fc) && (!fa || f.agencia === fa) && (!fs || enSapo(f) === fs) && (!fl || f.lives === fl));
+  const nPend = d.cresa.filter(f => ['pend', 'dud'].includes(estadoCresa(f))).length;
+  $('#e-cresa-sub').textContent = cr.length + ' de ' + d.cresa.length + ' cuentas · ' + nPend + ' por revisar';
   const ttLink = u => `<a class="u" href="https://www.tiktok.com/@${encodeURIComponent(u)}" target="_blank" rel="noopener">@${esc(u)}</a>`;
   const estadoHtml = f => { const e = estadoCresa(f);
     if (e === 'sin') return '<span class="hint">no tiene</span>';
     if (e === 'ok') return '<span class="ok">✓ sí</span>';
+    if (e === 'dud') return `<span class="err" title="La cuenta existe pero no tiene videos (${fmtN(f.seguidores)} seguidores). Puede que haya escrito su nombre visible y no su usuario.">⚠ existe pero sin videos, ¿es su cuenta?</span>`;
     if (e === 'corr') return `<span class="ok">✓ corregida → </span>${ttLink(f.corregido.tiktok)}`;
     if (f.corregido) return `<span class="err" title="Se agregó a mano @${esc(f.corregido.tiktok)}, pero ese usuario tampoco existe en TikTok">✗ corregida, pero ${ttLink(f.corregido.tiktok)} tampoco existe</span>`;
     return e === 'pend' ? '<span class="err" title="No existe en TikTok: revisa cómo lo escribió">✗ no existe</span>' : '<span class="hint">verificando</span>'; };
-  const ordEstado = {pend: 0, ver: 1, corr: 2, ok: 3, sin: 4};
+  const ordEstado = {pend: 0, dud: 1, ver: 2, corr: 3, ok: 4, sin: 5};
   tabla($('#e-cresa'), 'e-cresa', [
     {k: 'fecha', t: 'Última respuesta', h: f => `<span style="white-space:nowrap">${esc(f.fecha.slice(5).replace('-', '/'))}</span>`},
     {k: 'nombre', t: 'Nombre', h: f => `<b>${esc(f.nombre)}</b>`},
@@ -589,7 +590,7 @@ function renderEncuesta() {
     {k: 'seguidores', t: 'Seguidores', num: 1, h: f => fmtN(f.seguidores)},
     {k: 'lives', t: '¿Hace lives?'},
     {k: 'instagram', t: 'Instagram', h: f => f.instagram ? `<a class="u" href="https://www.instagram.com/${encodeURIComponent(f.instagram)}/" target="_blank" rel="noopener">@${esc(f.instagram)}</a>` : ''},
-    {k: 'sapo', t: 'En SAPO', v: f => enSapo(f), h: f => ({ya: '<span class="hint">ya estaba</span>', agr: '<span class="ok">agregada</span>', no: '—'})[enSapo(f)]},
+    {k: 'sapo', t: 'En SAPO', v: f => enSapo(f), h: f => ({ya: '<span class="hint">ya estaba</span>', corr: '<span class="hint">la corregida</span>', agr: '<span class="ok">agregada</span>', no: '—'})[enSapo(f)]},
     {k: 'veces', t: 'Respondió', num: 1, h: f => f.veces > 1 ? f.veces + ' veces' : '1'},
     {k: 'del', t: '', v: () => 0, h: f => f.tiktok ? linkEliminar(f.tiktok + '.txt', '@' + f.tiktok, 'Eliminar') : linkEliminar('resp-' + f.ids[0] + '.txt', f.ids.map(i => 'id:' + i).join('\n'), 'Eliminar')},
   ], cr, {orden: {k: 'fecha', dir: -1}, vacio: d.cresa.length ? 'Ninguna cuenta con estos filtros.' : 'Aún no hay respuestas. Comparte el link de la encuesta.'});

@@ -113,7 +113,7 @@ def verificar(usuario, cache):
             return c
         c = {"existe": None, "error": "no se pudo consultar TikTok", "t": ahora - 7 * 86400, "v": 2}
     else:
-        c = {"existe": p["existe"], "nick": p["nick"], "seguidores": p["seguidores"], "t": ahora, "v": 2}
+        c = {"existe": p["existe"], "nick": p["nick"], "seguidores": p["seguidores"], "videos": p.get("videos"), "t": ahora, "v": 2}
     cache[usuario] = c
     time.sleep(0.4)
     return c
@@ -134,6 +134,8 @@ def existe_txt(v):
     if c:
         estado = {True: "sí existe", False: "TAMPOCO EXISTE – revisar", None: "sin verificar"}[c.get("existe")]
         return "Corregida → @%s (%s)" % (c["tiktok"], estado)
+    if v.get("dudosa"):
+        return "NO – existe pero sin videos, revisar si es su cuenta"
     return {True: "Sí", False: "NO EXISTE – revisar", None: "Sin verificar"}[v.get("existe")]
 
 
@@ -195,7 +197,8 @@ def procesar(respuestas, cache):
         filas_cresa.append({
             "fecha": fecha(x["_t"]), "nombre": x.get("nombre", ""), "cadena": x.get("cadena", ""),
             "agencia": x.get("agencia") or ("(sin agencia)" if x.get("cadena") in INDEP else ""),
-            "tiktok": tt, "existe": v.get("existe") if tt else None, "nick": v.get("nick", ""),
+            "tiktok": tt, "existe": v.get("existe") if tt else None, "nick": v.get("nick", ""), "videos": v.get("videos"),
+            "dudosa": bool(tt and v.get("existe") and v.get("videos") == 0 and not man),
             "seguidores": v.get("seguidores"), "lives": x.get("lives", ""),
             "instagram": (x.get("instagram") or "").lower(), "veces": x["_veces"], "ids": x["_ids"],
             "ya_en_sapo": bool(man)})
@@ -205,9 +208,9 @@ def procesar(respuestas, cache):
     for (plat, h), v in manuales.items():
         if plat == "tiktok" and v["tipo"] == "propio":
             manuales_por_ag[_ag_norm(v["agencia"] or "INDEPENDIENTE")].append(h)
-    ocupadas = {f["tiktok"] for f in filas_cresa if f["tiktok"] and f["existe"]}   # cuentas válidas de otros vendedores
+    ocupadas = {f["tiktok"] for f in filas_cresa if f["tiktok"] and f["existe"] and not f["dudosa"]}
     for f in filas_cresa:
-        if f["tiktok"] and f["existe"] is False:
+        if f["tiktok"] and not f["ya_en_sapo"] and (f["existe"] is False or f["dudosa"]):
             h = buscar_correccion(f, manuales_por_ag, ocupadas)
             if h:
                 f["corregido"] = {"tiktok": h, "existe": verificar(h, cache).get("existe")}
@@ -307,7 +310,7 @@ def escribir_cuentas_sapo(filas_cresa, filas_comp):
     """Cuentas verificadas para que SAPO las monitoree. Las que ya están puestas a mano se omiten (no se duplican)."""
     filas = []
     for f in filas_cresa:
-        if f["tiktok"] and f["existe"] and not f["ya_en_sapo"]:
+        if f["tiktok"] and f["existe"] and not f["ya_en_sapo"] and not f.get("dudosa") and not f.get("corregido"):
             agencia = "INDEPENDIENTE" if f["cadena"] in INDEP else f["agencia"]
             filas.append([f["tiktok"], agencia, f["nombre"], "SI", "propio", "vendedor", "tiktok"])
         if f["instagram"]:
