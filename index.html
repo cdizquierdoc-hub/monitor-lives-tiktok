@@ -10,7 +10,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root{--bg:#f5f6f8;--card:#ffffff;--ink:#0f172a;--mute:#64748b;--line:#e6e8ec;--accent:#fe2c55;--accent2:#14b8c4;--soft:#fff1f4}
-  @media (prefers-color-scheme:dark){:root{--bg:#0b0f17;--card:#121826;--ink:#e5e7eb;--mute:#94a3b8;--line:#222b3a;--soft:#2a1620}}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b0f17;--card:#121826;--ink:#e5e7eb;--mute:#94a3b8;--line:#222b3a;--soft:#2a1620}}
+  :root[data-theme="dark"]{--bg:#0b0f17;--card:#121826;--ink:#e5e7eb;--mute:#94a3b8;--line:#222b3a;--soft:#2a1620}
   *{box-sizing:border-box}
   body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
   .wrap{max-width:1240px;margin:0 auto;padding:22px 16px 48px}
@@ -88,7 +89,7 @@
   .tabs a{padding:7px 14px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--mute);text-decoration:none;white-space:nowrap}
   .tabs a.on{background:var(--ink);color:var(--card)}
   .pill.us{background:rgba(20,184,196,.15);color:#0e8a93}.pill.them{background:rgba(139,92,246,.15);color:#7c3aed}
-  @media (prefers-color-scheme:dark){.pill.us{color:#5fe1ea}.pill.them{color:#c4b5fd}}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pill.us{color:#5fe1ea}:root:not([data-theme="light"]) .pill.them{color:#c4b5fd}}
   .vs{width:100%;border-collapse:collapse}
   .vs td,.vs th{padding:11px 10px;border-bottom:1px solid var(--line);font-size:14px}
   .vs th{font-size:12px}
@@ -104,7 +105,7 @@
   .red{display:inline-block;font-size:10px;font-weight:700;padding:1px 5px;border-radius:5px;vertical-align:1px;margin-left:4px;letter-spacing:.02em}
   .red.tt{background:#111;color:#fff}.red.ig{background:linear-gradient(45deg,#f58529,#dd2a7b,#8134af);color:#fff}
   .pill.ofi{background:rgba(234,179,8,.18);color:#a16207}
-  @media (prefers-color-scheme:dark){.pill.ofi{color:#facc15}.red.tt{background:#e5e7eb;color:#111}}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pill.ofi{color:#facc15}:root:not([data-theme="light"]) .red.tt{background:#e5e7eb;color:#111}}
   .aviso-ig{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:12.5px;color:var(--mute);margin-bottom:12px}
   .encuesta-box{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:16px;font-size:13.5px}
   h2.seccion{font-size:16px;margin:4px 0 10px;display:block}
@@ -173,6 +174,39 @@
   .filtros-t{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
   .filtros-t select{font-size:13px;padding:6px 9px;max-width:100%}
   .vh-hint{font-size:11.5px;color:var(--mute);margin:-4px 0 8px}
+  .vh h2{margin-right:auto}
+  .vh .btn-pdf{order:3}
+  button.btn-pdf{width:30px;height:28px;padding:0;border-radius:7px;font-size:14px;line-height:1;display:inline-grid;place-items:center;color:var(--mute);flex:none}
+  button.btn-pdf:hover{color:var(--ink)}
+  .exportando .no-pdf{visibility:hidden}
+  .fechas{display:flex;gap:6px;align-items:center;margin-top:5px;text-transform:none;letter-spacing:0;font-weight:500}
+  .fechas input{flex:1;min-width:0;font-size:13px;padding:6px 7px}
+  .fechas span{width:44px;font-size:12px;color:var(--mute)}
+  .chartbox .vacio-g{position:absolute;inset:0;display:grid;place-items:center;color:var(--mute);font-size:13px}
+  .chartbox{position:relative}
+  .pdf-fin{display:flex;justify-content:center;margin:18px 0 4px}
+  /* Top 5 con portadas */
+  .top5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+  @media (max-width:1100px){.top5{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  @media (max-width:640px){.top5{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .t5{display:flex;flex-direction:column;text-decoration:none;color:var(--ink);border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg)}
+  .t5:hover{border-color:var(--accent2)}
+  .t5-img{position:relative;aspect-ratio:9/16;background:linear-gradient(160deg,#25f4ee33,#fe2c5533);display:grid;place-items:center;color:var(--mute);font-size:12px}
+  .t5-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .t5-n{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.72);color:#fff;font-weight:800;border-radius:8px;padding:2px 8px;font-size:13px}
+  .t5-v{position:absolute;bottom:8px;left:8px;right:8px;background:rgba(0,0,0,.72);color:#fff;border-radius:8px;padding:4px 8px;font-size:12.5px;font-weight:700}
+  .t5-b{padding:9px 10px 10px;font-size:12.5px;line-height:1.4}
+  .t5-b .d{color:var(--mute);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:3px}
+  .t5-b .m{color:var(--mute);font-size:11.5px;margin-top:4px}
+  /* Cuenta vs cuenta */
+  .vsx{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+  .vsx-sel{border:1px solid var(--line);border-radius:12px;padding:10px;display:grid;gap:8px}
+  .vsx-sel b{font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  .vsx-sel label{font-size:12px;color:var(--mute);display:grid;gap:4px}
+  .vsx-sel select{width:100%;font-size:13px;padding:6px 8px}
+  .vsx-sel.a{box-shadow:inset 3px 0 0 var(--us)} .vsx-sel.b{box-shadow:inset 3px 0 0 var(--them)}
+  table.vs td.gana{font-weight:800}
+  @media (max-width:640px){.vsx{grid-template-columns:1fr}}
   header > div:first-child{min-width:0;flex:1 1 320px;max-width:100%}
   .tabs{max-width:100%}
   .live-item > div{flex:1;min-width:0}
@@ -185,14 +219,10 @@
   <aside class="side" id="side">
     <div class="side-head"><b>Filtros</b><button type="button" class="link" id="f-limpiar">Limpiar</button></div>
     <div class="sel-box" id="sel-box" hidden></div>
-    <label class="flbl no-enc">Periodo
-      <select id="periodo">
-        <option value="1">Hoy</option>
-        <option value="7" selected>Últimos 7 días</option>
-        <option value="30">Últimos 30 días</option>
-        <option value="90">Últimos 90 días</option>
-      </select>
-    </label>
+    <div class="flbl no-enc">Periodo
+      <div class="fechas"><span>Desde</span><input type="date" id="f-desde" aria-label="Desde"></div>
+      <div class="fechas"><span>Hasta</span><input type="date" id="f-hasta" aria-label="Hasta"></div>
+    </div>
     <label class="flbl no-enc" id="lbl-tipo">Grupo
       <select id="tipo">
         <option value="" selected>Cresa + Competencia</option>
@@ -207,7 +237,7 @@
         <option value="instagram">Solo Instagram</option>
       </select>
     </label>
-    <label class="flbl no-enc">Tipo de cuenta
+    <label class="flbl no-enc" id="lbl-rol">Tipo de cuenta
       <select id="rol">
         <option value="">Vendedores + oficiales</option>
         <option value="vendedor">Solo vendedores</option>
@@ -231,11 +261,12 @@
     <div>
       <h1><span class="logo">S</span> SAPO <span class="marca">Sistema de Análisis de Presencia Online</span></h1>
       <div class="sub" id="actualizado">Cargando…</div>
-      <nav class="tabs"><a href="#" id="t-resumen" class="on">Lives</a><a href="#competencia" id="t-comp">Nosotros vs Competencia</a><a href="#contenido" id="t-cont">Contenido (posts y seguidores)</a><a href="#encuesta" id="t-enc">Encuesta</a></nav>
+      <nav class="tabs"><a href="#" id="t-resumen" class="on">Lives</a><a href="#competencia" id="t-comp">Nosotros vs Competencia</a><a href="#contenido" id="t-cont">Contenido vendedores</a><a href="#contenido-oficiales" id="t-conto">Contenido oficiales</a><a href="#encuesta" id="t-enc">Encuesta</a></nav>
     </div>
     <div class="filters">
       <button type="button" class="btn-filtros" id="btn-filtros">☰ Filtros</button>
       <button id="exportar" class="solo-resumen" title="Descargar los lives filtrados">⬇ CSV</button>
+      <button type="button" class="no-enc" data-pdf-hoja title="Descargar toda la hoja en PDF">⬇ PDF</button>
       <button id="gestionar" class="primary">＋ Cuentas</button>
     </div>
   </header>
@@ -270,6 +301,7 @@
       <h2>Historial de lives <small id="hist-sub">clic en un live para ver el detalle de la cuenta</small></h2>
       <div class="tablewrap" id="historial"></div>
     </div>
+    <div class="pdf-fin no-pdf"><button type="button" data-pdf-hoja>⬇ Descargar toda la hoja en PDF</button></div>
     <div class="card" id="sinvendedores" hidden style="margin-top:14px">
       <div class="empty-cta">
         <h2 style="justify-content:center">Todavía no hay cuentas cargadas</h2>
@@ -329,6 +361,7 @@
       <div class="vh"><h2>Contenido: Cresa vs competencia por cadena</h2><div class="vctl" data-ctl="mC2"></div></div>
       <div class="tablewrap" id="mC2"></div>
     </div>
+    <div class="pdf-fin no-pdf"><button type="button" data-pdf-hoja>⬇ Descargar toda la hoja en PDF</button></div>
   </section>
 
   <section id="p-enc" hidden>
@@ -399,6 +432,37 @@
       <div class="card kpi"><div class="l">Guardados</div><div class="v" id="s-sav">–</div><div class="s" id="s-sav-s"></div></div>
       <div class="card kpi hot"><div class="l">Engagement</div><div class="v" id="s-er">–</div><div class="s">interacciones ÷ views</div></div>
     </div>
+    <div class="card section">
+      <div class="vh"><h2>Top 5 contenidos <small id="t5-sub"></small></h2><div class="vctl"><select id="t5-met">
+        <option value="vistas">Más views</option><option value="likes">Más likes</option><option value="comentarios">Más comentarios</option>
+        <option value="compartidos">Más compartidos</option><option value="guardados">Más guardados</option><option value="er">Mayor engagement</option></select></div></div>
+      <div class="top5" id="t5"></div>
+    </div>
+    <div class="card section">
+      <div class="vh"><h2>Cadenas: Cresa + competencia <small>clic en una barra para filtrar la hoja</small></h2><div class="vctl"><select id="bT-met" class="bmet"></select></div></div>
+      <div class="chartbox" id="bT-box" style="height:320px"><canvas id="bT"></canvas></div>
+    </div>
+    <div class="grid2b">
+      <div class="card">
+        <div class="vh"><h2>Solo Cresa</h2><div class="vctl"><select id="bP-met" class="bmet"></select></div></div>
+        <div class="chartbox" id="bP-box" style="height:260px"><canvas id="bP"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="vh"><h2>Solo competencia</h2><div class="vctl"><select id="bC-met" class="bmet"></select></div></div>
+        <div class="chartbox" id="bC-box" style="height:260px"><canvas id="bC"></canvas></div>
+      </div>
+    </div>
+    <div class="card section">
+      <div class="vh"><h2>Cuenta vs cuenta <small>todas las métricas del periodo</small></h2></div>
+      <div class="vsx">
+        <div class="vsx-sel a"><b style="color:var(--us)">Cuenta A</b><label>Cadena<select id="cA-cad"></select></label><label>Cuenta<select id="cA-cta"></select></label></div>
+        <div class="vsx-sel b"><b style="color:var(--them)">Cuenta B</b><label>Cadena<select id="cB-cad"></select></label><label>Cuenta<select id="cB-cta"></select></label></div>
+      </div>
+      <div class="tablewrap"><table class="vs">
+        <thead><tr><th>Métrica</th><th class="num" id="cA-h">A</th><th class="num" id="cB-h">B</th></tr></thead>
+        <tbody id="cAB"></tbody>
+      </table></div>
+    </div>
     <div class="grid2">
       <div class="card">
         <div class="vh"><h2>Contenido en el tiempo</h2><div class="vctl"><select id="gC-met"></select><select id="gC-gran"><option value="dia">por día</option><option value="semana" selected>por semana</option><option value="mes">por mes</option></select><span data-ctl="gC"></span></div></div>
@@ -419,6 +483,7 @@
       <div class="tablewrap" id="s-posts-t"></div>
       <p class="hint" style="margin-top:10px">Se actualiza cada hora. TikTok permite leer gratis las ~13 publicaciones más recientes de cada cuenta, así que el historial anterior al inicio del monitoreo es parcial; desde ahora cada publicación nueva queda registrada. Las métricas de cada post se siguen actualizando durante 45 días.</p>
     </div>
+    <div class="pdf-fin no-pdf"><button type="button" data-pdf-hoja>⬇ Descargar toda la hoja en PDF</button></div>
   </section>
   </main>
 </div>
@@ -488,7 +553,8 @@ let RAW = null, chart = null, ULTIMOS = [];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtDur = m => { m = Math.round(m || 0); if (m < 60) return m + ' min'; const h = Math.floor(m / 60), r = m % 60; return h + ' h' + (r ? ' ' + r + ' min' : ''); };
 const fmtF = ms => ms ? new Date(ms).toLocaleString('es-EC', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : '—';
-const pasaGlobal = v => { const red = $('#red').value, rol = $('#rol').value; return (!red || v.plataforma === red) && (!rol || v.rol === rol); };
+const rolCont = () => location.hash === '#contenido-oficiales' ? 'oficial' : 'vendedor';
+const pasaGlobal = v => { const red = $('#red').value, rol = paginaActual() === 'cont' ? rolCont() : $('#rol').value; return (!red || v.plataforma === red) && (!rol || v.rol === rol); };
 const hdl = v => '@' + (v.handle || String(v.usuario).replace(/^ig:/, ''));
 const urlPerfil = v => v.plataforma === 'instagram' ? 'https://www.instagram.com/' + encodeURIComponent(v.handle) + '/' : 'https://www.tiktok.com/@' + encodeURIComponent(v.handle || v.usuario);
 const urlLive = v => v.plataforma === 'instagram' ? urlPerfil(v) : urlPerfil(v) + '/live';
@@ -673,7 +739,7 @@ function opciones(sel, todos, valores) {
   sel.innerHTML = `<option value="">${todos}</option>` + valores.map(z => `<option${z === actual ? ' selected' : ''}>${esc(z)}</option>`).join('');
   if (actual && !valores.includes(actual)) sel.value = '';
 }
-const paginaActual = () => ({'#competencia': 'comp', '#contenido': 'cont', '#encuesta': 'enc'}[location.hash] || 'resumen');
+const paginaActual = () => ({'#competencia': 'comp', '#contenido': 'cont', '#contenido-oficiales': 'cont', '#encuesta': 'enc'}[location.hash] || 'resumen');
 function prepararFiltros() {
   RAW.vendedores.forEach(v => { v.tipo = v.tipo || 'propio'; v.cadena = v.cadena || cadenaDe(v.agencia || v.zona || ''); v.cadena = v.cadena === 'Multinivel' ? 'Independientes' : v.cadena; v.agencia = v.cadena === 'Independientes' ? '' : (v.agencia || v.zona || 'SIN AGENCIA');
     v.plataforma = v.plataforma || (String(v.usuario).startsWith('ig:') ? 'instagram' : 'tiktok'); v.handle = v.handle || String(v.usuario).replace(/^ig:/, ''); v.rol = v.rol || 'vendedor'; });
@@ -694,10 +760,23 @@ function cuentasFiltradas(ignorarGrupo = false) {
     (!FILT.cadenas.size || FILT.cadenas.has(v.cadena)) && (!agencia || v.agencia === agencia) &&
     (!q || norm(v.nombre).includes(q) || norm(v.handle).includes(q) || norm(v.agencia).includes(q)));
 }
+/** Periodo elegido con las fechas del panel: {desde, hasta (fin del día), hoy0 (inicio del último día), dias}. */
 function periodo() {
-  const dias = +$('#periodo').value, hoy0 = new Date(); hoy0.setHours(0, 0, 0, 0);
-  return {dias, hoy0: hoy0.getTime(), desde: hoy0.getTime() - (dias - 1) * 86400000};
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const leer = (id, def) => { const x = $('#' + id).value; if (!x) return def; const [y, m, d] = x.split('-'); return new Date(+y, m - 1, +d).getTime(); };
+  let desde = leer('f-desde', hoy.getTime() - 6 * 86400000), hoy0 = Math.min(leer('f-hasta', hoy.getTime()), hoy.getTime());
+  if (desde > hoy0) [desde, hoy0] = [hoy0, desde];
+  return {desde, hoy0, hasta: hoy0 + 86400000 - 1, dias: Math.round((hoy0 - desde) / 86400000) + 1};
 }
+function textoPeriodo() {
+  const {desde, hoy0} = periodo(), f = t => new Date(t).toLocaleDateString('es-EC', {day: '2-digit', month: 'short', year: 'numeric'});
+  return desde === hoy0 ? f(desde) : f(desde) + ' – ' + f(hoy0);
+}
+(function fechasIniciales() {
+  const hoy = new Date(), iso = d => diaKey(d);
+  $('#f-hasta').value = iso(hoy); $('#f-desde').value = iso(new Date(hoy.getTime() - 6 * 86400000));
+  $('#f-desde').max = $('#f-hasta').max = iso(hoy);
+})();
 
 /* ======================================================================
    Jerarquía Grupo → Cadena → Agencia → Cuenta, drill y selección cruzada
@@ -778,10 +857,10 @@ function cajaSeleccion() {
    Estadísticas por cuenta (se calculan una vez por render)
    ====================================================================== */
 const durLive = (l, ahora) => l.estado === 'EN VIVO' ? Math.max(1, (ahora - l.inicio) / 60000) : (l.min || (l.fin ? (l.fin - l.inicio) / 60000 : 0));
-function statsLives(desde) {
+function statsLives(desde, hasta = Infinity) {
   const ahora = Date.now(), S = {};
   RAW.lives.forEach(l => {
-    if (l.inicio < desde) return;
+    if (l.inicio < desde || l.inicio > hasta) return;
     const s = S[l.usuario] ||= {n: 0, min: 0, vis: 0, nVis: 0, picoSum: 0, nPico: 0, vivo: false, ult: 0, dia: {}};
     const d = durLive(l, ahora), k = diaKey(new Date(l.inicio));
     s.n++; s.min += d; if (l.vistas != null) { s.vis += l.vistas; s.nVis++; } if (l.pico != null) { s.picoSum += l.pico; s.nPico++; }
@@ -796,18 +875,19 @@ function aggLives(cuentas, S) {
     a.picoSum += s.picoSum; a.nPico += s.nPico; if (s.vivo) a.vivo++; a.ult = Math.max(a.ult, s.ult); });
   return a;
 }
-function statsCont(desde) {
-  const S = {}, desdeKey = diaKey(new Date(desde));
+function statsCont(desde, hasta = Infinity) {
+  const S = {}, desdeKey = diaKey(new Date(desde)), hoyKey = diaKey(new Date()), hastaKey = hasta === Infinity ? hoyKey : diaKey(new Date(hasta));
   Object.entries(SOC.cuentas || {}).forEach(([u, c]) => {
     const h = c.historial || [], base = [...h].reverse().find(x => x.d <= desdeKey) || h[0];
-    S[u] = {seg: c.seguidores ?? null, delta: base && c.seguidores != null && base.seguidores != null && h.length > 1 ? c.seguidores - base.seguidores : null,
+    const fin = hastaKey >= hoyKey ? c.seguidores ?? null : ([...h].reverse().find(x => x.d <= hastaKey)?.seguidores ?? null);
+    S[u] = {seg: fin, delta: base && fin != null && base.seguidores != null && h.length > 1 ? fin - base.seguidores : null,
       err: c.error, n: 0, V: 0, L: 0, C: 0, S: 0, G: 0, nV: 0, IE: 0, ult: 0};
   });
   const posts = [];
   Object.entries(SOC.posts || {}).forEach(([id, p]) => {
     const s = S[p.usuario] ||= {seg: null, delta: null, n: 0, V: 0, L: 0, C: 0, S: 0, G: 0, nV: 0, IE: 0, ult: 0};
-    s.ult = Math.max(s.ult, p.creado || 0);
-    if (p.creado < desde) return;
+    if (p.creado <= hasta) s.ult = Math.max(s.ult, p.creado || 0);
+    if (p.creado < desde || p.creado > hasta) return;
     s.n++; s.V += p.vistas || 0; s.L += p.likes || 0; s.C += p.comentarios || 0; s.S += p.compartidos || 0; s.G += p.guardados || 0;
     if (p.vistas != null) { s.nV++; s.IE += interacciones(p); }
     posts.push({id, ...p, er: p.vistas ? interacciones(p) / p.vistas : null});
@@ -983,7 +1063,7 @@ function grafico(id, cuentas, cub, valor, fmtY) {
   const css = getComputedStyle(document.documentElement), mute = css.getPropertyValue('--mute').trim(), line = css.getPropertyValue('--line').trim();
   const tipo = cub.keys.length === 1 ? 'bar' : 'line';
   const alClic = (dsIdx, ev) => { const d = ds[dsIdx]; if (d && d._clave) elegir(id, d._clave, d.label, ev?.ctrlKey || ev?.metaKey || ev?.shiftKey); };
-  const opciones_ = {responsive: true, maintainAspectRatio: false, interaction: {mode: 'nearest', intersect: false},
+  const opciones_ = {responsive: true, maintainAspectRatio: false, animation: EXPORTANDO ? false : undefined, interaction: {mode: 'nearest', intersect: false},
     onClick: (e, els, ch) => { const p = ch.getElementsAtEventForMode(e, 'nearest', {intersect: false}, true)[0]; if (p) alClic(p.datasetIndex, e.native); },
     plugins: {legend: {position: 'bottom', labels: {color: mute, boxWidth: 12, usePointStyle: true, generateLabels: ch => Chart.defaults.plugins.legend.labels.generateLabels(ch).map(i => ({...i, fillStyle: i.strokeStyle}))}, onClick: (e, item) => alClic(item.datasetIndex, e.native)},
       tooltip: {mode: 'index', callbacks: {label: c => c.dataset.label + ': ' + fmtY(c.parsed.y)}}},
@@ -1021,12 +1101,12 @@ const MET_CONT = {
 ['gC-met', 'gC2-met'].forEach(id => { $('#' + id).innerHTML = Object.entries(MET_CONT).map(([k, [t]]) => `<option value="${k}">${t}</option>`).join(''); });
 $('#gC2-met').value = 'engagement';
 function graficoCont(id, cuentas) {
-  const {desde, hoy0} = periodo(), cub = cubetas(desde, hoy0, $('#' + id + '-gran').value);
+  const {desde, hoy0, hasta} = periodo(), cub = cubetas(desde, hoy0, $('#' + id + '-gran').value);
   const metK = $('#' + id + '-met').value, [, f, fy] = MET_CONT[metK];
   // estadísticas por cuenta y cubeta
   const B = {};
   Object.values(SOC.posts || {}).forEach(p => {
-    if (p.creado < desde) return;
+    if (p.creado < desde || p.creado > hasta) return;
     const k = cub.clave(p.creado), s = (B[p.usuario] ||= {})[k] ||= {n: 0, V: 0, L: 0, C: 0, S: 0, G: 0, nV: 0, IE: 0};
     s.n++; s.V += p.vistas || 0; s.L += p.likes || 0; s.C += p.comentarios || 0; s.S += p.compartidos || 0; s.G += p.guardados || 0;
     if (p.vistas != null) { s.nV++; s.IE += interacciones(p); }
@@ -1053,9 +1133,12 @@ function renderPagina() {
   p === 'comp' ? renderComp() : p === 'cont' ? renderContenido() : p === 'enc' ? renderEncuesta() : render();
 }
 function pagina() {
-  const p = paginaActual();
-  if (pagina._ult !== p) { SEL = null; pagina._ult = p; }
-  [['resumen', 'resumen'], ['comp', 'comp'], ['cont', 'cont'], ['enc', 'enc']].forEach(([k]) => { $('#p-' + k).hidden = p !== k; $('#t-' + k).classList.toggle('on', p === k); });
+  const p = paginaActual(), pk = p === 'cont' ? 'cont-' + rolCont() : p;
+  if (pagina._ult !== pk) { SEL = null; pagina._ult = pk; }
+  ['resumen', 'comp', 'cont', 'enc'].forEach(k => { $('#p-' + k).hidden = p !== k; });
+  [['resumen', 'resumen'], ['comp', 'comp'], ['cont', 'cont-vendedor'], ['conto', 'cont-oficial'], ['enc', 'enc']].forEach(([t, k]) => $('#t-' + t).classList.toggle('on', pk === k));
+  $('#lbl-rol').style.opacity = p === 'cont' ? .45 : 1; $('#rol').disabled = p === 'cont';
+  $('#lbl-rol').title = p === 'cont' ? 'En las hojas de contenido el tipo de cuenta lo define la pestaña (vendedores u oficiales)' : '';
   document.querySelectorAll('.solo-resumen').forEach(el => el.style.display = p === 'resumen' ? '' : 'none');
   document.querySelectorAll('.no-enc').forEach(el => el.style.display = p === 'enc' ? 'none' : '');
   $('#lbl-tipo').style.opacity = p === 'comp' ? .45 : 1; $('#tipo').disabled = p === 'comp';
@@ -1124,8 +1207,8 @@ function insightsPosts(kp) {
 
 /* ---------- Lives ---------- */
 function render() {
-  const ahora = Date.now(), {dias, desde} = periodo();
-  const base = cuentasFiltradas(), S = statsLives(desde);
+  const ahora = Date.now(), {dias, desde, hasta} = periodo();
+  const base = cuentasFiltradas(), S = statsLives(desde, hasta);
   const porU = Object.fromEntries(RAW.vendedores.map(v => [v.usuario, v]));
   const kp = cruzar('kpi', base), set = new Set(kp.map(v => v.usuario));
   const A = aggLives(kp, S);
@@ -1149,7 +1232,7 @@ function render() {
       <span class="t">${l.actual != null ? '👁 ' + fmtN(l.actual) + ' viendo · ' : ''}${fmtDur(l.d)} · desde ${new Date(l.inicio).toLocaleTimeString('es-EC', {hour: '2-digit', minute: '2-digit'})}</span>
     </a>`).join('') : '<div class="empty">Nadie está en vivo en este momento.</div>';
 
-  const lives = RAW.lives.filter(l => set.has(l.usuario) && l.inicio >= desde).map(l => ({...l, d: durLive(l, ahora), v: porU[l.usuario]}));
+  const lives = RAW.lives.filter(l => set.has(l.usuario) && l.inicio >= desde && l.inicio <= hasta).map(l => ({...l, d: durLive(l, ahora), v: porU[l.usuario]}));
   ULTIMOS = lives.map(l => ({...l, nombre: l.v.nombre, agencia: l.v.agencia}));
   $('#heat').innerHTML = mapaCalor(lives, '254,44,85');
   insightsLives(kp);
@@ -1178,8 +1261,8 @@ function filasVs(el, filas) {
   }).join('');
 }
 function renderComp() {
-  const {dias, desde} = periodo();
-  const base = cuentasFiltradas(true), SL = statsLives(desde), {S: SC} = statsCont(desde);
+  const {dias, desde, hasta} = periodo();
+  const base = cuentasFiltradas(true), SL = statsLives(desde, hasta), {S: SC} = statsCont(desde, hasta);
   $('#c-vacio').hidden = base.some(v => v.tipo === 'competencia');
   const kp = cruzar('kpi', base);
   const div = (a, b) => b ? a / b : null, pctf = x => x == null ? '—' : Math.round(x) + '%';
@@ -1218,16 +1301,16 @@ function renderComp() {
   graficoCont('gC2', cruzar('gC2', base));
   matrizCont('mC2', cruzar('mC2', base), SC, dias);
   const ahora = Date.now(), porU = Object.fromEntries(kp.map(v => [v.usuario, v]));
-  const lives = RAW.lives.filter(l => porU[l.usuario] && l.inicio >= desde).map(l => ({...l, d: durLive(l, ahora), v: porU[l.usuario]}));
+  const lives = RAW.lives.filter(l => porU[l.usuario] && l.inicio >= desde && l.inicio <= hasta).map(l => ({...l, d: durLive(l, ahora), v: porU[l.usuario]}));
   $('#c-heat-us').innerHTML = mapaCalor(lives.filter(l => l.v.tipo !== 'competencia'), '20,184,196');
   $('#c-heat-them').innerHTML = mapaCalor(lives.filter(l => l.v.tipo === 'competencia'), '139,92,246');
-  $('#actualizado').textContent = 'Comparativo Cresa vs competencia · ' + $('#periodo').selectedOptions[0].textContent.toLowerCase();
+  $('#actualizado').textContent = 'Comparativo Cresa vs competencia · ' + textoPeriodo();
 }
 
 /* ---------- Contenido ---------- */
 function renderContenido() {
-  const {dias, desde} = periodo();
-  const base = cuentasFiltradas(), {S, posts: todos} = statsCont(desde);
+  const {dias, desde, hasta} = periodo();
+  const base = cuentasFiltradas(), {S, posts: todos} = statsCont(desde, hasta);
   $('#s-vacio').hidden = Object.keys(SOC.cuentas || {}).length > 0;
   $('#s-aviso-ig').hidden = !base.some(v => v.plataforma === 'instagram');
   const kp = cruzar('kpi', base), set = new Set(kp.map(v => v.usuario)), porU = Object.fromEntries(kp.map(v => [v.usuario, v]));
@@ -1246,6 +1329,13 @@ function renderContenido() {
 
   graficoCont('gC', cruzar('gC', base));
   matrizCont('mC', cruzar('mC', base), S, dias);
+  top5(posts, porU);
+  // los gráficos de barras siempre muestran Cresa y competencia; una selección hecha en ellos se resalta en los tres (no los vacía)
+  const todasCad = cuentasFiltradas(true), deBarra = ['bT', 'bP', 'bC'].includes(SEL?.vis), cb = id => deBarra ? todasCad : cruzar(id, todasCad);
+  barrasCadena('bT', cb('bT'), S, dias);
+  barrasCadena('bP', cb('bP').filter(v => v.tipo !== 'competencia'), S, dias);
+  barrasCadena('bC', cb('bC').filter(v => v.tipo === 'competencia'), S, dias);
+  cuentaVsCuenta(S, dias);
 
   const H = Array.from({length: 7}, () => Array(24).fill(0));
   posts.forEach(p => { const d = new Date(p.creado); H[(d.getDay() + 6) % 7][d.getHours()]++; });
@@ -1269,8 +1359,189 @@ function renderContenido() {
     {k: 'er', t: 'Engagement', num: 1, h: p => `<b>${pct(p.er)}</b>`},
     {k: 'link', t: '', v: () => 0, h: p => `<a class="u" href="${urlPost(p, porU[p.usuario])}" target="_blank" rel="noopener">ver ↗</a>`},
   ], posts.slice().sort((a, b) => (b.vistas ?? -1) - (a.vistas ?? -1)).slice(0, 200), {orden: {k: 'vistas', dir: -1}, vacio: 'Sin publicaciones en el periodo.'});
-  $('#actualizado').textContent = 'Métricas de contenido cada hora · última actualización: ' + (SOC.generado ? fmtF(SOC.generado) : '—');
+  $('#actualizado').textContent = (rolCont() === 'oficial' ? 'Cuentas oficiales' : 'Cuentas de vendedores') + ' · ' + textoPeriodo() + ' · métricas de contenido cada hora · última actualización: ' + (SOC.generado ? fmtF(SOC.generado) : '—');
 }
+
+/* ---------- Top 5 con la portada real de TikTok ---------- */
+const PORTADAS = {}, PORTADA_CORS = false;
+function portada(url) {
+  return PORTADAS[url] ||= fetch('https://www.tiktok.com/oembed?url=' + encodeURIComponent(url)).then(r => r.ok ? r.json() : null)
+    .then(j => j?.thumbnail_url || null).catch(() => { delete PORTADAS[url]; return null; });
+}
+const MET_T5 = {vistas: ['views', fmtN], likes: ['likes', fmtN], comentarios: ['comentarios', fmtN], compartidos: ['compartidos', fmtN], guardados: ['guardados', fmtN], er: ['de engagement', pct]};
+function top5(posts, porU) {
+  const k = $('#t5-met').value, [unidad, fmt] = MET_T5[k];
+  const lista = posts.filter(p => p[k] != null && (k !== 'er' || (p.vistas || 0) >= 300)).sort((a, b) => b[k] - a[k]).slice(0, 5);
+  $('#t5-sub').textContent = k === 'er' ? 'entre publicaciones con 300 views o más' : posts.length + ' publicaciones en el periodo';
+  $('#t5').innerHTML = lista.map((p, i) => { const v = porU[p.usuario], url = urlPost(p, v), tt = v.plataforma !== 'instagram';
+    return `<a class="t5" href="${esc(url)}" target="_blank" rel="noopener">
+      <div class="t5-img" ${tt ? `data-portada="${esc(url)}"` : ''}>${tt ? 'Cargando portada…' : 'Instagram'}<span class="t5-n">#${i + 1}</span><span class="t5-v">${fmt(p[k])} ${unidad}</span></div>
+      <div class="t5-b">${puntoMarca(v.cadena)}<b>${esc(hdl(v))}</b> <span class="hint">${esc(v.cadena)}</span>
+        <div class="d">${esc(p.desc || '') || 'sin descripción'}</div>
+        <div class="m">${new Date(p.creado).toLocaleDateString('es-EC', {day: '2-digit', month: 'short'})} · 👁 ${fmtN(p.vistas)} · ♥ ${fmtN(p.likes)} · 💬 ${fmtN(p.comentarios)} · ↗ ${fmtN(p.compartidos)}</div></div></a>`; }).join('')
+    || '<div class="empty" style="grid-column:1/-1">Sin publicaciones en el periodo.</div>';
+  $('#t5').querySelectorAll('[data-portada]').forEach(box => { const txt = box.firstChild; portada(box.dataset.portada).then(src => {
+    if (!box.isConnected) return;
+    if (!src) { txt.textContent = 'Sin portada'; return; }
+    const img = new Image(); img.alt = ''; img.referrerPolicy = 'no-referrer'; img.crossOrigin = PORTADA_CORS ? 'anonymous' : null; img.src = src;
+    img.onload = () => { txt.textContent = ''; }; img.onerror = () => { txt.textContent = 'Sin portada'; img.remove(); }; box.prepend(img);
+  }); });
+}
+
+/* ---------- Barras por cadena ---------- */
+const MET_BAR = {
+  vistas: ['Views', a => a.nV ? a.V : null, fmtN],
+  vistasPost: ['Views por post', a => a.nV ? a.V / a.nV : null, fmtN],
+  engagement: ['Engagement', a => a.V ? a.IE / a.V * 100 : null, x => f1(x) + '%'],
+  seguidores: ['Seguidores', a => a.conSeg ? a.seg : null, fmtN],
+  segCuenta: ['Seguidores por cuenta', a => a.conSeg ? a.seg / a.conSeg : null, fmtN],
+  delta: ['Seguidores ganados', a => a.conDelta ? a.delta : null, fmtN],
+  posts: ['Publicaciones', a => a.n, fmtN],
+  postsSem: ['Posts por semana, por cuenta', (a, d) => a.cuentas ? a.n / a.cuentas / d * 7 : null, f1],
+  likes: ['Likes', a => a.L, fmtN],
+  likesPost: ['Likes por post', a => a.n ? a.L / a.n : null, fmtN],
+  comentarios: ['Comentarios', a => a.C, fmtN],
+  compartidos: ['Compartidos', a => a.S, fmtN],
+  guardados: ['Guardados', a => a.G, fmtN],
+  cuentas: ['Cuentas', a => a.cuentas, fmtN],
+};
+document.querySelectorAll('.bmet').forEach(sel => { sel.innerHTML = Object.entries(MET_BAR).map(([k, [t]]) => `<option value="${k}">${t}</option>`).join(''); });
+$('#bT-met').value = 'vistasPost'; $('#bP-met').value = 'vistas'; $('#bC-met').value = 'vistas';
+function barrasCadena(id, cuentas, S, dias) {
+  if (!window.Chart) return;
+  const [nombre, f, fmt] = MET_BAR[$('#' + id + '-met').value];
+  const st = vis(id); st.nivel = 1; st.ruta = []; st.drill = false;
+  const filas = miembros(cuentas, st).map(m => ({...m, val: f(aggCont(m.cs, S), dias)})).filter(m => m.val != null && isFinite(m.val)).sort((a, b) => b.val - a.val);
+  const box = $('#' + id + '-box');
+  box.style.height = Math.max(160, filas.length * 30 + 50) + 'px';
+  box.querySelector('.vacio-g')?.remove();
+  if (!filas.length) { box.insertAdjacentHTML('beforeend', '<div class="vacio-g">Sin datos con estos filtros.</div>'); GRAF[id]?.destroy(); delete GRAF[id]; return; }
+  const resaltar = ['bT', 'bP', 'bC'].includes(SEL?.vis) && SEL.nivel === 1;
+  const apagada = m => resaltar && !SEL.claves.has(m.clave);
+  const colores = filas.map(m => { const c = colorMarca(m.v.cadena);
+    return apagada(m) ? c + '30' : m.v.tipo === 'competencia' ? c + 'B3' : c; });
+  const css = getComputedStyle(document.documentElement), mute = css.getPropertyValue('--mute').trim(), line = css.getPropertyValue('--line').trim(), ink = css.getPropertyValue('--ink').trim();
+  const data = {labels: filas.map(m => m.etq + (m.v.tipo === 'competencia' ? ' ·c' : '')), datasets: [{label: nombre, data: filas.map(m => m.val), backgroundColor: colores,
+    borderColor: filas.map(m => colorMarca(m.v.cadena) + (apagada(m) ? '40' : '')), borderWidth: filas.map(m => m.v.tipo === 'competencia' ? 1.5 : 0), borderRadius: 5, barThickness: 18}]};
+  const options = {indexAxis: 'y', responsive: true, maintainAspectRatio: false, animation: EXPORTANDO ? false : undefined,
+    onClick: (e, els) => { const el = els[0]; if (el) { const m = filas[el.index]; elegir(id, m.clave, m.etq, e.native?.ctrlKey || e.native?.metaKey || e.native?.shiftKey); } },
+    onHover: (e, els) => { e.native.target.style.cursor = els.length ? 'pointer' : ''; },
+    plugins: {legend: {display: false}, tooltip: {callbacks: {title: c => filas[c[0].dataIndex].etq + (filas[c[0].dataIndex].v.tipo === 'competencia' ? ' (competencia)' : ' (Cresa)'),
+      label: c => nombre + ': ' + fmt(c.parsed.x) + ' · ' + filas[c.dataIndex].cs.length + ' cuenta' + (filas[c.dataIndex].cs.length === 1 ? '' : 's')}}},
+    scales: {x: {beginAtZero: true, ticks: {color: mute, callback: x => fmt(x)}, grid: {color: line}},
+      y: {ticks: {color: ink, font: {weight: '600'}, callback: (v, i) => filas[i]?.etq}, grid: {display: false}}}};
+  const g = GRAF[id];
+  if (g) { g.data = data; g.options = options; g.update(); } else GRAF[id] = new Chart($('#' + id), {type: 'bar', data, options});
+}
+
+/* ---------- Cuenta vs cuenta ---------- */
+const CMP = {A: {cad: '', cta: ''}, B: {cad: '', cta: ''}};
+function cuentaVsCuenta(S, dias) {
+  const todas = RAW.vendedores.filter(v => v.activo !== false && pasaGlobal(v));
+  const seg = v => S[v.usuario]?.seg ?? -1;
+  const cads = {};
+  todas.forEach(v => (cads[v.cadena] ||= {tipo: v.tipo, cs: []}).cs.push(v));
+  const nombres = Object.keys(cads).sort((a, b) => a.localeCompare(b, 'es'));
+  const props = nombres.filter(c => cads[c].tipo !== 'competencia'), comps = nombres.filter(c => cads[c].tipo === 'competencia');
+  const mayor = lista => lista.slice().sort((a, b) => cads[b].cs.reduce((s, v) => s + Math.max(0, seg(v)), 0) - cads[a].cs.reduce((s, v) => s + Math.max(0, seg(v)), 0))[0] || '';
+  if (!cads[CMP.A.cad]) CMP.A = {cad: mayor(props) || nombres[0] || '', cta: ''};
+  if (!cads[CMP.B.cad]) CMP.B = {cad: mayor(comps) || nombres[1] || nombres[0] || '', cta: ''};
+  const lado = L => {
+    const c = CMP[L], cs = (cads[c.cad]?.cs || []).slice().sort((a, b) => seg(b) - seg(a));
+    if (c.cta !== '*' && !cs.some(v => v.usuario === c.cta)) c.cta = cs[0]?.usuario || '';
+    const og = (t, l) => l.length ? `<optgroup label="${t}">${l.map(n => `<option${n === c.cad ? ' selected' : ''}>${esc(n)}</option>`).join('')}</optgroup>` : '';
+    $('#c' + L + '-cad').innerHTML = og('Cresa', props) + og('Competencia', comps);
+    $('#c' + L + '-cta').innerHTML = `<option value="*"${c.cta === '*' ? ' selected' : ''}>Toda la cadena (${cs.length} cuentas)</option>` +
+      cs.map(v => `<option value="${esc(v.usuario)}"${v.usuario === c.cta ? ' selected' : ''}>${esc(hdl(v))}${v.plataforma === 'instagram' ? ' (IG)' : ''} · ${S[v.usuario]?.seg != null ? fmtN(S[v.usuario].seg) + ' seg.' : 'sin datos'}</option>`).join('');
+    const sel = c.cta === '*' ? cs : cs.filter(v => v.usuario === c.cta);
+    return {a: aggCont(sel, S), etq: c.cta === '*' ? c.cad + ' (toda la cadena)' : sel[0] ? hdl(sel[0]) : '—', cad: c.cad};
+  };
+  const A = lado('A'), B = lado('B');
+  $('#cA-h').innerHTML = puntoMarca(A.cad) + esc(A.etq); $('#cB-h').innerHTML = puntoMarca(B.cad) + esc(B.etq);
+  const div = (x, y) => y ? x / y : null, a = A.a, b = B.a;
+  const filas = [
+    ['Seguidores', a.conSeg ? a.seg : null, b.conSeg ? b.seg : null, fmtN],
+    ['Seguidores ganados en el periodo', a.conDelta ? a.delta : null, b.conDelta ? b.delta : null, fmtN],
+    ['Publicaciones', a.n, b.n, fmtN],
+    ['Posts por semana', a.n / dias * 7, b.n / dias * 7, f1],
+    ['Views', a.nV ? a.V : null, b.nV ? b.V : null, fmtN],
+    ['Views por post', div(a.V, a.nV), div(b.V, b.nV), fmtN],
+    ['Likes', a.L, b.L, fmtN],
+    ['Likes por post', div(a.L, a.n), div(b.L, b.n), fmtN],
+    ['Comentarios', a.C, b.C, fmtN],
+    ['Comentarios por post', div(a.C, a.n), div(b.C, b.n), f1],
+    ['Compartidos', a.S, b.S, fmtN],
+    ['Guardados', a.G, b.G, fmtN],
+    ['Engagement', div(a.IE, a.V), div(b.IE, b.V), pct],
+    ['Último post', a.ult || null, b.ult || null, x => x ? fmtF(x) : '—'],
+  ];
+  $('#cAB').innerHTML = filas.map(([k, x, y, f]) => {
+    const ok = x != null && y != null && x !== y, ga = ok && x > y, gb = ok && y > x;
+    return `<tr><td>${k}</td><td class="us${ga ? ' gana' : ''}">${x == null ? '—' : f(x)}${ga ? ' ▲' : ''}</td><td class="them${gb ? ' gana' : ''}">${y == null ? '—' : f(y)}${gb ? ' ▲' : ''}</td></tr>`;
+  }).join('');
+}
+['A', 'B'].forEach(L => {
+  $('#c' + L + '-cad').addEventListener('change', e => { CMP[L] = {cad: e.target.value, cta: ''}; renderPagina(); });
+  $('#c' + L + '-cta').addEventListener('change', e => { CMP[L].cta = e.target.value; renderPagina(); });
+});
+
+/* ---------- Descargar en PDF (un gráfico o toda la hoja) ---------- */
+let EXPORTANDO = false, LIBS_PDF = null;
+const cargarScript = src => new Promise((ok, mal) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = mal; document.head.appendChild(s); });
+const cargarPDF = () => LIBS_PDF ||= Promise.all([cargarScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
+  cargarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')]).catch(e => { LIBS_PDF = null; throw e; });
+function tituloDe(card) { const h = card.querySelector('h2'); return h ? [...h.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join(' ').trim() : 'SAPO'; }
+const nombreHoja = () => ({resumen: 'Lives', comp: 'Nosotros vs Competencia', enc: 'Encuesta', cont: rolCont() === 'oficial' ? 'Contenido oficiales' : 'Contenido vendedores'})[paginaActual()];
+async function exportarPDF(el, titulo, cortes) {
+  const boton = document.activeElement; if (boton?.tagName === 'BUTTON') { boton.disabled = true; boton.dataset.t = boton.textContent; boton.textContent = '…'; }
+  const tema = document.documentElement.dataset.theme;
+  try {
+    await cargarPDF();
+    EXPORTANDO = true; document.documentElement.dataset.theme = 'light'; document.body.classList.add('exportando');
+    renderPagina(); await new Promise(r => setTimeout(r, 350));
+    const caja = el.getBoundingClientRect();
+    const lienzo = await html2canvas(el, {scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false, ignoreElements: e => e.classList?.contains('no-pdf')});
+    const {jsPDF} = window.jspdf, W = lienzo.width, H = lienzo.height, k = W / caja.width;
+    const pdf = new jsPDF({orientation: cortes ? 'portrait' : W > H ? 'landscape' : 'portrait', unit: 'pt', format: 'a4'});
+    const pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight(), m = 28, cab = 26, esc_ = (pw - 2 * m) / W, alto = (ph - 2 * m - cab) / esc_;
+    const limites = (cortes || []).map(b => Math.round(b * k)).sort((a, b) => a - b);
+    let y = 0, pag = 0;
+    while (y < H - 2) {
+      let h = Math.min(alto, H - y);
+      if (y + h < H) { const c = limites.filter(b => b > y + 40 && b <= y + h).pop(); if (c) h = c - y; }
+      const trozo = document.createElement('canvas'); trozo.width = W; trozo.height = h;
+      const cx = trozo.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, W, h); cx.drawImage(lienzo, 0, y, W, h, 0, 0, W, h);
+      if (pag++) pdf.addPage();
+      pdf.setFontSize(11); pdf.setTextColor(30); pdf.text('SAPO · ' + titulo, m, m + 8);
+      pdf.setFontSize(8.5); pdf.setTextColor(110); pdf.text(textoPeriodo() + ' · generado ' + new Date().toLocaleString('es-EC'), m, m + 20);
+      pdf.addImage(trozo.toDataURL('image/jpeg', 0.92), 'JPEG', m, m + cab, W * esc_, h * esc_);
+      y += h;
+    }
+    pdf.save('SAPO - ' + titulo.replace(/·/g, '-').replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, ' ') + '.pdf');
+  } catch (e) {
+    alert('No se pudo generar el PDF. Revisa tu conexión e inténtalo otra vez.');
+  } finally {
+    EXPORTANDO = false; document.body.classList.remove('exportando');
+    if (tema) document.documentElement.dataset.theme = tema; else delete document.documentElement.dataset.theme;
+    renderPagina();
+    if (boton?.dataset.t) { boton.disabled = false; boton.textContent = boton.dataset.t; delete boton.dataset.t; }
+  }
+}
+// botón ⤓ en cada recuadro con título (gráficos y tablas)
+document.querySelectorAll('main section .card').forEach(card => {
+  if (card.classList.contains('kpi')) return;
+  const cab = card.querySelector(':scope > .vh') || card.querySelector(':scope > h2');
+  if (!cab) return;
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'btn-pdf no-pdf'; b.title = 'Descargar este recuadro en PDF'; b.textContent = '⤓';
+  b.addEventListener('click', e => { e.stopPropagation(); exportarPDF(card, nombreHoja() + ' · ' + tituloDe(card)); });
+  cab.appendChild(b);
+});
+document.addEventListener('click', e => {
+  if (!e.target.closest('[data-pdf-hoja]')) return;
+  const sec = $('#p-' + paginaActual()), top = sec.getBoundingClientRect().top;
+  const bloques = [...sec.querySelectorAll(':scope > .card, :scope > .kpis, :scope > .grid2, :scope > .grid2b, :scope > h2')].filter(b => b.offsetParent);
+  exportarPDF(sec, nombreHoja(), bloques.map(b => b.getBoundingClientRect().bottom - top + 7));
+});
 
 /* ---------- detalle de una cuenta desde tablas ---------- */
 document.addEventListener('click', e => {
@@ -1283,11 +1554,12 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') { cerrarDeta
 
 /* ---------- eventos de filtros ---------- */
 const alFiltrar = () => { SEL = null; prepararFiltros(); renderPagina(); };
-['periodo', 'tipo', 'red', 'rol', 'agencia'].forEach(id => $('#' + id).addEventListener('change', alFiltrar));
+['f-desde', 'f-hasta', 'tipo', 'red', 'rol', 'agencia'].forEach(id => $('#' + id).addEventListener('change', alFiltrar));
 $('#buscar').addEventListener('input', () => { SEL = null; renderPagina(); });
 $('#f-cadenas').addEventListener('change', e => { const c = e.target.value; e.target.checked ? FILT.cadenas.add(c) : FILT.cadenas.delete(c); $('#agencia').value = ''; alFiltrar(); });
-$('#f-limpiar').addEventListener('click', () => { ['tipo', 'red', 'rol', 'agencia'].forEach(id => $('#' + id).value = ''); $('#periodo').value = '7'; $('#buscar').value = ''; FILT.cadenas.clear(); alFiltrar(); });
-['gL-met', 'gL2-met', 'gC-met', 'gC-gran', 'gC2-met', 'gC2-gran'].forEach(id => $('#' + id).addEventListener('change', renderPagina));
+$('#f-limpiar').addEventListener('click', () => { ['tipo', 'red', 'rol', 'agencia'].forEach(id => $('#' + id).value = ''); fechasPorDefecto(); $('#buscar').value = ''; FILT.cadenas.clear(); alFiltrar(); });
+['gL-met', 'gL2-met', 'gC-met', 'gC-gran', 'gC2-met', 'gC2-gran', 't5-met', 'bT-met', 'bP-met', 'bC-met'].forEach(id => $('#' + id).addEventListener('change', renderPagina));
+function fechasPorDefecto() { const hoy = new Date(); $('#f-hasta').value = diaKey(hoy); $('#f-desde').value = diaKey(new Date(hoy.getTime() - 6 * 86400000)); }
 $('#btn-filtros').addEventListener('click', () => $('#side').classList.toggle('abierto'));
 document.addEventListener('click', e => { if ($('#side').classList.contains('abierto') && !e.target.closest('#side,#btn-filtros')) $('#side').classList.remove('abierto'); });
 $('#exportar').addEventListener('click', exportarCSV);
@@ -1307,17 +1579,15 @@ let DETALLE = null;
 function abrirDetalle(usuario) {
   DETALLE = usuario;
   const v = RAW.vendedores.find(x => x.usuario === usuario) || {usuario, handle: usuario.replace(/^ig:/, ''), nombre: '@' + usuario.replace(/^ig:/, ''), agencia: '', plataforma: usuario.startsWith('ig:') ? 'instagram' : 'tiktok'};
-  const ahora = Date.now(), dias = +$('#periodo').value;
-  const hoy0 = new Date(); hoy0.setHours(0, 0, 0, 0);
-  const desde = hoy0.getTime() - (dias - 1) * 86400000;
+  const ahora = Date.now(), {dias, desde, hasta} = periodo();
   const dur = l => l.estado === 'EN VIVO' ? Math.max(1, (ahora - l.inicio) / 60000) : (l.min || (l.fin ? (l.fin - l.inicio) / 60000 : 0));
-  const ls = RAW.lives.filter(l => l.usuario === usuario && l.inicio >= desde).map(l => ({...l, d: dur(l)})).sort((a, b) => b.inicio - a.inicio);
+  const ls = RAW.lives.filter(l => l.usuario === usuario && l.inicio >= desde && l.inicio <= hasta).map(l => ({...l, d: dur(l)})).sort((a, b) => b.inicio - a.inicio);
   const tot = ls.reduce((s, l) => s + l.d, 0);
   const largo = ls.reduce((m, l) => Math.max(m, l.d), 0);
   const lv = ls.filter(l => l.vistas != null), vis = lv.reduce((s, l) => s + l.vistas, 0);
   const pico = ls.reduce((m, l) => Math.max(m, l.pico || 0), 0);
   const diasConLive = new Set(ls.map(l => diaKey(new Date(l.inicio)))).size;
-  const per = $('#periodo').selectedOptions[0].textContent.toLowerCase();
+  const per = textoPeriodo();
   $('#d-titulo').innerHTML = esc(v.nombre) + (ls.some(l => l.estado === 'EN VIVO') ? ' <span class="pill live">EN VIVO</span>' : '');
   $('#d-sub').innerHTML = `<a class="u" href="${urlPerfil(v)}" target="_blank" rel="noopener">${esc(hdl(v))}</a>${redBadge(v)}${pillRol(v)} · ${esc(v.cadena || '')} · ${esc(v.agencia || '')} · ${esc(per)}`;
   $('#d-kpis').innerHTML = [
