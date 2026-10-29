@@ -116,7 +116,7 @@ COMPETIDORES = [
     ("ALMACENES TIA", "Almacenes Tía"), ("ALMACENES TÍA", "Almacenes Tía"), ("TIA", "Almacenes Tía"), ("TÍA", "Almacenes Tía"),
     ("TVENTAS", "Tventas"),
     # agregadas: indicadas por Mercadeo y principales cadenas del gremio (Asadelec) y del mercado
-    ("POINT", "Point"), ("BODEGA DEL AHORRO", "Bodega del Ahorro"), ("LA BODEGA DEL AHORRO", "Bodega del Ahorro"),
+    ("POINT", "Point"), ("BAJAJ", "Bajaj"), ("BODEGUITA DEL AHORRO", "Bodeguita del Ahorro"), ("LA BODEGUITA DEL AHORRO", "Bodeguita del Ahorro"), ("BODEGA DEL AHORRO", "Bodega del Ahorro"), ("LA BODEGA DEL AHORRO", "Bodega del Ahorro"),
     ("CASA HOGAR", "Casa Hogar"), ("MAS MOTO", "Más Moto"), ("MÁS MOTO", "Más Moto"), ("MASMOTO", "Más Moto"),
     ("SUKASA", "Sukasa"), ("TODO HOGAR", "Todo Hogar"), ("TODOHOGAR", "Todo Hogar"), ("GRAN HOGAR", "Gran Hogar"),
     ("MI BODEGA", "Mi Bodega"), ("BESTPC", "BestPC"), ("BEST PC", "BestPC"), ("COMPUTRON", "Computron"),
@@ -219,10 +219,21 @@ def cadena_de(agencia, tipo="propio"):
     """Cadenas Cresa por prefijo conocido; si no se conoce, se separa la cadena de la ubicación."""
     if agencia == "SIN AGENCIA":
         return "Competencia" if tipo == "competencia" else "Otra"
-    conocida = _prefijo(agencia, CADENAS_CRESA)[0]
+    conocida = _prefijo(agencia, CADENAS_CRESA)[0] or cadena_cresa_flexible(agencia)
     if conocida:
         return conocida
     return separar_cadena(agencia)[0]
+
+
+def cadena_cresa_flexible(agencia):
+    """Errores de escritura comunes: 'JAPONCHONE' (sin espacio) o 'ISLA JAPON MALL DEL SOL' → Japón."""
+    a = re.sub(r"^(ISLA|ALMACENES|ALMACEN|TIENDA|AGENCIA)\s+", "", _sin_tildes(agencia).upper().strip())
+    a = re.sub(r"^ISLA\s+", "", a)
+    for prefijo, nombre in CADENAS_CRESA:
+        p = _sin_tildes(prefijo)
+        if a == p or a.startswith(p + " ") or (len(p) >= 5 and a.startswith(p)):
+            return nombre
+    return None
 
 
 ENCUESTA_CSV = os.path.join(DATA_DIR, "encuesta", "cuentas_sapo.csv")
