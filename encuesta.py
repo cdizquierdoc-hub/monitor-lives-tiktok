@@ -95,7 +95,7 @@ def leer_exclusiones():
                 if l.lower().startswith("id:"):
                     ids.add(l[3:].strip())
                 else:
-                    usuarios.add(l.lstrip("@").lower())
+                    usuarios.add(re.split(r"[\s,;]+", l)[0].lstrip("@").lower())   # "@usuario, comentario" → usuario
     return usuarios, ids
 
 
