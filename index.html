@@ -1375,16 +1375,16 @@ function top5(posts, porU) {
   $('#t5-sub').textContent = k === 'er' ? 'entre publicaciones con 300 views o más' : posts.length + ' publicaciones en el periodo';
   $('#t5').innerHTML = lista.map((p, i) => { const v = porU[p.usuario], url = urlPost(p, v), tt = v.plataforma !== 'instagram';
     return `<a class="t5" href="${esc(url)}" target="_blank" rel="noopener">
-      <div class="t5-img" ${tt ? `data-portada="${esc(url)}"` : ''}>${tt ? 'Cargando portada…' : 'Instagram'}<span class="t5-n">#${i + 1}</span><span class="t5-v">${fmt(p[k])} ${unidad}</span></div>
+      <div class="t5-img" ${tt || p.portada ? `data-portada="${esc(url)}" data-src="${esc(p.portada || '')}"` : ''}>${tt || p.portada ? 'Cargando portada…' : 'Instagram'}<span class="t5-n">#${i + 1}</span><span class="t5-v">${fmt(p[k])} ${unidad}</span></div>
       <div class="t5-b">${puntoMarca(v.cadena)}<b>${esc(hdl(v))}</b> <span class="hint">${esc(v.cadena)}</span>
         <div class="d">${esc(p.desc || '') || 'sin descripción'}</div>
         <div class="m">${new Date(p.creado).toLocaleDateString('es-EC', {day: '2-digit', month: 'short'})} · 👁 ${fmtN(p.vistas)} · ♥ ${fmtN(p.likes)} · 💬 ${fmtN(p.comentarios)} · ↗ ${fmtN(p.compartidos)}</div></div></a>`; }).join('')
     || '<div class="empty" style="grid-column:1/-1">Sin publicaciones en el periodo.</div>';
-  $('#t5').querySelectorAll('[data-portada]').forEach(box => { const txt = box.firstChild; portada(box.dataset.portada).then(src => {
+  $('#t5').querySelectorAll('[data-portada]').forEach(box => { const txt = box.firstChild; (box.dataset.src ? Promise.resolve(box.dataset.src) : portada(box.dataset.portada)).then(src => {
     if (!box.isConnected) return;
     if (!src) { txt.textContent = 'Sin portada'; return; }
     const img = new Image(); img.alt = ''; img.referrerPolicy = 'no-referrer'; img.crossOrigin = PORTADA_CORS ? 'anonymous' : null; img.src = src;
-    img.onload = () => { txt.textContent = ''; }; img.onerror = () => { txt.textContent = 'Sin portada'; img.remove(); }; box.prepend(img);
+    img.onload = () => { txt.textContent = ''; }; img.onerror = () => { img.remove(); if (src === box.dataset.src) { box.dataset.src = ''; portada(box.dataset.portada).then(s2 => { if (!s2) { txt.textContent = 'Sin portada'; return; } const i2 = new Image(); i2.referrerPolicy = 'no-referrer'; i2.src = s2; i2.onload = () => { txt.textContent = ''; }; i2.onerror = () => { txt.textContent = 'Sin portada'; i2.remove(); }; box.prepend(i2); }); } else txt.textContent = 'Sin portada'; }; box.prepend(img);
   }); });
 }
 

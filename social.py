@@ -82,6 +82,8 @@ def video(usuario, vid):
         "compartidos": n(st.get("shareCount")),
         "guardados": n(st.get("collectCount")),
         "duracion": n((it.get("video") or {}).get("duration")),
+        # portada real del video (URL firmada de TikTok; se renueva en cada actualización del post)
+        "portada": (it.get("video") or {}).get("cover") or (it.get("video") or {}).get("originCover") or "",
     }
 
 
