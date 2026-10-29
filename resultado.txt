@@ -1,0 +1,6 @@
+200 image/jpeg ACAO= * con origin 239490
+200 image/jpeg ACAO= * sin origin 239490
+200 image/jpeg ACAO= * con origin 231874
+200 image/jpeg ACAO= * sin origin 231874
+200 image/jpeg ACAO= * con origin 188840
+200 image/jpeg ACAO= * sin origin 188840
