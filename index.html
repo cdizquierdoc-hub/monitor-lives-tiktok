@@ -1363,7 +1363,7 @@ function renderContenido() {
 }
 
 /* ---------- Top 5 con la portada real de TikTok ---------- */
-const PORTADAS = {}, PORTADA_CORS = false;
+const PORTADAS = {}, PORTADA_CORS = true;   // el CDN de TikTok responde con CORS abierto: así las portadas salen también en el PDF
 function portada(url) {
   return PORTADAS[url] ||= fetch('https://www.tiktok.com/oembed?url=' + encodeURIComponent(url)).then(r => r.ok ? r.json() : null)
     .then(j => j?.thumbnail_url || null).catch(() => { delete PORTADAS[url]; return null; });
@@ -1498,7 +1498,9 @@ async function exportarPDF(el, titulo, cortes) {
   try {
     await cargarPDF();
     EXPORTANDO = true; document.documentElement.dataset.theme = 'light'; document.body.classList.add('exportando');
-    renderPagina(); await new Promise(r => setTimeout(r, 350));
+    renderPagina();
+    Object.values(GRAF).forEach(g => { try { g.setActiveElements([]); g.tooltip?.setActiveElements([], {x: 0, y: 0}); g.update('none'); } catch (e) {} });
+    await new Promise(r => setTimeout(r, 350));
     const caja = el.getBoundingClientRect();
     const lienzo = await html2canvas(el, {scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false, ignoreElements: e => e.classList?.contains('no-pdf')});
     const {jsPDF} = window.jspdf, W = lienzo.width, H = lienzo.height, k = W / caja.width;
