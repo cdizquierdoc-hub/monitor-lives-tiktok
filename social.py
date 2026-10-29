@@ -20,6 +20,8 @@ DATA_DIR = os.environ.get("DATA_DIR", "data")
 ARCHIVO = os.path.join(DATA_DIR, "social.json")
 DIAS_ACTUALIZAR = 45        # se refrescan métricas de posts publicados en los últimos N días
 HILOS = 4
+DIAS_PORTADA = 120          # se mantiene vigente la portada de los posts de los últimos N días
+MAX_VIEJOS = 25             # posts anteriores que se releen por cuenta en cada corrida (para no tardar demasiado)
 
 
 def ahora_ms():
@@ -112,7 +114,27 @@ def procesar(v, posts_previos, t):
             if not prev:
                 res["error"] += " video %s: %s" % (vid, str(e)[:60])
         time.sleep(0.4)
+    # Posts anteriores a los ~13 más recientes: se vuelven a leer cuando les falta la portada o ya va a vencer
+    # (TikTok firma la URL de la portada por ~2 días). Así el top 5 siempre tiene portada y sus métricas siguen al día.
+    vistos = {vid for vid, _ in recientes}
+    viejos = sorted(((vid, p) for vid, p in posts_previos.items() if p.get("usuario") == v["usuario"] and vid not in vistos
+                     and p.get("creado", 0) >= t - DIAS_PORTADA * 86400000 and portada_vence(p.get("portada"), t)),
+                    key=lambda x: -(x[1].get("vistas") or 0))[:MAX_VIEJOS]
+    for vid, prev in viejos:
+        try:
+            d = video(u, vid)
+            d.update(usuario=v["usuario"], plataforma="tiktok", actualizado=t)
+            res["posts"][vid] = d
+        except Exception:
+            pass
+        time.sleep(0.4)
     return res
+
+
+def portada_vence(url, t):
+    """True si no hay portada o su firma vence en menos de 12 horas."""
+    m = re.search(r"x-expires=(\d+)", url or "")
+    return not m or int(m.group(1)) * 1000 < t + 12 * 3600 * 1000
 
 
 def main():
