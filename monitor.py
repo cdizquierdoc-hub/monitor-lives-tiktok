@@ -111,6 +111,7 @@ def tipo_de(txt):
 COMPETIDORES = [
     ("ALMACENES ESPAÑA", "Almacenes España"), ("ALMACENES ESPANA", "Almacenes España"), ("ESPAÑA", "Almacenes España"),
     ("ALMACENES AL PRECIO", "Almacenes Al Precio"), ("AL PRECIO", "Almacenes Al Precio"),
+    ("ARTEFACTA MOTORS", "Artefacta Motors"), ("ARTEFACTA MOTOR", "Artefacta Motors"), ("ARTEFACTA MOTOS", "Artefacta Motors"), ("ART MOTORS", "Artefacta Motors"),
     ("ARTEFACTA", "Artefacta"), ("MARCIMEX", "Marcimex"), ("COMANDATO", "Comandato"), ("JAHER", "Jaher"),
     ("ALMACENES JAHER", "Jaher"), ("LA GANGA", "La Ganga"), ("ALMACENES LA GANGA", "La Ganga"),
     ("ALMACENES TIA", "Almacenes Tía"), ("ALMACENES TÍA", "Almacenes Tía"), ("TIA", "Almacenes Tía"), ("TÍA", "Almacenes Tía"),
