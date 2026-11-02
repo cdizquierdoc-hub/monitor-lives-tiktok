@@ -323,7 +323,7 @@ def consultar_api(usuario):
         if 0 <= ahora_ms() - t < 24 * 3600 * 1000:
             inicio = t
     stats = room.get("liveRoomStats") or {}
-    return {"enVivo": en_vivo, "roomId": str(user.get("roomId") or ""),
+    return {"st": st, "enVivo": en_vivo, "roomId": str(user.get("roomId") or ""),
             "inicio": inicio, "titulo": room.get("title") or "",
             "espectadores": int(stats.get("userCount") or 0) if en_vivo else None,
             "vistas": int(stats.get("enterCount") or 0) if en_vivo else None}
@@ -534,6 +534,7 @@ def revisar(d):
         if e.get("error"):
             cambios = True
         e["error"] = ""
+        e["st"] = r.get("st")          # estado crudo que devolvió TikTok (2 = en vivo), para diagnóstico
 
         if r["enVivo"]:
             en_vivo += 1
