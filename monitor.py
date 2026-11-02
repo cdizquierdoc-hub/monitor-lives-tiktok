@@ -598,7 +598,8 @@ def main():
                 _, txt = http_get("https://www.tiktok.com/api-live/user/room/?" + q)
                 d = json.loads(txt).get("data") or {}
                 room = d.get("liveRoom") or {}
-                print(u, "status", room.get("status"), (d.get("user") or {}).get("status"))
+                us = d.get("user") or {}
+                print(u, "status", room.get("status"), us.get("status"), "roomId", us.get("roomId"), "msg", json.loads(txt).get("message"), "len", len(txt))
                 print("  liveRoom keys:", sorted(room.keys()))
                 print("  stats:", json.dumps(room.get("liveRoomStats"), ensure_ascii=False)[:400])
                 for k in ("userCount", "enterCount", "viewerCount", "likeCount", "totalUser"):
