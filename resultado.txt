@@ -1,0 +1,12 @@
+crecosre1 status 4 4 roomId 7703362800130788114 msg  len 8691
+  liveRoom keys: ['coverUrl', 'gameTagId', 'hevcStreamData', 'liveRoomMode', 'liveRoomStats', 'liveSubOnly', 'multiStreamScene', 'multiStreamSource', 'paidEvent', 'squareCoverImg', 'startTime', 'status', 'streamData', 'streamId', 'title']
+  stats: {"enterCount": 785, "userCount": 1}
+  data keys: ['liveRoom', 'stats', 'user']
+isla.japon.tech.ma status 4 4 roomId 7703361660438416129 msg  len 10064
+  liveRoom keys: ['coverUrl', 'gameTagId', 'hevcStreamData', 'liveRoomMode', 'liveRoomStats', 'liveSubOnly', 'multiStreamScene', 'multiStreamSource', 'paidEvent', 'squareCoverImg', 'startTime', 'status', 'streamData', 'streamId', 'title']
+  stats: {"enterCount": 55, "userCount": 1}
+  data keys: ['liveRoom', 'stats', 'user']
+almacenes.arcos status 2 2 roomId 7703341091873049352 msg  len 8791
+  liveRoom keys: ['coverUrl', 'gameTagId', 'hevcStreamData', 'liveRoomMode', 'liveRoomStats', 'liveSubOnly', 'multiStreamScene', 'multiStreamSource', 'paidEvent', 'squareCoverImg', 'startTime', 'status', 'streamData', 'streamId', 'title']
+  stats: {"enterCount": 28089, "userCount": 418}
+  data keys: ['liveRoom', 'stats', 'user']
