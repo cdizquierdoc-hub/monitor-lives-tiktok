@@ -18,6 +18,7 @@ import csv
 import glob
 import json
 import os
+import random
 import re
 import subprocess
 import sys
@@ -35,6 +36,7 @@ DURACION_MIN = float(os.environ.get("DURACION_MIN", "0"))
 AL_GUARDAR = os.environ.get("AL_GUARDAR", "")
 REVISIONES_PARA_CERRAR = 3      # revisiones seguidas sin live para dar por terminado (evita cortes por señal)
 DIAS_EN_DASHBOARD = 120         # historial que se publica en data.json
+CADA_MIN_CUENTA = 3             # minutos entre revisiones de una cuenta que no está en vivo
 RONDAS_SIN_LIVES = 30          # rondas seguidas sin ningún live (9:00–21:00) antes de cambiar de servidor
 LATIDO_SEG = 120                # guarda aunque no haya cambios, para mostrar "última revisión"
 HILOS = 8
@@ -432,21 +434,27 @@ def consultar_tt(v, sala_previa):
 
 
 def consultar(usuario):
-    errores = []
+    """Estado de live de una cuenta. Si la API rápida no trae datos de la cuenta (a veces TikTok la 'apaga' para un
+    servidor), se mira la página del live; solo si la cuenta existe y no hay sala se da por 'no está en vivo'."""
+    errores, vacia = [], False
     for fn in (consultar_api, consultar_html):
         try:
             r = fn(usuario)
             r["metodo"] = fn.__name__
+            r["apiVacia"] = vacia
             return r
         except LookupError as e:
+            if fn is consultar_api:
+                vacia = True            # la API no devolvió la cuenta: probar con la página del live
+                continue
             p = perfil_tiktok(usuario)
             if p and p["existe"]:   # existe, pero sin lives habilitados → no es un error
                 return {"enVivo": False, "roomId": "", "inicio": None, "titulo": "", "espectadores": None, "vistas": None,
-                        "metodo": "perfil", "nota": "sin lives habilitados"}
+                        "metodo": "perfil", "nota": "sin lives habilitados", "apiVacia": vacia}
             return {"error": str(e)}
         except Exception as e:  # red, bloqueo, JSON inválido
             errores.append("%s: %s" % (fn.__name__, str(e)[:120]))
-    return {"error": " | ".join(errores)}
+    return {"error": " | ".join(errores), "apiVacia": vacia}
 
 
 # ------------------------------------------------------------------ datos
@@ -531,15 +539,24 @@ def revisar(d):
             del d["estado"][u]
             cambios = True
 
+    # Para no saturar a TikTok (con ~400 cuentas cada minuto deja de responder a ese servidor): las cuentas en vivo
+    # se revisan cada minuto; las demás cada CADA_MIN_CUENTA minutos y las que no tienen lives habilitados cada 10.
+    def toca(v):
+        e = d["estado"].get(v["usuario"])
+        return v["plataforma"] != "tiktok" or not e or e.get("enVivo") or t >= e.get("prox", 0)
+    ahora_revisar = [v for v in activos if toca(v)]
     with ThreadPoolExecutor(HILOS) as ex:
-        resultados = list(ex.map(lambda v: consultar_tt(v, d["estado"].get(v["usuario"], {}).get("rid")) if v["plataforma"] == "tiktok" else None, activos))
-    resultados = [r if r is not None else consultar_instagram(v) for v, r in zip(activos, resultados)]
+        resultados = list(ex.map(lambda v: consultar_tt(v, d["estado"].get(v["usuario"], {}).get("rid")) if v["plataforma"] == "tiktok" else None, ahora_revisar))
+    resultados = [r if r is not None else consultar_instagram(v) for v, r in zip(ahora_revisar, resultados)]
 
     en_vivo = 0
-    for v, r in zip(activos, resultados):
+    for v, r in zip(ahora_revisar, resultados):
         e = d["estado"].setdefault(v["usuario"], {
             "usuario": v["usuario"], "enVivo": False, "roomId": "", "liveId": "", "sinLive": 0})
         e["ultimaRev"] = t
+        if v["plataforma"] == "tiktok":
+            seg = 0 if r.get("enVivo") else 120 if "error" in r else 600 if r.get("metodo") == "perfil" else CADA_MIN_CUENTA * 60
+            e["prox"] = t + int((seg + random.uniform(0, 30)) * 1000) if seg else 0
         live = por_id.get(e.get("liveId"))
 
         if r.get("omitir"):               # Instagram fuera de turno o sin datos de lives disponibles
@@ -599,8 +616,13 @@ def revisar(d):
                 cambios = True
 
     errores = sum(1 for v in activos if d["estado"][v["usuario"]].get("error") and v["plataforma"] == "tiktok")
-    log("Revisados %d · en vivo %d · errores %d" % (len(activos), en_vivo, errores))
+    log("Revisados %d de %d · en vivo %d · errores %d" % (len(ahora_revisar), len(activos), en_vivo, errores))
     d["_en_vivo_ronda"] = en_vivo
+    tt = [r for v, r in zip(ahora_revisar, resultados) if v["plataforma"] == "tiktok"]
+    vacias = sum(1 for r in tt if r.get("apiVacia"))
+    d["_api_bloqueada"] = len(tt) >= 20 and vacias > len(tt) * 0.6
+    if vacias:
+        log("API sin datos para %d de %d cuentas" % (vacias, len(tt)))
     return vendedores, cambios
 
 
@@ -647,7 +669,7 @@ def main():
 
     fin_bucle = time.time() + DURACION_MIN * 60
     ultimo_guardado = 0
-    rondas_sin_lives = 0
+    rondas_sin_lives = rondas_bloqueo = 0
     d = cargar_datos()
     while True:
         inicio_ronda = time.time()
@@ -671,6 +693,13 @@ def main():
         if 9 <= hora_ec < 21 and rondas_sin_lives >= RONDAS_SIN_LIVES:
             log("Sin lives en %d rondas: se cambia de servidor" % rondas_sin_lives)
             break
+        if d.get("_api_bloqueada"):
+            rondas_bloqueo += 1
+            if rondas_bloqueo >= 2:
+                log("TikTok no está respondiendo a este servidor: se cambia de servidor")
+                break
+        else:
+            rondas_bloqueo = 0
         time.sleep(max(5, INTERVALO - (time.time() - inicio_ronda)))
     guardar_datos(d, leer_vendedores())
     if AL_GUARDAR:
