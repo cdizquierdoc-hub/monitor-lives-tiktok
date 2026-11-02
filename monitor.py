@@ -35,7 +35,7 @@ DURACION_MIN = float(os.environ.get("DURACION_MIN", "0"))
 AL_GUARDAR = os.environ.get("AL_GUARDAR", "")
 REVISIONES_PARA_CERRAR = 3      # revisiones seguidas sin live para dar por terminado (evita cortes por señal)
 DIAS_EN_DASHBOARD = 120         # historial que se publica en data.json
-LATIDO_SEG = 600                # guarda aunque no haya cambios, para mostrar "última revisión"
+LATIDO_SEG = 120                # guarda aunque no haya cambios, para mostrar "última revisión"
 HILOS = 8
 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
