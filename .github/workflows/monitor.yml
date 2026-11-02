@@ -15,6 +15,7 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   monitor:
@@ -47,3 +48,11 @@ jobs:
             (git diff --cached --quiet || git commit -q -m "datos $(date -u +%FT%TZ)") &&
             (git push -q origin data || (git pull -q --rebase -X theirs origin data && git push -q origin data))
         run: python3 monitor.py
+
+      # El siguiente turno se pide al terminar este, para que no haya huecos (el horario de GitHub puede atrasarse
+      # hasta una hora). Si este turno terminó por respuestas viejas de TikTok, el nuevo corre en otro servidor.
+      - name: Encadenar el siguiente turno
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run monitor.yml --ref main -f duracion=340 -R ${{ github.repository }}

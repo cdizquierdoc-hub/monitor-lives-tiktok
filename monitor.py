@@ -35,6 +35,7 @@ DURACION_MIN = float(os.environ.get("DURACION_MIN", "0"))
 AL_GUARDAR = os.environ.get("AL_GUARDAR", "")
 REVISIONES_PARA_CERRAR = 3      # revisiones seguidas sin live para dar por terminado (evita cortes por señal)
 DIAS_EN_DASHBOARD = 120         # historial que se publica en data.json
+RONDAS_SIN_LIVES = 30          # rondas seguidas sin ningún live (9:00–21:00) antes de cambiar de servidor
 LATIDO_SEG = 120                # guarda aunque no haya cambios, para mostrar "última revisión"
 HILOS = 8
 
@@ -410,6 +411,26 @@ def consultar_instagram(v):
     return r
 
 
+def sala_viva(room_id):
+    """Segunda opinión (otro servicio de TikTok): ¿esta sala está transmitiendo?"""
+    _, txt = http_get("https://webcast.tiktok.com/webcast/room/check_alive/?aid=1988&region=CH&user_is_login=false&room_ids=" + room_id)
+    return bool(((json.loads(txt).get("data") or [{}])[0]).get("alive"))
+
+
+def consultar_tt(v, sala_previa):
+    """Lives de TikTok. Si TikTok dice 'no está en vivo' pero la cuenta tiene una sala NUEVA (distinta a la última
+    vista), se confirma con check_alive: a veces la API responde con datos viejos y así no se pierde el live."""
+    r = consultar(v["handle"])
+    if r.get("error") or r.get("enVivo") or not r.get("roomId") or r["roomId"] == sala_previa:
+        return r
+    try:
+        if sala_viva(r["roomId"]):
+            r.update(enVivo=True, metodo="check_alive")
+    except Exception:
+        pass
+    return r
+
+
 def consultar(usuario):
     errores = []
     for fn in (consultar_api, consultar_html):
@@ -511,7 +532,7 @@ def revisar(d):
             cambios = True
 
     with ThreadPoolExecutor(HILOS) as ex:
-        resultados = list(ex.map(lambda v: consultar(v["handle"]) if v["plataforma"] == "tiktok" else None, activos))
+        resultados = list(ex.map(lambda v: consultar_tt(v, d["estado"].get(v["usuario"], {}).get("rid")) if v["plataforma"] == "tiktok" else None, activos))
     resultados = [r if r is not None else consultar_instagram(v) for v, r in zip(activos, resultados)]
 
     en_vivo = 0
@@ -535,6 +556,8 @@ def revisar(d):
             cambios = True
         e["error"] = ""
         e["st"] = r.get("st")          # estado crudo que devolvió TikTok (2 = en vivo), para diagnóstico
+        if r.get("roomId"):
+            e["rid"] = r["roomId"]
 
         if r["enVivo"]:
             en_vivo += 1
@@ -577,6 +600,7 @@ def revisar(d):
 
     errores = sum(1 for v in activos if d["estado"][v["usuario"]].get("error") and v["plataforma"] == "tiktok")
     log("Revisados %d · en vivo %d · errores %d" % (len(activos), en_vivo, errores))
+    d["_en_vivo_ronda"] = en_vivo
     return vendedores, cambios
 
 
@@ -623,6 +647,7 @@ def main():
 
     fin_bucle = time.time() + DURACION_MIN * 60
     ultimo_guardado = 0
+    rondas_sin_lives = 0
     d = cargar_datos()
     while True:
         inicio_ronda = time.time()
@@ -637,6 +662,14 @@ def main():
             if AL_GUARDAR:
                 subprocess.run(AL_GUARDAR, shell=True, check=False)
         if time.time() + INTERVALO > fin_bucle:
+            break
+        # A veces TikTok le da respuestas viejas a un servidor (nadie aparece en vivo durante horas).
+        # Si en horario de tiendas pasan RONDAS_SIN_LIVES rondas sin ningún live, se termina el turno
+        # y el siguiente turno arranca en otro servidor de GitHub (otra IP).
+        rondas_sin_lives = 0 if d.get("_en_vivo_ronda") else rondas_sin_lives + 1
+        hora_ec = (datetime.now(timezone.utc).hour - 5) % 24
+        if 9 <= hora_ec < 21 and rondas_sin_lives >= RONDAS_SIN_LIVES:
+            log("Sin lives en %d rondas: se cambia de servidor" % rondas_sin_lives)
             break
         time.sleep(max(5, INTERVALO - (time.time() - inicio_ronda)))
     guardar_datos(d, leer_vendedores())
