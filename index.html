@@ -125,6 +125,7 @@
   .checks label{display:flex;gap:7px;align-items:center;font-size:13px;font-weight:500;color:var(--ink);text-transform:none;letter-spacing:0;padding:3px 4px;border-radius:6px;cursor:pointer}
   .checks label:hover{background:var(--soft)}
   .checks .grp{font-size:11px;color:var(--mute);font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:6px 4px 2px}
+  .checks label.grp{display:flex;gap:7px;align-items:center;cursor:pointer;color:var(--mute);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:7px 4px 3px}
   .checks input{margin:0;padding:0;width:auto}
   button.link{background:none;border:0;color:var(--accent2);font-size:13px;padding:2px 4px;font-weight:600}
   .sel-box{background:var(--soft);border:1px solid var(--accent);border-radius:10px;padding:10px;font-size:12.5px;margin-bottom:14px}
@@ -744,6 +745,7 @@ async function cargar() {
 const CADENAS = {CRECOS: 'Crecos', ORVE: 'Orve Hogar', JAPON: 'Japón', 'JAPÓN': 'Japón', MOTOZONE: 'Motozone', PAGAMENOS: 'Pagamenos', PAGA: 'Pagamenos', SAMSUNG: 'Samsung', MULTINIVEL: 'Independientes', INDEPENDIENTE: 'Independientes', INDEPENDIENTES: 'Independientes'};
 const cadenaDe = a => CADENAS[String(a || '').trim().split(/\s+/)[0].toUpperCase()] || 'Otra';
 const FILT = {cadenas: new Set()};
+let GRUPOS_CAD = {};
 function opciones(sel, todos, valores) {
   const actual = sel.value;
   sel.innerHTML = `<option value="">${todos}</option>` + valores.map(z => `<option${z === actual ? ' selected' : ''}>${esc(z)}</option>`).join('');
@@ -758,8 +760,12 @@ function prepararFiltros() {
   const grupos = {};
   deTipo.forEach(v => (grupos[grupoDe(v)] ||= new Set()).add(v.cadena));
   [...FILT.cadenas].forEach(c => { if (!deTipo.some(v => v.cadena === c)) FILT.cadenas.delete(c); });
-  $('#f-cadenas').innerHTML = ['Cresa', 'Competencia'].filter(g => grupos[g]).map(g => `<div class="grp">${g}</div>` +
-    [...grupos[g]].sort().map(c => `<label><input type="checkbox" value="${esc(c)}"${FILT.cadenas.has(c) ? ' checked' : ''}>${puntoMarca(c)}${esc(c)}</label>`).join('')).join('') || '<span class="hint">Sin cuentas</span>';
+  GRUPOS_CAD = grupos;
+  $('#f-cadenas').innerHTML = ['Cresa', 'Competencia'].filter(g => grupos[g]).map(g => {
+    const n = [...grupos[g]].filter(c => FILT.cadenas.has(c)).length;
+    return `<label class="grp" title="Elegir o quitar todas las de ${g}"><input type="checkbox" data-grupo="${g}"${n && n === grupos[g].size ? ' checked' : ''}${n && n < grupos[g].size ? ' data-medio="1"' : ''}>${g}</label>` +
+      [...grupos[g]].sort().map(c => `<label><input type="checkbox" value="${esc(c)}"${FILT.cadenas.has(c) ? ' checked' : ''}>${puntoMarca(c)}${esc(c)}</label>`).join(''); }).join('') || '<span class="hint">Sin cuentas</span>';
+  $('#f-cadenas').querySelectorAll('[data-medio]').forEach(i => i.indeterminate = true);
   $('#f-cad-n').textContent = FILT.cadenas.size ? '(' + FILT.cadenas.size + ')' : '';
   opciones($('#ciudad'), 'Todas las ciudades', [...new Set(deTipo.filter(v => !FILT.cadenas.size || FILT.cadenas.has(v.cadena)).map(ciudadDe).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es')));
   const ciudad = $('#ciudad').value;
@@ -1654,18 +1660,35 @@ function rgba(c) {
 const sobreBlanco = c => { const [r, g, b, a] = rgba(c); return [r, g, b].map(x => Math.round(x * a + 255 * (1 - a))); };
 
 /** Hoja de PDF con cursor: escribe de arriba hacia abajo y pasa de página sola. */
+/** Filtros aplicados (panel izquierdo + selección en gráficos/tablas), para escribirlos en el PDF. */
+function textoFiltros() {
+  const p = paginaActual(), f = [], sel = id => $('#' + id).selectedOptions[0]?.textContent;
+  if (p !== 'comp' && $('#tipo').value) f.push('Grupo: ' + sel('tipo'));
+  if ($('#red').value) f.push('Red: ' + sel('red'));
+  if (p === 'cont') f.push('Tipo de cuenta: ' + (rolCont() === 'oficial' ? 'cuentas oficiales' : 'vendedores'));
+  else if ($('#rol').value) f.push('Tipo de cuenta: ' + sel('rol'));
+  if (FILT.cadenas.size) {
+    const partes = [];
+    Object.entries(GRUPOS_CAD).forEach(([g, cs]) => { const el = [...cs].filter(c => FILT.cadenas.has(c)).sort();
+      if (el.length && el.length === cs.size) partes.push('toda ' + g); else partes.push(...el); });
+    if (!(partes.length === Object.keys(GRUPOS_CAD).length && partes.every(x => x.startsWith('toda ')))) f.push('Cadenas: ' + partes.join(', '));
+  }
+  if ($('#agencia').value) f.push('Agencia: ' + $('#agencia').value);
+  if ($('#ciudad').value) f.push('Ciudad: ' + $('#ciudad').value);
+  if ($('#buscar').value.trim()) f.push('Búsqueda: "' + $('#buscar').value.trim() + '"');
+  if (SEL) f.push('Selección: ' + [...SEL.etq.values()].join(', '));
+  return 'Filtros: ' + (f.length ? f.join(' · ') : 'ninguno (todas las cuentas)');
+}
 function hojaPDF(titulo, orient) {
   const pdf = new window.jspdf.jsPDF({orientation: orient, unit: 'pt', format: 'a4'});
   const L = {pdf, titulo, M: 30, W: pdf.internal.pageSize.getWidth(), H: pdf.internal.pageSize.getHeight(), y: 0, pag: 0};
   L.ancho = L.W - 2 * L.M;
+  pdf.setFontSize(8); L.filtros = pdf.splitTextToSize(txt(textoFiltros()), L.ancho);
+  L.cab = 34 + L.filtros.length * 10;          // alto de la cabecera de cada página
   L.nueva = () => {
     if (L.pag++) pdf.addPage();
-    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(12); pdf.setTextColor(20, 24, 33); pdf.text(txt('SAPO · ' + titulo), L.M, L.M + 6);
-    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(110, 118, 130);
-    pdf.text(txt(textoPeriodo() + ' · generado ' + new Date().toLocaleString('es-EC')), L.M, L.M + 18);
-    pdf.text(String(L.pag), L.W - L.M, L.H - 14, {align: 'right'});
-    pdf.setDrawColor(225, 229, 236); pdf.setLineWidth(.6); pdf.line(L.M, L.M + 25, L.W - L.M, L.M + 25);
-    L.y = L.M + 40;
+    dibujarCabecera(L);
+    L.y = L.M + L.cab + 14;
   };
   L.espacio = h => { if (L.y + h > L.H - L.M) L.nueva(); };
   L.nueva();
@@ -1776,7 +1799,7 @@ function pdfTabla(L, tabla, chico) {
   const numCols = [...(tabla.querySelector('thead tr')?.cells || [])].map(th => th.classList.contains('num'));
   const cols = numCols.length, fs = chico ? 6.4 : cols > 11 ? 6.4 : cols > 7 ? 7.2 : 8;
   L.pdf.autoTable({
-    head, body, foot, startY: L.y, margin: {left: L.M, right: L.M, top: L.M + 40, bottom: L.M}, theme: 'plain',
+    head, body, foot, startY: L.y, margin: {left: L.M, right: L.M, top: L.M + L.cab + 14, bottom: L.M}, theme: 'plain',
     styles: {font: 'helvetica', fontSize: fs, cellPadding: {top: 3, bottom: 3, left: 3, right: 3}, textColor: [35, 40, 50], overflow: 'linebreak', lineColor: [232, 235, 240], lineWidth: {bottom: .5}},
     headStyles: {fontStyle: 'bold', textColor: [110, 118, 130], fontSize: fs - .4, lineWidth: {bottom: .8}},
     footStyles: {fontStyle: 'bold', textColor: [20, 24, 33], lineWidth: {top: .8}},
@@ -1791,9 +1814,10 @@ function dibujarCabecera(L) {
   const pdf = L.pdf;
   pdf.setFont('helvetica', 'bold'); pdf.setFontSize(12); pdf.setTextColor(20, 24, 33); pdf.text(txt('SAPO · ' + L.titulo), L.M, L.M + 6);
   pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(110, 118, 130);
-  pdf.text(txt(textoPeriodo() + ' · generado ' + new Date().toLocaleString('es-EC')), L.M, L.M + 18);
-  pdf.text(String(L.pag), L.W - L.M, L.H - 14, {align: 'right'});
-  pdf.setDrawColor(225, 229, 236); pdf.setLineWidth(.6); pdf.line(L.M, L.M + 25, L.W - L.M, L.M + 25);
+  pdf.text(txt('Periodo: ' + textoPeriodo() + ' · generado ' + new Date().toLocaleString('es-EC')), L.M, L.M + 18);
+  pdf.setTextColor(13, 120, 130); pdf.text(L.filtros, L.M, L.M + 29);
+  pdf.setTextColor(110, 118, 130); pdf.text(String(L.pag), L.W - L.M, L.H - 14, {align: 'right'});
+  pdf.setDrawColor(225, 229, 236); pdf.setLineWidth(.6); pdf.line(L.M, L.M + L.cab, L.W - L.M, L.M + L.cab);
 }
 
 function pdfCalor(L, heat) {
@@ -1968,7 +1992,11 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') { cerrarDeta
 const alFiltrar = () => { SEL = null; prepararFiltros(); renderPagina(); };
 ['f-desde', 'f-hasta', 'tipo', 'red', 'rol', 'agencia', 'ciudad'].forEach(id => $('#' + id).addEventListener('change', alFiltrar));
 $('#buscar').addEventListener('input', () => { SEL = null; renderPagina(); });
-$('#f-cadenas').addEventListener('change', e => { const c = e.target.value; e.target.checked ? FILT.cadenas.add(c) : FILT.cadenas.delete(c); $('#agencia').value = ''; alFiltrar(); });
+$('#f-cadenas').addEventListener('change', e => {
+  const g = e.target.dataset.grupo;
+  const cs = g ? [...(GRUPOS_CAD[g] || [])] : [e.target.value];     // casilla de grupo = todas sus cadenas
+  cs.forEach(c => e.target.checked ? FILT.cadenas.add(c) : FILT.cadenas.delete(c));
+  $('#agencia').value = ''; alFiltrar(); });
 $('#f-limpiar').addEventListener('click', () => { ['tipo', 'red', 'rol', 'agencia', 'ciudad'].forEach(id => $('#' + id).value = ''); fechasPorDefecto(); $('#buscar').value = ''; FILT.cadenas.clear(); alFiltrar(); });
 ['gL-met', 'gL2-met', 'gC-met', 'gC-gran', 'gC2-met', 'gC2-gran', 't5-met', 'bT-met', 'bP-met', 'bC-met', 'geoL-met', 'geoC-met'].forEach(id => $('#' + id).addEventListener('change', renderPagina));
 function fechasPorDefecto() { const hoy = new Date(); $('#f-hasta').value = diaKey(hoy); $('#f-desde').value = diaKey(new Date(hoy.getTime() - 6 * 86400000)); }
