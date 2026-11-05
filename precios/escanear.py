@@ -24,7 +24,7 @@ TIENDAS = [
     {"id": "crecos",    "nombre": "Crecos",          "grupo": "cresa", "tipo": "vtex",    "host": "www.crecos.com"},
     {"id": "orve",      "nombre": "Orve Hogar",      "grupo": "cresa", "tipo": "vtex",    "host": "www.orvehogar.com"},
     {"id": "japon",     "nombre": "Almacenes Japón", "grupo": "cresa", "tipo": "vtex",    "host": "www.almacenesjapon.com"},
-    # Artefacta (Magento) se agrega cuando se confirme cómo leer su catálogo
+    {"id": "artefacta", "nombre": "Artefacta",       "grupo": "comp",  "tipo": "magento", "host": "www.artefacta.com", "store": 16},
     {"id": "marcimex",  "nombre": "Marcimex",        "grupo": "comp",  "tipo": "vtex",    "host": "www.marcimex.com"},
     {"id": "comandato", "nombre": "Comandato",       "grupo": "comp",  "tipo": "vtex",    "host": "www.comandato.com"},
 ]
@@ -152,68 +152,55 @@ def escanear_vtex(t):
 
 
 # ---------------------------------------------------------------- Magento (Artefacta)
-MAG_Q = """{ products(filter: {category_uid: {eq: "%s"}}, pageSize: 100, currentPage: %d, sort: {name: ASC}) {
-  total_count page_info { total_pages }
-  items { uid sku name url_key url_suffix canonical_url
-    small_image { url } categories { name }
-    price_range { minimum_price { regular_price { value } final_price { value } } }
-    stock_status
-    ... on SimpleProduct { manufacturer }
-  } } }"""
+# Su GraphQL está apagado; el listado público "products-render-info" sí responde.
+MAG_PAG = 200
 
 
-def mag(host, q):
-    st, b = get(f"https://{host}/graphql?query=" + urllib.parse.quote(q), headers={"Content-Type": "application/json"})
-    d = json.loads(b)
-    if d.get("errors") and not d.get("data"):
-        raise RuntimeError(str(d["errors"])[:200])
-    return d["data"]
+def mag_pagina(host, store, pag):
+    q = (f"searchCriteria[pageSize]={MAG_PAG}&searchCriteria[currentPage]={pag}"
+         "&searchCriteria[filterGroups][0][filters][0][field]=status"
+         "&searchCriteria[filterGroups][0][filters][0][value]=1"
+         f"&storeId={store}&currencyCode=USD")
+    st, b = get(f"https://{host}/rest/V1/products-render-info?{q}", timeout=90)
+    return json.loads(b)
 
 
 def escanear_magento(t):
-    host = t["host"]
-    cats = mag(host, "{ categories(filters: {}) { items { uid name children { uid name children { uid name } } } } }")
-    uids = []
-
-    def rec(items):
-        for c in items or []:
-            uids.append(c["uid"])
-            rec(c.get("children"))
-    rec(cats["categories"]["items"])
-    log(f"[{t['id']}] {len(uids)} categorías")
-    vistos = {}
-
-    def una(uid):
-        out = []
-        pag, total = 1, 1
-        while pag <= total and pag <= 60:
-            d = mag(host, MAG_Q % (uid, pag))["products"]
-            total = d["page_info"]["total_pages"] or 1
-            out.extend(d["items"])
-            pag += 1
-        return out
-
+    host, store = t["host"], t.get("store", 16)
+    d = mag_pagina(host, store, 1)
+    total = d.get("total_count") or 0
+    paginas = max(1, -(-total // MAG_PAG))
+    log(f"[{t['id']}] {total} productos en {paginas} páginas")
+    if d.get("items"):
+        ej = dict(d["items"][0]); ej.pop("add_to_cart_button", None); ej.pop("add_to_compare_button", None)
+        log(f"[{t['id']}] ejemplo: {json.dumps(ej, ensure_ascii=False)[:900]}")
+    lotes = [d.get("items") or []]
     with ThreadPoolExecutor(3) as ex:
-        for lote in ex.map(una, uids):
-            for p in lote:
-                if p["uid"] in vistos or p.get("stock_status") == "OUT_OF_STOCK":
-                    continue
-                mp = p["price_range"]["minimum_price"]
-                precio = mp["final_price"]["value"] or 0
-                lista = mp["regular_price"]["value"] or 0
-                if precio <= 0:
-                    continue
-                url = p.get("canonical_url") or f"{p.get('url_key')}{p.get('url_suffix') or ''}"
-                if url and not url.startswith("http"):
-                    url = f"https://{host}/" + url.lstrip("/")
-                foto = (p.get("small_image") or {}).get("url")
-                if foto and "placeholder" in foto:
-                    foto = None
-                vistos[p["uid"]] = {
-                    "t": t["id"], "n": re.sub(r"\s+", " ", p["name"]).strip(), "m": str(p.get("manufacturer") or ""),
-                    "mo": modelo_de(p["name"]), "p": round(precio, 2), "l": round(lista, 2) if lista > precio + 0.5 else None,
-                    "i": foto, "u": url, "c": ((p.get("categories") or [{}])[-1] or {}).get("name", ""), "_id": p["uid"],
-                }
+        for r in ex.map(lambda n: mag_pagina(host, store, n), range(2, min(paginas, 400) + 1)):
+            lotes.append(r.get("items") or [])
+    vistos = {}
+    for lote in lotes:
+        for p in lote:
+            pid = str(p.get("id"))
+            if pid in vistos or str(p.get("is_salable", "1")) in ("0", "False", "false"):
+                continue
+            if p.get("type") in ("warranty", "virtual", "giftcard"):
+                continue
+            pi = p.get("price_info") or {}
+            precio = pi.get("final_price") or pi.get("minimal_price") or 0
+            lista = pi.get("regular_price") or pi.get("max_regular_price") or 0
+            if precio < 1:
+                continue
+            fotos = p.get("images") or []
+            foto = next((f.get("url") for f in fotos if f.get("url") and "placeholder" not in f.get("url")), None)
+            nombre = re.sub(r"\s+", " ", p.get("name") or "").strip()
+            if not nombre:
+                continue
+            vistos[pid] = {
+                "t": t["id"], "n": nombre, "m": "", "mo": modelo_de(nombre),
+                "p": round(precio, 2), "l": round(lista, 2) if lista > precio + 0.5 else None,
+                "i": foto, "u": p.get("url") or "", "c": "", "_id": pid,
+            }
     return list(vistos.values())
 
 
