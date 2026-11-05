@@ -1,66 +1,52 @@
-"""Diagnóstico: cómo responde cada tienda (APIs de catálogo y páginas)."""
-import json, re, sys, urllib.request, urllib.error, ssl
+"""Diagnóstico 2: Artefacta (Magento), Jaher y Almacenes España."""
+import json, re, sys, urllib.request, urllib.error, urllib.parse
 
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36"
 Q = sys.argv[1] if len(sys.argv) > 1 else "refrigeradora"
 
-def get(url, accept="application/json,text/html;q=0.9,*/*;q=0.8"):
-    req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": accept, "Accept-Language": "es-EC,es;q=0.9"})
+def get(url, accept="application/json,text/html;q=0.9,*/*;q=0.8", data=None, headers=None, timeout=25):
+    h = {"User-Agent": UA, "Accept": accept, "Accept-Language": "es-EC,es;q=0.9"}
+    h.update(headers or {})
+    req = urllib.request.Request(url, data=data, headers=h)
     try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            return r.status, dict(r.headers), r.read().decode("utf-8", "replace")
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.status, dict(r.headers), r.read().decode("utf-8", "replace"), r.geturl()
     except urllib.error.HTTPError as e:
-        return e.code, dict(e.headers or {}), (e.read() or b"").decode("utf-8", "replace")
+        return e.code, dict(e.headers or {}), (e.read() or b"").decode("utf-8", "replace"), url
     except Exception as e:
-        return 0, {}, f"ERROR {type(e).__name__}: {e}"
+        return 0, {}, f"ERROR {type(e).__name__}: {e}", url
 
-HOSTS = ["www.crecos.com", "www.orvehogar.com", "www.almacenesjapon.com", "www.artefacta.com",
-         "www.marcimex.com", "www.comandato.com", "almacenesespana.com.ec", "www.jaher.com.ec"]
+print("===== ARTEFACTA")
+gql = '{ products(search: "%s", pageSize: 3, currentPage: 1) { total_count page_info { total_pages } items { sku name url_key url_suffix manufacturer small_image { url } price_range { minimum_price { regular_price { value } final_price { value } } } } } }' % Q
+for url in ["https://www.artefacta.com/graphql?query=" + urllib.parse.quote(gql)]:
+    s, hd, b, _ = get(url, headers={"Store": "default"})
+    print("graphql GET:", s, b[:1500])
+s, hd, b, _ = get("https://www.artefacta.com/graphql", data=json.dumps({"query": gql}).encode(), headers={"Content-Type": "application/json"})
+print("graphql POST:", s, b[:600])
+gql2 = '{ products(filter: {price: {from: "1"}}, pageSize: 2, currentPage: 1) { total_count items { sku name } } }'
+s, hd, b, _ = get("https://www.artefacta.com/graphql?query=" + urllib.parse.quote(gql2))
+print("graphql all:", s, b[:400])
+s, hd, b, u = get(f"https://www.artefacta.com/catalogsearch/result/?q={Q}", accept="text/html")
+print("catalogsearch:", s, len(b), u)
+print("  data-price-amount:", re.findall(r'data-price-amount="([\d.]+)"', b)[:8])
+print("  product names:", [re.sub(r"\s+"," ",x).strip() for x in re.findall(r'class="product-item-link"[^>]*>(.*?)</a>', b, re.S)[:5]])
+print("  imgs:", re.findall(r'class="product-image-photo[^"]*"[^>]*src="([^"]+)"', b)[:3])
+print("  amount/toolbar:", re.findall(r'toolbar-number">(\d+)<', b)[:4])
+s, hd, b, u = get("https://www.artefacta.com/sitemap.xml", accept="*/*")
+print("sitemap:", s, len(b), b[:300])
 
-def vtex(h):
-    s, hd, b = get(f"https://{h}/api/catalog_system/pub/products/search?ft={Q}&_from=0&_to=1")
-    print(f"  vtex legacy: {s} resources={hd.get('resources') or hd.get('Resources')} len={len(b)}")
-    if s in (200, 206):
-        try:
-            d = json.loads(b)
-            if d:
-                p = d[0]; it = p["items"][0]; so = it["sellers"][0]["commertialOffer"]
-                print("   ", p.get("productName"), "|", p.get("brand"), "|", p.get("link"))
-                print("    img:", it["images"][0]["imageUrl"] if it.get("images") else None)
-                print("    price:", so.get("Price"), "list:", so.get("ListPrice"), "avail:", so.get("AvailableQuantity"))
-                print("    cats:", p.get("categories", [])[:2], "ref:", it.get("referenceId"), "ean:", it.get("ean"))
-        except Exception as e:
-            print("    parse", e, b[:200])
-    else:
-        print("   ", b[:200].replace("\n", " "))
-    s, hd, b = get(f"https://{h}/api/io/_v/api/intelligent-search/product_search/?query={Q}&count=2")
-    print(f"  vtex IS: {s} len={len(b)} {b[:160]!r}")
+print("\n===== JAHER")
+s, hd, b, u = get("https://www.jaher.com.ec/", accept="text/html")
+print("home:", s, len(b), u)
+links = sorted(set(re.findall(r'href="([^"#]+)"', b)))
+print("links:", links[:80])
+print("scripts:", re.findall(r'<script[^>]+src="([^"]+)"', b)[:15])
+print("text:", re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", b))[:1200])
+for path in ["/sitemap.xml", "/robots.txt", "/productos/", "/catalogo/", "/tienda/", "/api/productos/", "/api/products/"]:
+    s, hd, b, u = get("https://www.jaher.com.ec" + path, accept="*/*")
+    print(f" {path}: {s} {len(b)} {re.sub(chr(10),' ',b[:200])!r}")
 
-def woo(h):
-    s, hd, b = get(f"https://{h}/wp-json/wc/store/v1/products?search={Q}&per_page=2")
-    print(f"  woo store api: {s} total={hd.get('X-WP-Total') or hd.get('x-wp-total')} {b[:300]!r}")
-
-def home(h):
-    s, hd, b = get(f"https://{h}/", accept="text/html")
-    marks = [m for m in ["vtex", "__NEXT_DATA__", "shopify", "woocommerce", "wp-content", "prestashop", "magento", "faststore", "vtexassets", "jumpseller", "bigcommerce", "wix"] if m in b.lower()]
-    print(f"  home: {s} len={len(b)} server={hd.get('Server') or hd.get('server')} marks={marks}")
-    forms = re.findall(r'<form[^>]*>.{0,400}?</form>', b, re.S | re.I)
-    for f in forms[:3]:
-        if "search" in f.lower() or "busc" in f.lower() or 'name="s"' in f or "q" in f:
-            print("   form:", re.sub(r"\s+", " ", f)[:300])
-    return b
-
-for h in HOSTS:
-    print(f"\n===== {h}")
-    home(h)
-    vtex(h)
-    if h in ("almacenesespana.com.ec", "www.jaher.com.ec"):
-        woo(h)
-        for path in [f"/?s={Q}&post_type=product", f"/busqueda?search_query={Q}", f"/index.php?controller=search&s={Q}", f"/buscar?q={Q}", f"/search?q={Q}"]:
-            s, hd, b = get(f"https://{h}{path}", accept="text/html")
-            prices = re.findall(r"\$\s?\d[\d.,]*", b)
-            print(f"  {path}: {s} len={len(b)} precios={prices[:5]}")
-    if h == "www.artefacta.com":
-        for path in [f"/s?q={Q}", f"/{Q}?_q={Q}&map=ft", f"/api/graphql"]:
-            s, hd, b = get(f"https://{h}{path}", accept="text/html")
-            print(f"  {path}: {s} len={len(b)} precios={re.findall(r'[$]\s?[0-9][0-9.,]*', b)[:5]}")
+print("\n===== ALMACENES ESPAÑA")
+for url in ["https://almacenesespana.com.ec/", "http://almacenesespana.com.ec/", "https://www.almacenesespana.com.ec/", "https://almacenesespana.ec/"]:
+    s, hd, b, u = get(url, accept="text/html", timeout=40)
+    print(url, s, len(b), u, b[:120].replace("\n", " "))
