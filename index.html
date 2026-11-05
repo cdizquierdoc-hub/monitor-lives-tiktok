@@ -186,6 +186,20 @@
   .chartbox .vacio-g{position:absolute;inset:0;display:grid;place-items:center;color:var(--mute);font-size:13px}
   .chartbox{position:relative}
   .pdf-fin{display:flex;justify-content:center;margin:18px 0 4px}
+  .msel{position:relative;margin-top:5px;text-transform:none;letter-spacing:0;font-weight:500}
+  .msel-btn{width:100%;text-align:left;font-size:13.5px;padding:7px 28px 7px 9px;position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+  .msel-btn::after{content:'▾';position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--mute)}
+  .msel.activo .msel-btn{border-color:var(--accent2);color:var(--accent2);font-weight:600}
+  .msel-panel{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:30;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .msel-panel .msel-q{width:100%;font-size:13px;padding:6px 8px;margin:0 0 6px}
+  .msel-acc{display:flex;justify-content:space-between;margin-bottom:4px}
+  .msel-acc button{background:none;border:0;color:var(--accent2);font-size:12px;font-weight:600;padding:2px 4px;cursor:pointer}
+  .msel-list{max-height:260px;overflow:auto;display:grid;gap:1px}
+  .msel-list label{display:flex;gap:7px;align-items:center;font-size:13px;font-weight:500;color:var(--ink);text-transform:none;letter-spacing:0;padding:4px;border-radius:6px;cursor:pointer}
+  .msel-list label[hidden]{display:none}
+  .msel-list label:hover{background:var(--soft)}
+  .msel-list input{margin:0;width:auto}
+  .msel-n{text-transform:none;letter-spacing:0;font-weight:500}
   .menu-desc{position:absolute;z-index:40;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 12px 34px rgba(0,0,0,.35);display:grid;gap:4px;min-width:230px}
   .menu-desc button{display:grid;gap:2px;text-align:left;border:0;background:none;padding:8px 10px;border-radius:8px;cursor:pointer}
   .menu-desc button:hover{background:var(--soft)}
@@ -261,12 +275,14 @@
     <div class="flbl no-enc">Cadena / empresa <span id="f-cad-n" style="text-transform:none;letter-spacing:0;font-weight:500"></span>
       <div class="checks" id="f-cadenas"></div>
     </div>
-    <label class="flbl no-enc">Agencia
-      <select id="agencia"><option value="">Todas las agencias</option></select>
-    </label>
-    <label class="flbl no-enc">Ciudad
-      <select id="ciudad"><option value="">Todas las ciudades</option></select>
-    </label>
+    <div class="flbl no-enc">Ciudad <span class="msel-n" id="ciudad-n"></span>
+      <div class="msel" id="ciudad" data-todos="Todas las ciudades" data-plural="ciudades"><button type="button" class="msel-btn">Todas las ciudades</button>
+        <div class="msel-panel" hidden><input class="msel-q" placeholder="Buscar…" aria-label="Buscar"><div class="msel-acc"><button type="button" data-macc="todas">Elegir todas</button><button type="button" data-macc="ninguna">Quitar todas</button></div><div class="msel-list"></div></div></div>
+    </div>
+    <div class="flbl no-enc">Agencia <span class="msel-n" id="agencia-n"></span>
+      <div class="msel" id="agencia" data-todos="Todas las agencias" data-plural="agencias"><button type="button" class="msel-btn">Todas las agencias</button>
+        <div class="msel-panel" hidden><input class="msel-q" placeholder="Buscar…" aria-label="Buscar"><div class="msel-acc"><button type="button" data-macc="todas">Elegir todas</button><button type="button" data-macc="ninguna">Quitar todas</button></div><div class="msel-list"></div></div></div>
+    </div>
     <label class="flbl no-enc">Buscar cuenta
       <input id="buscar" placeholder="Nombre o @usuario">
     </label>
@@ -748,7 +764,7 @@ async function cargar() {
    ====================================================================== */
 const CADENAS = {CRECOS: 'Crecos', ORVE: 'Orve Hogar', JAPON: 'Japón', 'JAPÓN': 'Japón', MOTOZONE: 'Motozone', PAGAMENOS: 'Pagamenos', PAGA: 'Pagamenos', SAMSUNG: 'Samsung', MULTINIVEL: 'Independientes', INDEPENDIENTE: 'Independientes', INDEPENDIENTES: 'Independientes'};
 const cadenaDe = a => CADENAS[String(a || '').trim().split(/\s+/)[0].toUpperCase()] || 'Otra';
-const FILT = {cadenas: new Set()};
+const FILT = {cadenas: new Set(), agencias: new Set(), ciudades: new Set()};
 let GRUPOS_CAD = {};
 function opciones(sel, todos, valores) {
   const actual = sel.value;
@@ -771,15 +787,14 @@ function prepararFiltros() {
       [...grupos[g]].sort().map(c => `<label><input type="checkbox" value="${esc(c)}"${FILT.cadenas.has(c) ? ' checked' : ''}>${puntoMarca(c)}${esc(c)}</label>`).join(''); }).join('') || '<span class="hint">Sin cuentas</span>';
   $('#f-cadenas').querySelectorAll('[data-medio]').forEach(i => i.indeterminate = true);
   $('#f-cad-n').textContent = FILT.cadenas.size ? '(' + FILT.cadenas.size + ')' : '';
-  opciones($('#ciudad'), 'Todas las ciudades', [...new Set(deTipo.filter(v => !FILT.cadenas.size || FILT.cadenas.has(v.cadena)).map(ciudadDe).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es')));
-  const ciudad = $('#ciudad').value;
-  opciones($('#agencia'), 'Todas las agencias', [...new Set(deTipo.filter(v => (!FILT.cadenas.size || FILT.cadenas.has(v.cadena)) && (!ciudad || ciudadDe(v) === ciudad) && v.agencia).map(v => v.agencia))].sort());
+  pintarMulti('ciudad', [...new Set(deTipo.filter(v => !FILT.cadenas.size || FILT.cadenas.has(v.cadena)).map(ciudadDe).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es')));
+  pintarMulti('agencia', [...new Set(deTipo.filter(v => (!FILT.cadenas.size || FILT.cadenas.has(v.cadena)) && (!FILT.ciudades.size || FILT.ciudades.has(ciudadDe(v))) && v.agencia).map(v => v.agencia))].sort());
 }
 /** Cuentas que pasan los filtros del panel izquierdo. */
 function cuentasFiltradas(ignorarGrupo = false, ignorarCiudad = false) {
-  const tipo = ignorarGrupo ? '' : $('#tipo').value, agencia = $('#agencia').value, q = norm($('#buscar').value.trim()), ciudad = ignorarCiudad ? '' : $('#ciudad').value;
-  return RAW.vendedores.filter(v => v.activo !== false && pasaGlobal(v) && (!tipo || v.tipo === tipo) && (!ciudad || ciudadDe(v) === ciudad) &&
-    (!FILT.cadenas.size || FILT.cadenas.has(v.cadena)) && (!agencia || v.agencia === agencia) &&
+  const tipo = ignorarGrupo ? '' : $('#tipo').value, ags = FILT.agencias, q = norm($('#buscar').value.trim()), cds = ignorarCiudad ? new Set() : FILT.ciudades;
+  return RAW.vendedores.filter(v => v.activo !== false && pasaGlobal(v) && (!tipo || v.tipo === tipo) && (!cds.size || cds.has(ciudadDe(v))) &&
+    (!FILT.cadenas.size || FILT.cadenas.has(v.cadena)) && (!ags.size || ags.has(v.agencia)) &&
     (!q || norm(v.nombre).includes(q) || norm(v.handle).includes(q) || norm(v.agencia).includes(q)));
 }
 /** Periodo elegido con las fechas del panel: {desde, hasta (fin del día), hoy0 (inicio del último día), dias}. */
@@ -1582,7 +1597,7 @@ function porCiudad(tipo, cuentas, S, dias) {
     const a = agg(g.todas, S), ap = agg(g.propio, S), ac = agg(g.competencia, S);
     return {ciudad: c, prov: CIUDADES[c]?.[0] || '', ...a, val: f(a, dias), valP: g.propio.length ? f(ap, dias) : null, valC: g.competencia.length ? f(ac, dias) : null, nP: g.propio.length, nC: g.competencia.length};
   });
-  const sel = $('#ciudad').value;
+  const selC = FILT.ciudades;
   // ---- tabla
   const p = x => x == null || !isFinite(x) ? null : x;
   const colsL = [
@@ -1600,7 +1615,7 @@ function porCiudad(tipo, cuentas, S, dias) {
     {k: 'prov', t: 'Provincia'},
     {k: 'val', t: nomMet, num: 1, h: r => `<b>${r.val == null ? '—' : fmt(r.val)}</b>`},
     ...(tipo === 'L' ? colsL : colsC).filter(c => !(c.k === 'er' && nomMet === 'Engagement') && !(c.k === 'min' && nomMet === 'Horas en live')),
-  ], filas.filter(r => r.ciudad !== SIN_CIUDAD), {orden: {k: 'val', dir: -1}, pie: filas.filter(r => r.ciudad === SIN_CIUDAD), fila: r => r.ciudad === SIN_CIUDAD ? '' : `class="click${sel === r.ciudad ? ' sel' : ''}" data-ciudad="${esc(r.ciudad)}"`, clase: 'geo-t', vacio: 'Sin cuentas con estos filtros.'});
+  ], filas.filter(r => r.ciudad !== SIN_CIUDAD), {orden: {k: 'val', dir: -1}, pie: filas.filter(r => r.ciudad === SIN_CIUDAD), fila: r => r.ciudad === SIN_CIUDAD ? '' : `class="click${selC.has(r.ciudad) ? ' sel' : ''}" data-ciudad="${esc(r.ciudad)}"`, clase: 'geo-t', vacio: 'Sin cuentas con estos filtros.'});
   // ---- mapa
   const caja = $('#geo' + tipo + '-mapa');
   cargarMapa().then(m => {
@@ -1613,7 +1628,7 @@ function porCiudad(tipo, cuentas, S, dias) {
     const R = x => x == null || x <= 0 ? 0 : 3.5 + 26 * Math.sqrt(x / max);
     const top = new Set(conMapa.slice().sort((a, b) => (b.val || 0) - (a.val || 0)).slice(0, 9).map(r => r.ciudad));
     const burbujas = conMapa.sort((a, b) => Math.max(R(b.valP), R(b.valC)) - Math.max(R(a.valP), R(a.valC))).map(r => {
-      const [, lat, lon] = CIUDADES[r.ciudad], x = X(lon), y = Y(lat), rp = R(r.valP), rc = R(r.valC), elegida = sel === r.ciudad, apagada = sel && !elegida;
+      const [, lat, lon] = CIUDADES[r.ciudad], x = X(lon), y = Y(lat), rp = R(r.valP), rc = R(r.valC), elegida = selC.has(r.ciudad), apagada = selC.size && !elegida;
       const tip = `${r.ciudad} (${r.prov}) · ${nomMet}: ${r.val == null ? '—' : fmt(r.val)}` + (r.nP ? ` · Cresa ${r.valP == null ? '—' : fmt(r.valP)}` : '') + (r.nC ? ` · competencia ${r.valC == null ? '—' : fmt(r.valC)}` : '') + ` · ${r.cuentas} cuentas`;
       return `<g class="geo-b" data-ciudad="${esc(r.ciudad)}" opacity="${apagada ? .3 : 1}"><title>${esc(tip)}</title>
         ${rc ? `<circle cx="${x + (rp ? rc * .35 : 0)}" cy="${y}" r="${rc}" fill="${them}" fill-opacity=".38" stroke="${them}" stroke-width="${elegida ? 3 : 1.4}"/>` : ''}
@@ -1632,8 +1647,8 @@ function porCiudad(tipo, cuentas, S, dias) {
 }
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-ciudad]'); if (!el || e.target.closest('a')) return;
-  const c = el.dataset.ciudad; $('#ciudad').value = $('#ciudad').value === c ? '' : c;
-  if ($('#ciudad').value !== c) $('#ciudad').value = '';
+  const c = el.dataset.ciudad;            // clic = agrega o quita esa ciudad del filtro
+  FILT.ciudades.has(c) ? FILT.ciudades.delete(c) : FILT.ciudades.add(c);
   alFiltrar();
 });
 
@@ -1680,8 +1695,8 @@ function textoFiltros() {
       if (el.length && el.length === cs.size) partes.push('toda ' + g); else partes.push(...el); });
     if (!(partes.length === Object.keys(GRUPOS_CAD).length && partes.every(x => x.startsWith('toda ')))) f.push('Cadenas: ' + partes.join(', '));
   }
-  if ($('#agencia').value) f.push('Agencia: ' + $('#agencia').value);
-  if ($('#ciudad').value) f.push('Ciudad: ' + $('#ciudad').value);
+  if (FILT.ciudades.size) f.push((FILT.ciudades.size > 1 ? 'Ciudades: ' : 'Ciudad: ') + [...FILT.ciudades].sort().join(', '));
+  if (FILT.agencias.size) f.push((FILT.agencias.size > 1 ? 'Agencias: ' : 'Agencia: ') + [...FILT.agencias].sort().join(', '));
   if ($('#buscar').value.trim()) f.push('Búsqueda: "' + $('#buscar').value.trim() + '"');
   if (SEL) f.push('Selección: ' + [...SEL.etq.values()].join(', '));
   return 'Filtros: ' + (f.length ? f.join(' · ') : 'ninguno (todas las cuentas)');
@@ -2126,14 +2141,52 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') { cerrarDeta
 
 /* ---------- eventos de filtros ---------- */
 const alFiltrar = () => { SEL = null; prepararFiltros(); renderPagina(); };
-['f-desde', 'f-hasta', 'tipo', 'red', 'rol', 'agencia', 'ciudad'].forEach(id => $('#' + id).addEventListener('change', alFiltrar));
+['f-desde', 'f-hasta', 'tipo', 'red', 'rol'].forEach(id => $('#' + id).addEventListener('change', alFiltrar));
 $('#buscar').addEventListener('input', () => { SEL = null; renderPagina(); });
 $('#f-cadenas').addEventListener('change', e => {
   const g = e.target.dataset.grupo;
   const cs = g ? [...(GRUPOS_CAD[g] || [])] : [e.target.value];     // casilla de grupo = todas sus cadenas
   cs.forEach(c => e.target.checked ? FILT.cadenas.add(c) : FILT.cadenas.delete(c));
-  $('#agencia').value = ''; alFiltrar(); });
-$('#f-limpiar').addEventListener('click', () => { ['tipo', 'red', 'rol', 'agencia', 'ciudad'].forEach(id => $('#' + id).value = ''); fechasPorDefecto(); $('#buscar').value = ''; FILT.cadenas.clear(); alFiltrar(); });
+  alFiltrar(); });
+$('#f-limpiar').addEventListener('click', () => { ['tipo', 'red', 'rol'].forEach(id => $('#' + id).value = ''); fechasPorDefecto(); $('#buscar').value = ''; FILT.cadenas.clear(); FILT.agencias.clear(); FILT.ciudades.clear(); alFiltrar(); });
+
+/* ---------- Listas con casillas (varias ciudades o agencias a la vez) ---------- */
+const MSEL = {agencia: FILT.agencias, ciudad: FILT.ciudades};
+function pintarMulti(id, valores) {
+  const el = $('#' + id), set = MSEL[id], lista = el.querySelector('.msel-list'), arriba = lista.scrollTop;
+  [...set].forEach(v => { if (!valores.includes(v)) set.delete(v); });
+  lista.innerHTML = valores.map(v => `<label><input type="checkbox" value="${esc(v)}"${set.has(v) ? ' checked' : ''}><span>${esc(v)}</span></label>`).join('') || '<span class="hint">Sin opciones con estos filtros</span>';
+  lista.scrollTop = arriba;
+  filtrarMulti(el); textoMulti(id);
+}
+function textoMulti(id) {
+  const el = $('#' + id), set = MSEL[id];
+  el.querySelector('.msel-btn').textContent = !set.size ? el.dataset.todos : set.size === 1 ? [...set][0] : set.size + ' ' + el.dataset.plural;
+  el.classList.toggle('activo', set.size > 0);
+  $('#' + id + '-n').textContent = set.size ? '(' + set.size + ')' : '';
+}
+function filtrarMulti(el) {
+  const q = norm(el.querySelector('.msel-q').value.trim());
+  el.querySelectorAll('.msel-list label').forEach(l => l.hidden = !!q && !norm(l.textContent).includes(q));
+}
+document.querySelectorAll('.msel').forEach(el => {
+  const id = el.id, set = MSEL[id], panel = el.querySelector('.msel-panel');
+  el.querySelector('.msel-btn').addEventListener('click', () => {
+    const abrir = panel.hidden;
+    document.querySelectorAll('.msel-panel').forEach(p => p.hidden = true);
+    panel.hidden = !abrir; if (abrir) el.querySelector('.msel-q').focus();
+  });
+  el.querySelector('.msel-q').addEventListener('input', () => filtrarMulti(el));
+  el.querySelector('.msel-list').addEventListener('change', e => { const v = e.target.value; e.target.checked ? set.add(v) : set.delete(v); alFiltrar(); });
+  el.querySelector('.msel-acc').addEventListener('click', e => {
+    const b = e.target.closest('[data-macc]'); if (!b) return;
+    if (b.dataset.macc === 'ninguna') set.clear();
+    else el.querySelectorAll('.msel-list label:not([hidden]) input').forEach(i => set.add(i.value));   // las visibles (respeta la búsqueda)
+    alFiltrar();
+  });
+});
+document.addEventListener('click', e => { if (!e.target.closest('.msel')) document.querySelectorAll('.msel-panel').forEach(p => p.hidden = true); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.msel-panel').forEach(p => p.hidden = true); });
 ['gL-met', 'gL2-met', 'gC-met', 'gC-gran', 'gC2-met', 'gC2-gran', 't5-met', 'bT-met', 'bP-met', 'bC-met', 'geoL-met', 'geoC-met'].forEach(id => $('#' + id).addEventListener('change', renderPagina));
 function fechasPorDefecto() { const hoy = new Date(); $('#f-hasta').value = diaKey(hoy); $('#f-desde').value = diaKey(new Date(hoy.getTime() - 6 * 86400000)); }
 $('#btn-filtros').addEventListener('click', () => $('#side').classList.toggle('abierto'));
