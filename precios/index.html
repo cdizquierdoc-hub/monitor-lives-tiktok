@@ -96,7 +96,7 @@ select{padding:10px;border:1px solid var(--line);border-radius:10px;background:v
 .empty{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:16px;color:var(--muted)}
 .none{padding:12px;color:var(--muted);font-size:13px}
 .err{color:var(--bad)}
-@media (max-width:520px){.model{grid-template-columns:64px 1fr}.model img{width:64px;height:64px}}
+@media (max-width:520px){.model{grid-template-columns:64px 1fr}.model img,.model .thumb{width:64px;height:64px}.pp{min-width:0;flex:1 1 calc(50% - 6px)}.pp .v{font-size:21px}}
 </style>
 </head>
 <body>
@@ -127,7 +127,7 @@ select{padding:10px;border:1px solid var(--line);border-radius:10px;background:v
   <section class="verdict" id="verdict" hidden></section>
 
   <section id="modelsSec" hidden>
-    <div class="row" style="justify-content:space-between;margin-bottom:8px"><h2>Mismo modelo en varias tiendas</h2><span class="eyebrow" id="modelsNote"></span></div>
+    <div class="row" style="justify-content:space-between;margin-bottom:8px"><h2>Mismo modelo: CRESA vs competencia</h2><span class="eyebrow" id="modelsNote"></span></div>
     <div class="models" id="models"></div>
   </section>
 
@@ -148,26 +148,37 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money = n => n == null ? "—" : "$" + Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const norm = s => String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
-const SYN = {refri:"refrigeradora",nevera:"refrigeradora",refrigerador:"refrigeradora",tv:"televisor",televisores:"televisor",tele:"televisor",freidora:"airfryer","air":"air",lavadoras:"lavadora",cocinas:"cocina",microonda:"microondas"};
-
+// sinónimos: cada palabra buscada acepta cualquiera de sus variantes
+const ALT = {
+  airfryer:["airfryer","air fryer","freidora de aire","freidora"], freidora:["freidora","airfryer","air fryer"],
+  refrigeradora:["refrigeradora","refrigerador","refri","nevera"], refri:["refri","refrigeradora","refrigerador"], nevera:["nevera","refrigeradora","refrigerador"], refrigerador:["refrigerador","refrigeradora"],
+  tv:["tv","televisor","television"], televisor:["televisor","tv","television"], tele:["televisor","tv"], televisores:["televisor","tv"],
+  lavadora:["lavadora","lavaseca"], microondas:["microondas","micro ondas"], aire:["aire","a/c"], celular:["celular","smartphone","telefono"],
+  laptop:["laptop","portatil","notebook"], moto:["moto","motocicleta"], colchon:["colchon","colchones"]
+};
+const PLURAL = t => t.length > 4 && t.endsWith("s") ? t.slice(0,-1) : t;
 let stores = [], products = [], meta = null, expanded = new Set();
 
-function tokens(q){ return norm(q).replace(/[^a-z0-9.\- ]/g," ").split(/\s+/).filter(Boolean).map(t => SYN[t] || t); }
+function tokens(q){ return norm(q).replace(/[^a-z0-9.\-/ ]/g," ").split(/\s+/).filter(Boolean); }
 
 function search(q){
   const ts = tokens(q); if (!ts.length) return [];
+  const alts = ts.map(t => ALT[t] || ALT[PLURAL(t)] || [t, PLURAL(t)]);
   const out = [];
   for (const p of products){
     let score = 0, ok = true;
-    for (const t of ts){
-      const tc = t.replace(/[-.]/g,"");
-      if (p._k.includes(" "+t)) score += 3;
-      else if (p._k.includes(t)) score += 2;
-      else if (tc.length >= 3 && p._c.includes(tc)) score += 3;
-      else if (t.length > 4 && p._k.includes(t.slice(0,-1))) score += 1;
-      else { ok = false; break; }
+    for (let i = 0; i < ts.length; i++){
+      const t = ts[i], tc = t.replace(/[-./]/g,"");
+      let hit = 0;
+      for (const a of alts[i]){
+        if (p._k.includes(" " + a)) { hit = a === t ? 3 : 2.5; break; }
+        if (p._k.includes(a)) hit = Math.max(hit, 2);
+      }
+      if (!hit && tc.length >= 3 && /\d/.test(tc) && p._c.includes(tc)) hit = 3;
+      if (!hit){ ok = false; break; }
+      score += hit;
     }
-    if (ok){ if (p._n.startsWith(ts[0])) score += 2; out.push([score, p]); }
+    if (ok){ if (alts[0].some(a => p._n.startsWith(a))) score += 2; out.push([score, p]); }
   }
   return out;
 }
@@ -202,7 +213,7 @@ function render(){
 
   // mismo modelo
   const groups = new Map();
-  for (const [score, p] of hits){ if (!p.mo) continue; const g = groups.get(p.mo) || {mo:p.mo, score:0, items:[]}; g.items.push(p); g.score = Math.max(g.score, score); groups.set(p.mo, g); }
+  for (const [score, p] of hits){ if (!p.mo || /^\s*combo\b/i.test(p.n)) continue; const g = groups.get(p.mo) || {mo:p.mo, score:0, items:[]}; g.items.push(p); g.score = Math.max(g.score, score); groups.set(p.mo, g); }
   // une modelos que solo difieren en el sufijo (RI7568 / RI7568D / RI7568DCR)
   const keys = [...groups.keys()].sort((a,b) => a.length - b.length);
   for (let i = 0; i < keys.length; i++){
@@ -212,10 +223,10 @@ function render(){
       const g = groups.get(k), h = groups.get(o); g.items.push(...h.items); g.score = Math.max(g.score, h.score); groups.delete(o);
     }
   }
-  const multi = [...groups.values()].filter(g => new Set(g.items.map(p=>p.t)).size >= 2)
+  const multi = [...groups.values()].filter(g => g.items.some(p => storeById[p.t]?.grupo === "cresa") && g.items.some(p => storeById[p.t]?.grupo !== "cresa"))
     .sort((a,b) => b.score - a.score || new Set(b.items.map(p=>p.t)).size - new Set(a.items.map(p=>p.t)).size).slice(0, 12);
   $("modelsSec").hidden = !multi.length;
-  $("modelsNote").textContent = multi.length ? `${multi.length} modelo${multi.length>1?"s":""} encontrados en 2 o más tiendas` : "";
+  $("modelsNote").textContent = multi.length ? `${multi.length} modelo${multi.length>1?"s":""} en CRESA y en la competencia` : "";
   $("models").innerHTML = multi.map(g => {
     const perStore = new Map();
     for (const p of g.items){ const c = perStore.get(p.t); if (!c || p.p < c.p) perStore.set(p.t, p); }

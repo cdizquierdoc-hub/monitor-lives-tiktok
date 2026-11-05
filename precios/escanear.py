@@ -67,6 +67,8 @@ def modelo_de(nombre, ref=None):
         c = limpio(t)
         return (len(c) >= 5 or (len(c) == 4 and "-" in t)) and re.search(r"[A-Z]", c) and re.search(r"\d", c) and not UNIDADES.match(c) and not re.match(r"^(19|20)\d\d[A-Z]?$", c)
 
+    if re.match(r"\s*combo\b", nombre or "", re.I):  # un combo no es el mismo producto que su componente
+        return None
     if ref and valido(ref) and not ref.isdigit():
         return limpio(ref)
     toks = re.findall(r"[A-Za-z0-9][A-Za-z0-9\-/.]*[A-Za-z0-9]", nombre or "")
