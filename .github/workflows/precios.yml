@@ -1,0 +1,35 @@
+name: Radar de precios
+
+on:
+  schedule:
+    - cron: "17 */3 * * *"   # cada 3 horas
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "escanear o explorar"
+        default: "escanear"
+      consulta:
+        description: "Palabra para explorar"
+        default: "refrigeradora"
+
+concurrency:
+  group: precios
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  precios:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Explorar tiendas
+        if: github.event.inputs.modo == 'explorar'
+        run: |
+          python3 precios/explorar.py "${{ github.event.inputs.consulta }}" 2>&1 | tee resultado.txt
+          git config user.name "monitor-lives"; git config user.email "monitor-lives@users.noreply.github.com"
+          git checkout -q --orphan pruebas-precios && git rm -rq --cached . && git add resultado.txt
+          git commit -qm "explorar $(date -u +%FT%TZ)" && git push -qf origin pruebas-precios
