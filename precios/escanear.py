@@ -168,16 +168,19 @@ def mag_pagina(host, store, pag):
 def escanear_magento(t):
     host, store = t["host"], t.get("store", 16)
     d = mag_pagina(host, store, 1)
-    total = d.get("total_count") or 0
-    paginas = max(1, -(-total // MAG_PAG))
-    log(f"[{t['id']}] {total} productos en {paginas} páginas")
     if d.get("items"):
-        ej = dict(d["items"][0]); ej.pop("add_to_cart_button", None); ej.pop("add_to_compare_button", None)
-        log(f"[{t['id']}] ejemplo: {json.dumps(ej, ensure_ascii=False)[:900]}")
+        ej = dict(d["items"][0]); ej.pop("price_info", None)
+        log(f"[{t['id']}] campos: {sorted(ej.keys())} ejemplo: {json.dumps({k: ej[k] for k in ej if k in ('name','url','images','is_salable','type','id')}, ensure_ascii=False)[:700]}")
     lotes = [d.get("items") or []]
-    with ThreadPoolExecutor(3) as ex:
-        for r in ex.map(lambda n: mag_pagina(host, store, n), range(2, min(paginas, 400) + 1)):
-            lotes.append(r.get("items") or [])
+    pag = 2
+    while len(lotes[-1]) >= MAG_PAG and pag < 600:  # sin total: avanza de 4 en 4 páginas hasta que una venga incompleta
+        with ThreadPoolExecutor(4) as ex:
+            nuevas = list(ex.map(lambda n: mag_pagina(host, store, n).get("items") or [], range(pag, pag + 4)))
+        lotes.extend(nuevas)
+        pag += 4
+        if any(len(x) < MAG_PAG for x in nuevas):
+            break
+    log(f"[{t['id']}] {sum(len(x) for x in lotes)} registros en {pag - 1} páginas")
     vistos = {}
     for lote in lotes:
         for p in lote:

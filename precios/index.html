@@ -90,6 +90,8 @@ select{padding:10px;border:1px solid var(--line);border-radius:10px;background:v
 .item .pr{text-align:right;font-family:var(--f-display);font-size:21px;font-weight:700;white-space:nowrap}
 .item .was{display:block;font-family:var(--f-mono);font-size:11px;font-weight:400;color:var(--muted);text-decoration:line-through}
 .item .off{display:block;font-family:var(--f-mono);font-size:11px;font-weight:500;color:var(--good)}
+.chg{display:block;font-family:var(--f-mono);font-size:11px;font-weight:500}
+.foot{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
 .more{padding:8px 12px;font-size:13px;background:none;border:0;color:var(--accent);cursor:pointer;width:100%;text-align:left}
 .empty{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:16px;color:var(--muted)}
 .none{padding:12px;color:var(--muted);font-size:13px}
@@ -133,6 +135,8 @@ select{padding:10px;border:1px solid var(--line);border-radius:10px;background:v
     <div class="row" style="justify-content:space-between;margin-bottom:8px"><h2 id="shelvesTitle">Resultados por tienda</h2><span class="eyebrow" id="shelvesNote"></span></div>
     <div class="shelves" id="shelves"></div>
   </section>
+
+  <p class="foot">Se escanean los catálogos en línea de Crecos, Orve Hogar, Almacenes Japón, Artefacta, Marcimex y Comandato cada 3 horas. Solo entran productos con stock y precio publicados. Jaher no vende en línea y Almacenes España bloquea las consultas automáticas, por eso no aparecen. “Mismo modelo” agrupa productos por el código del fabricante que aparece en el nombre, así que algunos modelos pueden no agruparse si una tienda no lo publica.</p>
 </div>
 
 <script>
@@ -199,6 +203,15 @@ function render(){
   // mismo modelo
   const groups = new Map();
   for (const [score, p] of hits){ if (!p.mo) continue; const g = groups.get(p.mo) || {mo:p.mo, score:0, items:[]}; g.items.push(p); g.score = Math.max(g.score, score); groups.set(p.mo, g); }
+  // une modelos que solo difieren en el sufijo (RI7568 / RI7568D / RI7568DCR)
+  const keys = [...groups.keys()].sort((a,b) => a.length - b.length);
+  for (let i = 0; i < keys.length; i++){
+    const k = keys[i]; if (!groups.has(k)) continue;
+    for (let j = i + 1; j < keys.length; j++){
+      const o = keys[j]; if (!groups.has(o) || k.length < 6 || !o.startsWith(k) || o.length - k.length > 4) continue;
+      const g = groups.get(k), h = groups.get(o); g.items.push(...h.items); g.score = Math.max(g.score, h.score); groups.delete(o);
+    }
+  }
   const multi = [...groups.values()].filter(g => new Set(g.items.map(p=>p.t)).size >= 2)
     .sort((a,b) => b.score - a.score || new Set(b.items.map(p=>p.t)).size - new Set(a.items.map(p=>p.t)).size).slice(0, 12);
   $("modelsSec").hidden = !multi.length;
@@ -225,15 +238,21 @@ function render(){
   $("shelves").innerHTML = stores.map(s => {
     const l = byStore.get(s.id) || [];
     const show = expanded.has(s.id) ? l.slice(0, 60) : l.slice(0, PER_SHELF);
+    const aviso = s.aviso ? `<div class="none">${esc(s.aviso)}</div>` : "";
     const body = s.error ? `<div class="none err">${esc(s.error)}</div>` : !l.length ? `<div class="none">Sin resultados para “${esc(q)}”.</div>` :
       show.map(([, p]) => `<a class="item" href="${esc(p.u)}" target="_blank" rel="noopener">${p.i?`<img src="${esc(p.i)}" alt="" loading="lazy">`:`<span class="thumb" style="width:64px;height:64px"></span>`}
         <span style="min-width:0"><span class="n">${esc(p.n)}</span><span class="b">${esc([p.m, p.mo].filter(Boolean).join(" · "))}</span></span>
-        <span class="pr num">${money(p.p)}${p.l && p.l > p.p ? `<span class="was">${money(p.l)}</span><span class="off">−${Math.round((1-p.p/p.l)*100)}%</span>`:""}</span></a>`).join("") +
+        <span class="pr num">${money(p.p)}${p.l && p.l > p.p ? `<span class="was">${money(p.l)}</span><span class="off">−${Math.round((1-p.p/p.l)*100)}%</span>`:""}${cambio(p)}</span></a>`).join("") +
       (l.length > show.length ? `<button class="more" data-more="${s.id}">Ver ${Math.min(l.length,60)-show.length} más</button>` : "");
-    return `<div class="shelf ${s.grupo==="cresa"?"cresa":""}"><div class="shelf-h"><span class="store">${esc(s.nombre)}</span><span class="cnt">${l.length.toLocaleString("es-EC")} resultado${l.length===1?"":"s"}</span></div><div class="items">${body}</div></div>`;
+    return `<div class="shelf ${s.grupo==="cresa"?"cresa":""}"><div class="shelf-h"><span class="store">${esc(s.nombre)}</span><span class="cnt">${l.length.toLocaleString("es-EC")} resultado${l.length===1?"":"s"}</span></div><div class="items">${aviso}${body}</div></div>`;
   }).join("");
 }
 let storeById = {};
+function cambio(p){
+  if (p.pa == null || p.pa === p.p) return "";
+  const d = p.p - p.pa, f = p.cf ? new Date(p.cf).toLocaleDateString("es-EC",{day:"2-digit",month:"short"}) : "";
+  return `<span class="chg ${d<0?"down":"up"}" title="Antes ${money(p.pa)}">${d<0?"▼ bajó":"▲ subió"} ${money(Math.abs(d))}${f?" · "+f:""}</span>`;
+}
 
 $("shelves").addEventListener("click", e => { const b = e.target.closest("[data-more]"); if (b){ expanded.add(b.dataset.more); render(); } });
 let t; $("q").addEventListener("input", () => { clearTimeout(t); expanded.clear(); t = setTimeout(() => { render(); const q=$("q").value.trim(); history.replaceState(null,"",q?"#"+encodeURIComponent(q):location.pathname); }, 150); });
