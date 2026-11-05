@@ -1,12 +1,12 @@
 {
- "actualizado": "2026-11-05T20:49:29+00:00",
+ "actualizado": "2026-11-05T20:50:45+00:00",
  "tiendas": [
   {
    "id": "crecos",
    "nombre": "Crecos",
    "grupo": "cresa",
    "total": 7981,
-   "actualizado": "2026-11-05T20:44:46+00:00",
+   "actualizado": "2026-11-05T20:50:45+00:00",
    "cambios": 0
   },
   {
@@ -14,15 +14,15 @@
    "nombre": "Orve Hogar",
    "grupo": "cresa",
    "total": 7840,
-   "actualizado": "2026-11-05T20:44:46+00:00",
-   "cambios": 0
+   "actualizado": "2026-11-05T20:50:45+00:00",
+   "cambios": 2
   },
   {
    "id": "japon",
    "nombre": "Almacenes Japón",
    "grupo": "cresa",
    "total": 7801,
-   "actualizado": "2026-11-05T20:44:46+00:00",
+   "actualizado": "2026-11-05T20:50:45+00:00",
    "cambios": 0
   },
   {
@@ -30,7 +30,7 @@
    "nombre": "Artefacta",
    "grupo": "comp",
    "total": 2072,
-   "actualizado": "2026-11-05T20:49:29+00:00",
+   "actualizado": "2026-11-05T20:50:45+00:00",
    "cambios": 0
   },
   {
@@ -38,7 +38,7 @@
    "nombre": "Marcimex",
    "grupo": "comp",
    "total": 3636,
-   "actualizado": "2026-11-05T20:44:46+00:00",
+   "actualizado": "2026-11-05T20:50:45+00:00",
    "cambios": 0
   },
   {
@@ -46,7 +46,7 @@
    "nombre": "Comandato",
    "grupo": "comp",
    "total": 319,
-   "actualizado": "2026-11-05T20:44:46+00:00",
+   "actualizado": "2026-11-05T20:50:45+00:00",
    "cambios": 0
   }
  ]
