@@ -278,7 +278,8 @@ def escanear_presta(t):
     for ruta in t["rutas"]:
         pag, total, param, previo_ids = 1, 1, "page", None
         while pag <= total and pag <= 300:
-            st, b = get(f"https://{t['host']}/{ruta}?{param}={pag}&resultsPerPage=48&from-xhr", headers={"X-Requested-With": "XMLHttpRequest"})
+            st, b = get(f"https://{t['host']}/{ruta}?{param}={pag}&resultsPerPage=48&from-xhr&nc={int(time.time())}{pag}",
+                        headers={"X-Requested-With": "XMLHttpRequest", "Cache-Control": "no-cache", "Pragma": "no-cache"})
             d = json.loads(b or "{}")
             total = (d.get("pagination") or {}).get("pages_count") or 1
             ids = [p.get("id_product") for p in d.get("products") or []]
