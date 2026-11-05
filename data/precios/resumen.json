@@ -1,5 +1,5 @@
 {
- "actualizado": "2026-11-05T21:23:35+00:00",
+ "actualizado": "2026-11-05T21:27:20+00:00",
  "tiendas": [
   {
    "id": "crecos",
@@ -69,7 +69,9 @@
    "id": "unity",
    "nombre": "Unity Stores",
    "grupo": "comp",
-   "error": "Esta tienda no respondió al escaneo."
+   "total": 8802,
+   "actualizado": "2026-11-05T21:27:20+00:00",
+   "cambios": 0
   },
   {
    "id": "bodeguita",
@@ -83,7 +85,9 @@
    "id": "bestpc",
    "nombre": "BestPC",
    "grupo": "comp",
-   "error": "Esta tienda no respondió al escaneo."
+   "total": 127,
+   "actualizado": "2026-11-05T21:27:20+00:00",
+   "cambios": 0
   },
   {
    "id": "computron",
@@ -106,7 +110,7 @@
    "nombre": "Mi Bodega",
    "grupo": "comp",
    "total": 48,
-   "actualizado": "2026-11-05T21:23:35+00:00",
+   "actualizado": "2026-11-05T21:27:20+00:00",
    "cambios": 0
   },
   {
@@ -129,9 +133,9 @@
    "id": "etafashion",
    "nombre": "Etafashion",
    "grupo": "comp",
-   "total": 516,
-   "actualizado": "2026-11-05T21:23:35+00:00",
-   "cambios": 0
+   "total": 515,
+   "actualizado": "2026-11-05T21:27:20+00:00",
+   "cambios": 37
   }
  ]
 }
