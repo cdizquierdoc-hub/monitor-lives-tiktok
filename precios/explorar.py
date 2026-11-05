@@ -1,24 +1,27 @@
-"""Diagnóstico 3: cómo arma Artefacta su búsqueda y sus listados."""
-import re, sys, json, urllib.request, urllib.error
+"""Diagnóstico 4: endpoints REST de Artefacta."""
+import re, json, urllib.request, urllib.error, urllib.parse
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36"
-def get(url, accept="text/html,*/*"):
-    req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": accept, "Accept-Language": "es-EC,es;q=0.9"})
+def get(url, accept="application/json"):
+    req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": accept, "X-Requested-With": "XMLHttpRequest"})
     try:
-        with urllib.request.urlopen(req, timeout=30) as r: return r.status, r.read().decode("utf-8","replace"), r.geturl()
-    except urllib.error.HTTPError as e: return e.code, (e.read() or b"").decode("utf-8","replace"), url
-    except Exception as e: return 0, str(e), url
-for url in ["https://www.artefacta.com/search/refrigeradora", "https://www.artefacta.com/c/linea-blanca/refrigeracion/refrigeradoras", "https://www.artefacta.com/refrigeradora-indurama-side-by-side-2-puertas-568-l-no-frost-ri-7568-158735/p"]:
-    s, b, u = get(url)
-    print(f"\n######## {url} -> {s} {len(b)} {u}")
-    low = b.lower()
-    print("marks:", {m: low.count(m) for m in ["algolia","doofinder","klevu","searchanise","amasty","product-item","price-box","data-price-amount","ld+json","__initial","window.checkout","mage-init","x-magento-init","pagebuilder","price","precio","/p\"","itemprop"]})
-    print("scripts:", [x for x in re.findall(r'<script[^>]+src="([^"]+)"', b) if "artefacta" not in x or "static" not in x][:20])
-    for m in re.finditer(r"\$\s?[0-9]{2,3}[.,][0-9]{2}|\$\s?[0-9],?[0-9]{3}", b):
-        print("PRICE CTX:", re.sub(r"\s+"," ",b[max(0,m.start()-400):m.end()+150])); break
-    for m in re.finditer(r'href="(https://www\.artefacta\.com/[^"]+/p)"', b):
-        print("PRODUCT LINK CTX:", re.sub(r"\s+"," ",b[max(0,m.start()-300):m.end()+700])); break
-    for j in re.findall(r'<script type="application/ld\+json">(.*?)</script>', b, re.S)[:3]:
-        print("LDJSON:", re.sub(r"\s+"," ",j)[:800])
-    for m in re.finditer(r'"(?:api|endpoint|url)"\s*:\s*"([^"]*(?:search|catalog|product)[^"]*)"', b):
-        print("ENDPOINT:", m.group(1)[:200])
-    print("first 'x-magento-init' blocks w/ search:", [re.sub(r"\s+"," ",x)[:300] for x in re.findall(r'<script type="text/x-magento-init">(.*?)</script>', b, re.S) if "search" in x.lower() or "product" in x.lower()][:4])
+        with urllib.request.urlopen(req, timeout=30) as r: return r.status, r.read().decode("utf-8","replace")
+    except urllib.error.HTTPError as e: return e.code, (e.read() or b"").decode("utf-8","replace")
+    except Exception as e: return 0, str(e)
+B = "https://www.artefacta.com/rest/art_artefacta_sv/V1/"
+tries = [
+ B + "products-render-info?searchCriteria[pageSize]=2&searchCriteria[currentPage]=1&storeId=16&currencyCode=USD",
+ B + "products-render-info?searchCriteria[pageSize]=2&searchCriteria[currentPage]=1&searchCriteria[filterGroups][0][filters][0][field]=name&searchCriteria[filterGroups][0][filters][0][value]=%25refrigeradora%25&searchCriteria[filterGroups][0][filters][0][conditionType]=like&storeId=16&currencyCode=USD",
+ B + "unicomer/live-search-plp/cards",
+ B + "unicomer/live-search-plp/cards?q=refrigeradora",
+ B + "unicomer/live-search-plp/cards?skus=158735",
+ B + "products?searchCriteria[pageSize]=2",
+ "https://www.artefacta.com/rest/V1/products-render-info?searchCriteria[pageSize]=2&storeId=16&currencyCode=USD",
+]
+for u in tries:
+    s, b = get(u); print(f"\n## {s} {u}\n{b[:1500]}")
+s, b = get("https://www.artefacta.com/c/linea-blanca/refrigeracion/refrigeradoras", "text/html")
+cfg = re.findall(r'"Unicomer_LiveSearchProductListing/js/plp-cards":\s*(\{.*?\})\s*\}\s*\}', b, re.S)
+print("\nPLP CONFIG:", cfg[0][:2000] if cfg else None)
+items = re.findall(r'<li[^>]*class="[^"]*product-item[^"]*"[^>]*>(.*?)</li>', b, re.S)
+print("ITEMS:", len(items)); print(re.sub(r"\s+"," ",items[0])[:1500] if items else "")
+print("data-sku/ids:", re.findall(r'data-(?:sku|product-id|product-sku)="([^"]+)"', b)[:10])
