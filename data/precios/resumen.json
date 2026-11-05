@@ -1,0 +1,45 @@
+{
+ "actualizado": "2026-11-05T20:44:46+00:00",
+ "tiendas": [
+  {
+   "id": "crecos",
+   "nombre": "Crecos",
+   "grupo": "cresa",
+   "total": 7981,
+   "actualizado": "2026-11-05T20:44:46+00:00",
+   "cambios": 0
+  },
+  {
+   "id": "orve",
+   "nombre": "Orve Hogar",
+   "grupo": "cresa",
+   "total": 7840,
+   "actualizado": "2026-11-05T20:44:46+00:00",
+   "cambios": 0
+  },
+  {
+   "id": "japon",
+   "nombre": "Almacenes Japón",
+   "grupo": "cresa",
+   "total": 7801,
+   "actualizado": "2026-11-05T20:44:46+00:00",
+   "cambios": 0
+  },
+  {
+   "id": "marcimex",
+   "nombre": "Marcimex",
+   "grupo": "comp",
+   "total": 3636,
+   "actualizado": "2026-11-05T20:44:46+00:00",
+   "cambios": 0
+  },
+  {
+   "id": "comandato",
+   "nombre": "Comandato",
+   "grupo": "comp",
+   "total": 319,
+   "actualizado": "2026-11-05T20:44:46+00:00",
+   "cambios": 0
+  }
+ ]
+}
