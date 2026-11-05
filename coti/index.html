@@ -139,9 +139,10 @@ select{padding:10px;border:1px solid var(--line);border-radius:10px;background:v
   <section>
     <div class="row" style="justify-content:space-between;margin-bottom:8px"><h2 id="shelvesTitle">Resultados por tienda</h2><span class="eyebrow" id="shelvesNote"></span></div>
     <div class="shelves" id="shelves"></div>
+    <p class="hint" id="sinRes" hidden style="margin-top:10px"></p>
   </section>
 
-  <p class="foot">Se escanean los catálogos en línea de Crecos, Orve Hogar, Almacenes Japón, Artefacta, Marcimex y Comandato cada hora. Solo entran productos con stock y precio publicados. Jaher no vende en línea y Almacenes España bloquea las consultas automáticas, por eso no aparecen. “Mismo modelo” agrupa productos por el código del fabricante que aparece en el nombre, así que algunos modelos pueden no agruparse si una tienda no lo publica.</p>
+  <p class="foot">COTI escanea cada hora los catálogos en línea de Crecos, Orve Hogar y Almacenes Japón, y de la competencia: Artefacta, Marcimex, Comandato, Pycca, Tía, Coral Hipermercados, Etafashion, El Juri, Mi Bodega, Estuardo Sánchez, Unity Stores, Bodeguita del Ahorro, BestPC y Computron. Solo entran productos con stock y precio publicados; en tiendas grandes se escanean solo las categorías de electrodomésticos y tecnología. “Mismo modelo” agrupa por el código del fabricante que aparece en el nombre.</p>
 </div>
 
 <script>
@@ -197,6 +198,7 @@ function render(){
     $("verdict").hidden = true; $("modelsSec").hidden = true;
     $("shelvesTitle").textContent = "Catálogo por tienda";
     $("shelvesNote").textContent = "";
+    $("sinRes").hidden = true;
     $("shelves").innerHTML = stores.map(s => `<div class="shelf ${s.grupo==="cresa"?"cresa":""}"><div class="shelf-h"><span class="store">${esc(s.nombre)}</span><span class="cnt">${s.error?'<span class="err">sin datos</span>':(s.total||0).toLocaleString("es-EC")+" productos"}</span></div>
       <div class="none">${s.error ? esc(s.error) : "Escribe un producto arriba para ver sus precios aquí."}</div></div>`).join("");
     return;
@@ -251,7 +253,12 @@ function render(){
   // estantes
   $("shelvesTitle").textContent = "Resultados por tienda";
   $("shelvesNote").textContent = "Toca un producto para abrirlo en la tienda";
-  $("shelves").innerHTML = stores.map(s => {
+  const conRes = stores.filter(s => (byStore.get(s.id) || []).length && !s.error);
+  const sinRes = stores.filter(s => !(byStore.get(s.id) || []).length || s.error);
+  conRes.sort((a,b) => (a.grupo==="cresa"?0:1) - (b.grupo==="cresa"?0:1));
+  $("sinRes").hidden = !sinRes.length;
+  $("sinRes").textContent = sinRes.length ? `Sin resultados para “${q}” en: ${sinRes.map(s=>s.nombre).join(", ")}.` : "";
+  $("shelves").innerHTML = conRes.map(s => {
     const l = byStore.get(s.id) || [];
     const show = expanded.has(s.id) ? l.slice(0, 60) : l.slice(0, PER_SHELF);
     const aviso = s.aviso ? `<div class="none">${esc(s.aviso)}</div>` : "";

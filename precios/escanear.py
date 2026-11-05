@@ -146,7 +146,11 @@ def vtex_categoria(t, ruta):
     fq = urllib.parse.quote("C:/" + "/".join(ruta) + "/")
     out = []
     for desde in range(0, 2500, 50):
-        st, b = get(f"https://{t['host']}/api/catalog_system/pub/products/search?fq={fq}&_from={desde}&_to={desde + 49}")
+        try:
+            st, b = get(f"https://{t['host']}/api/catalog_system/pub/products/search?fq={fq}&_from={desde}&_to={desde + 49}")
+        except RuntimeError as e:  # una categoría rota no tumba toda la tienda
+            log(f"[{t['id']}] categoría {'/'.join(ruta)} omitida: {str(e)[-60:]}")
+            break
         if st not in (200, 206):
             break
         lote = json.loads(b or "[]")
@@ -233,10 +237,17 @@ def escanear_woo(t):
     vistos, pag, total = {}, 1, 1
     while pag <= total and pag <= 200:
         url = f"https://{t['host']}/wp-json/wc/store/v1/products?per_page=100&page={pag}"
-        req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/json"})
-        with urllib.request.urlopen(req, timeout=60) as r:
-            total = int(r.headers.get("X-WP-TotalPages") or r.headers.get("x-wp-totalpages") or 1)
-            lote = json.loads(r.read().decode("utf-8", "replace"))
+        for intento in range(4):
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/json"})
+                with urllib.request.urlopen(req, timeout=90) as r:
+                    total = int(r.headers.get("X-WP-TotalPages") or r.headers.get("x-wp-totalpages") or 1)
+                    lote = json.loads(r.read().decode("utf-8", "replace"))
+                break
+            except Exception as e:
+                if intento == 3:
+                    raise
+                time.sleep(4 + intento * 4)
         for p in lote:
             if not p.get("is_in_stock", True) or not p.get("is_purchasable", True):
                 continue
@@ -265,11 +276,17 @@ def escanear_woo(t):
 def escanear_presta(t):
     vistos = {}
     for ruta in t["rutas"]:
-        pag, total = 1, 1
+        pag, total, param, previo_ids = 1, 1, "page", None
         while pag <= total and pag <= 300:
-            st, b = get(f"https://{t['host']}/{ruta}?page={pag}&resultsPerPage=48&from-xhr", headers={"X-Requested-With": "XMLHttpRequest"})
+            st, b = get(f"https://{t['host']}/{ruta}?{param}={pag}&resultsPerPage=48&from-xhr", headers={"X-Requested-With": "XMLHttpRequest"})
             d = json.loads(b or "{}")
             total = (d.get("pagination") or {}).get("pages_count") or 1
+            ids = [p.get("id_product") for p in d.get("products") or []]
+            if pag == 2 and ids and ids == previo_ids and param == "page":  # el sitio ignora "page": prueba "p"
+                param = "p"
+                continue
+            if pag == 1:
+                previo_ids = ids
             for p in d.get("products") or []:
                 if str(p.get("availability")) == "unavailable" and not p.get("quantity"):
                     continue
@@ -357,18 +374,19 @@ def escanear_hybris(t):
             for p in d.get("results") or []:
                 if not ejemplo:
                     ejemplo = True
-                    log(f"[{t['id']}] campos: {sorted(p.keys())} precio: {json.dumps({k: p.get(k) for k in p if 'rice' in k.lower() or 'discount' in k.lower()}, ensure_ascii=False)[:800]} imagenes: {json.dumps(p.get('images'), ensure_ascii=False)[:300]}")
+                    log(f"[{t['id']}] campos: {sorted(p.keys())} precio: {json.dumps({k: p.get(k) for k in ('price', 'priceWithDiscount', 'priceWithTax', 'discount', 'discountedPercentage', 'name')}, ensure_ascii=False)[:900]} imagenes: {json.dumps(p.get('images'), ensure_ascii=False)[:300]}")
                 url = p.get("url") or ""
                 if solo and not solo.search(url):
                     continue
                 if ((p.get("stock") or {}).get("stockLevelStatus") or {}).get("code") == "outOfStock":
                     continue
-                cands = [precio_hybris(p.get(k)) for k in ("discountPrice", "priceDiscount", "price") if p.get(k) is not None]
-                cands = [float(c) for c in cands if isinstance(c, (int, float)) and c > 0]
+                con_desc = precio_hybris(p.get("priceWithDiscount"))
+                con_iva = precio_hybris(p.get("priceWithTax")) or precio_hybris(p.get("price"))
+                cands = [float(c) for c in (con_desc, con_iva) if isinstance(c, (int, float)) and c > 0]
                 if not cands:
                     continue
                 precio = min(cands)
-                lista = max(cands)
+                lista = float(con_iva) if isinstance(con_iva, (int, float)) else precio
                 foto = None
                 for im in p.get("images") or []:
                     if im.get("format") in ("product", "thumbnail", "zoom") or not foto:
