@@ -105,7 +105,7 @@ select{padding:10px;border:1px solid var(--line);border-radius:10px;background:v
     <div>
       <div class="eyebrow">Mercadeo · Cresa Retail</div>
       <h1>Radar de Precios CRESA</h1>
-      <p>Busca un producto y compara, con foto, cuánto cuesta en Crecos, Orve Hogar y Almacenes Japón frente a la competencia. Los catálogos se escanean solos cada 3 horas.</p>
+      <p>Busca un producto y compara, con foto, cuánto cuesta en Crecos, Orve Hogar y Almacenes Japón frente a la competencia. Los catálogos se escanean solos cada hora.</p>
     </div>
     <div class="status" id="status">Cargando catálogos…</div>
   </header>
@@ -136,7 +136,7 @@ select{padding:10px;border:1px solid var(--line);border-radius:10px;background:v
     <div class="shelves" id="shelves"></div>
   </section>
 
-  <p class="foot">Se escanean los catálogos en línea de Crecos, Orve Hogar, Almacenes Japón, Artefacta, Marcimex y Comandato cada 3 horas. Solo entran productos con stock y precio publicados. Jaher no vende en línea y Almacenes España bloquea las consultas automáticas, por eso no aparecen. “Mismo modelo” agrupa productos por el código del fabricante que aparece en el nombre, así que algunos modelos pueden no agruparse si una tienda no lo publica.</p>
+  <p class="foot">Se escanean los catálogos en línea de Crecos, Orve Hogar, Almacenes Japón, Artefacta, Marcimex y Comandato cada hora. Solo entran productos con stock y precio publicados. Jaher no vende en línea y Almacenes España bloquea las consultas automáticas, por eso no aparecen. “Mismo modelo” agrupa productos por el código del fabricante que aparece en el nombre, así que algunos modelos pueden no agruparse si una tienda no lo publica.</p>
 </div>
 
 <script>
@@ -238,7 +238,7 @@ function render(){
       gap = `<div class="gap ${d>0?"up":d<0?"down":""}">CRESA ${d===0?"igual que":money(Math.abs(d))+(d>0?" más caro que":" más barato que")} la competencia (${d===0?"0":(d>0?"+":"−")+Math.abs(d/b*100).toFixed(1)}%)</div>`; }
     const pic = list.find(p=>p.i)?.i;
     const name = list.slice().sort((a,b)=>a.n.length-b.n.length)[0].n;
-    return `<article class="model">${pic?`<img src="${esc(pic)}" alt="" loading="lazy">`:`<div class="thumb"></div>`}
+    return `<article class="model">${pic?`<img src="${esc(pic)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:`<div class="thumb"></div>`}
       <div style="min-width:0"><h3>${esc(name)}</h3><div class="ref">Modelo ${esc(g.mo)}</div>
       <div class="prices">${list.map(p => `<a class="pp ${storeById[p.t].grupo==="cresa"?"cresa":""} ${p.p===min?"best":""}" href="${esc(p.u)}" target="_blank" rel="noopener"><span class="s">${esc(storeById[p.t].nombre)}</span><span class="v num">${money(p.p)}</span></a>`).join("")}</div>${gap}</div></article>`;
   }).join("");
@@ -251,7 +251,7 @@ function render(){
     const show = expanded.has(s.id) ? l.slice(0, 60) : l.slice(0, PER_SHELF);
     const aviso = s.aviso ? `<div class="none">${esc(s.aviso)}</div>` : "";
     const body = s.error ? `<div class="none err">${esc(s.error)}</div>` : !l.length ? `<div class="none">Sin resultados para “${esc(q)}”.</div>` :
-      show.map(([, p]) => `<a class="item" href="${esc(p.u)}" target="_blank" rel="noopener">${p.i?`<img src="${esc(p.i)}" alt="" loading="lazy">`:`<span class="thumb" style="width:64px;height:64px"></span>`}
+      show.map(([, p]) => `<a class="item" href="${esc(p.u)}" target="_blank" rel="noopener">${p.i?`<img src="${esc(p.i)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:`<span class="thumb" style="width:64px;height:64px"></span>`}
         <span style="min-width:0"><span class="n">${esc(p.n)}</span><span class="b">${esc([p.m, p.mo].filter(Boolean).join(" · "))}</span></span>
         <span class="pr num">${money(p.p)}${p.l && p.l > p.p ? `<span class="was">${money(p.l)}</span><span class="off">−${Math.round((1-p.p/p.l)*100)}%</span>`:""}${cambio(p)}</span></a>`).join("") +
       (l.length > show.length ? `<button class="more" data-more="${s.id}">Ver ${Math.min(l.length,60)-show.length} más</button>` : "");
