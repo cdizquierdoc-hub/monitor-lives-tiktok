@@ -9,8 +9,8 @@ on:
         description: "escanear o explorar"
         default: "escanear"
       consulta:
-        description: "Palabra para explorar"
-        default: "refrigeradora"
+        description: "Tiendas a escanear (vacío = todas) o palabra para explorar"
+        default: ""
 
 concurrency:
   group: precios
@@ -29,7 +29,35 @@ jobs:
       - name: Explorar tiendas
         if: github.event.inputs.modo == 'explorar'
         run: |
-          python3 precios/explorar.py "${{ github.event.inputs.consulta }}" 2>&1 | tee resultado.txt
+          python3 precios/explorar.py ${{ github.event.inputs.consulta }} 2>&1 | tee resultado.txt
           git config user.name "monitor-lives"; git config user.email "monitor-lives@users.noreply.github.com"
           git checkout -q --orphan pruebas-precios && git rm -rq --cached . && git add resultado.txt
           git commit -qm "explorar $(date -u +%FT%TZ)" && git push -qf origin pruebas-precios
+
+      - name: Preparar rama de datos
+        if: github.event.inputs.modo != 'explorar'
+        run: |
+          git config user.name "monitor-lives"
+          git config user.email "monitor-lives@users.noreply.github.com"
+          git fetch -q origin data
+          git worktree add -q _data origin/data
+          git -C _data checkout -q -B data origin/data
+
+      - name: Escanear catálogos
+        if: github.event.inputs.modo != 'explorar'
+        env:
+          DATA_DIR: _data/data
+        run: python3 precios/escanear.py ${{ github.event.inputs.consulta }}
+
+      - name: Guardar
+        if: github.event.inputs.modo != 'explorar'
+        run: |
+          cd _data && git add -A data/precios
+          git diff --cached --quiet && exit 0
+          git commit -q -m "precios $(date -u +%FT%TZ)"
+          for i in 1 2 3 4 5; do
+            git push -q origin data && exit 0
+            git pull -q --rebase origin data || { git rebase --abort; git pull -q --no-rebase -X ours origin data; }
+            sleep 3
+          done
+          exit 1

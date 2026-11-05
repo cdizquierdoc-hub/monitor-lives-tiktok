@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radar de Precios CRESA</title>
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: buscador fijo arriba; debajo, "mismo modelo" (fila por producto con precio por tienda) y luego un estante por tienda con fotos. */
+:root{
+  --bg:#EEF1F5; --surface:#FFFFFF; --sunk:#E4E9F0; --ink:#132033; --muted:#5A6779; --line:#D3DAE4;
+  --accent:#1546B8; --accent-ink:#FFFFFF; --cresa:#DCE6FA; --cresa-line:#B5C8F0;
+  --tag:#FFD43B; --tag-ink:#1E1A05; --good:#16794A; --bad:#B8402A; --img:#FFFFFF;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E141D; --surface:#161E2A; --sunk:#1D2735; --ink:#E6ECF4; --muted:#93A0B3; --line:#2A3647;
+  --accent:#7FA6FF; --accent-ink:#0B1222; --cresa:#17264A; --cresa-line:#2C4277; --good:#4CC489; --bad:#FF8A70; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E141D; --surface:#161E2A; --sunk:#1D2735; --ink:#E6ECF4; --muted:#93A0B3; --line:#2A3647;
+  --accent:#7FA6FF; --accent-ink:#0B1222; --cresa:#17264A; --cresa-line:#2C4277; --good:#4CC489; --bad:#FF8A70; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1280px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right,0px)) 56px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:18px}
+h1,h2{font-family:var(--f-display);margin:0;text-wrap:balance}
+h1{font-size:clamp(30px,5vw,42px);font-weight:700;line-height:1}
+h2{font-size:23px;font-weight:600}
+a{color:var(--accent)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:12px}
+header p{margin:6px 0 0;color:var(--muted);max-width:66ch}
+.status{font-family:var(--f-mono);font-size:12px;color:var(--muted);text-align:right}
+.status b{color:var(--ink);font-weight:500}
+
+.searchbar{position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0}
+.search{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#q{flex:1 1 280px;min-width:0;font-size:18px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+select{padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.chip{font-size:13px;padding:4px 10px;border-radius:999px;background:var(--sunk);border:1px solid transparent;cursor:pointer}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.hint{font-size:13px;color:var(--muted);margin:0}
+
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.vbox{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.vbox .big{font-family:var(--f-display);font-size:32px;font-weight:700;line-height:1.05}
+.vbox .sub{font-size:13px;color:var(--muted)}
+.up{color:var(--bad)} .down{color:var(--good)}
+
+/* mismo modelo */
+.models{display:flex;flex-direction:column;gap:10px}
+.model{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:grid;grid-template-columns:96px 1fr;gap:14px;align-items:start}
+.model img,.thumb{width:96px;height:96px;object-fit:contain;background:var(--img);border-radius:10px;border:1px solid var(--line)}
+.model h3{font-size:15px;margin:0 0 2px;font-weight:600}
+.model .ref{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.prices{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.pp{display:flex;flex-direction:column;padding:6px 10px;border-radius:10px;border:1px solid var(--line);text-decoration:none;color:inherit;min-width:110px;background:var(--surface)}
+.pp.cresa{background:var(--cresa);border-color:var(--cresa-line)}
+.pp .s{font-size:12px;color:var(--muted)}
+.pp .v{font-family:var(--f-display);font-size:24px;font-weight:700;line-height:1.1}
+.pp.best{outline:3px solid var(--tag);outline-offset:-1px}
+.pp.best .s::after{content:" · más barato";color:var(--ink);font-weight:600}
+.pp:hover{border-color:var(--accent)}
+.gap{font-family:var(--f-mono);font-size:12px;margin-top:6px}
+
+/* estantes por tienda */
+.shelves{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px;align-items:start}
+.shelf{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:0}
+.shelf.cresa{border-color:var(--cresa-line)}
+.shelf-h{padding:10px 12px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;border-bottom:1px solid var(--line)}
+.shelf.cresa .shelf-h{background:var(--cresa)}
+.store{font-family:var(--f-display);font-size:21px;font-weight:600}
+.cnt{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.items{display:flex;flex-direction:column}
+.item{display:grid;grid-template-columns:64px 1fr auto;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line);align-items:center;text-decoration:none;color:inherit}
+.item:last-child{border-bottom:0}
+.item:hover{background:var(--sunk)}
+.item img{width:64px;height:64px;object-fit:contain;background:var(--img);border-radius:8px}
+.item .n{font-size:13px;min-width:0;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.item .b{font-size:11px;color:var(--muted);font-family:var(--f-mono)}
+.item .pr{text-align:right;font-family:var(--f-display);font-size:21px;font-weight:700;white-space:nowrap}
+.item .was{display:block;font-family:var(--f-mono);font-size:11px;font-weight:400;color:var(--muted);text-decoration:line-through}
+.item .off{display:block;font-family:var(--f-mono);font-size:11px;font-weight:500;color:var(--good)}
+.more{padding:8px 12px;font-size:13px;background:none;border:0;color:var(--accent);cursor:pointer;width:100%;text-align:left}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:16px;color:var(--muted)}
+.none{padding:12px;color:var(--muted);font-size:13px}
+.err{color:var(--bad)}
+@media (max-width:520px){.model{grid-template-columns:64px 1fr}.model img{width:64px;height:64px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Mercadeo · Cresa Retail</div>
+      <h1>Radar de Precios CRESA</h1>
+      <p>Busca un producto y compara, con foto, cuánto cuesta en Crecos, Orve Hogar y Almacenes Japón frente a la competencia. Los catálogos se escanean solos cada 3 horas.</p>
+    </div>
+    <div class="status" id="status">Cargando catálogos…</div>
+  </header>
+
+  <div class="searchbar">
+    <div class="search">
+      <div class="row">
+        <input type="search" id="q" placeholder="Busca por producto, marca o modelo: refrigeradora Indurama, airfryer, RI-480…" autocomplete="off" aria-label="Buscar producto">
+        <select id="orden" aria-label="Ordenar">
+          <option value="rel">Más relevantes</option>
+          <option value="asc">Menor precio</option>
+          <option value="desc">Mayor precio</option>
+        </select>
+      </div>
+      <div class="row" id="chips"><span class="hint">Prueba:</span></div>
+    </div>
+  </div>
+
+  <section class="verdict" id="verdict" hidden></section>
+
+  <section id="modelsSec" hidden>
+    <div class="row" style="justify-content:space-between;margin-bottom:8px"><h2>Mismo modelo en varias tiendas</h2><span class="eyebrow" id="modelsNote"></span></div>
+    <div class="models" id="models"></div>
+  </section>
+
+  <section>
+    <div class="row" style="justify-content:space-between;margin-bottom:8px"><h2 id="shelvesTitle">Resultados por tienda</h2><span class="eyebrow" id="shelvesNote"></span></div>
+    <div class="shelves" id="shelves"></div>
+  </section>
+</div>
+
+<script>
+(() => {
+const RAW = "https://raw.githubusercontent.com/cdizquierdoc-hub/monitor-lives-tiktok/data/data/precios/";
+const EXAMPLES = ["refrigeradora","airfryer","lavadora","televisor 55","cocina","aire acondicionado","microondas","licuadora"];
+const PER_SHELF = 8;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money = n => n == null ? "—" : "$" + Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const norm = s => String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+const SYN = {refri:"refrigeradora",nevera:"refrigeradora",refrigerador:"refrigeradora",tv:"televisor",televisores:"televisor",tele:"televisor",freidora:"airfryer","air":"air",lavadoras:"lavadora",cocinas:"cocina",microonda:"microondas"};
+
+let stores = [], products = [], meta = null, expanded = new Set();
+
+function tokens(q){ return norm(q).replace(/[^a-z0-9.\- ]/g," ").split(/\s+/).filter(Boolean).map(t => SYN[t] || t); }
+
+function search(q){
+  const ts = tokens(q); if (!ts.length) return [];
+  const out = [];
+  for (const p of products){
+    let score = 0, ok = true;
+    for (const t of ts){
+      const tc = t.replace(/[-.]/g,"");
+      if (p._k.includes(" "+t)) score += 3;
+      else if (p._k.includes(t)) score += 2;
+      else if (tc.length >= 3 && p._c.includes(tc)) score += 3;
+      else if (t.length > 4 && p._k.includes(t.slice(0,-1))) score += 1;
+      else { ok = false; break; }
+    }
+    if (ok){ if (p._n.startsWith(ts[0])) score += 2; out.push([score, p]); }
+  }
+  return out;
+}
+
+function render(){
+  const q = $("q").value.trim();
+  const orden = $("orden").value;
+  document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", String(norm(c.textContent) === norm(q))));
+  if (!products.length) return;
+  if (!q){
+    $("verdict").hidden = true; $("modelsSec").hidden = true;
+    $("shelvesTitle").textContent = "Catálogo por tienda";
+    $("shelvesNote").textContent = "";
+    $("shelves").innerHTML = stores.map(s => `<div class="shelf ${s.grupo==="cresa"?"cresa":""}"><div class="shelf-h"><span class="store">${esc(s.nombre)}</span><span class="cnt">${s.error?'<span class="err">sin datos</span>':(s.total||0).toLocaleString("es-EC")+" productos"}</span></div>
+      <div class="none">${s.error ? esc(s.error) : "Escribe un producto arriba para ver sus precios aquí."}</div></div>`).join("");
+    return;
+  }
+  const hits = search(q);
+  const byStore = new Map(stores.map(s => [s.id, []]));
+  for (const h of hits) byStore.get(h[1].t)?.push(h);
+  const sorter = orden === "asc" ? (a,b) => a[1].p - b[1].p : orden === "desc" ? (a,b) => b[1].p - a[1].p : (a,b) => b[0]-a[0] || a[1].p - b[1].p;
+  for (const l of byStore.values()) l.sort(sorter);
+
+  // veredicto: precio más bajo por grupo entre resultados relevantes
+  const best = g => { let b = null; for (const [, p] of hits) { const s = storeById[p.t]; if (s?.grupo === g && (!b || p.p < b.p)) b = p; } return b; };
+  const bc = best("cresa"), bo = best("comp");
+  const v = $("verdict");
+  v.hidden = false;
+  v.innerHTML = `<div class="vbox"><div class="eyebrow">Resultados</div><div class="big num">${hits.length.toLocaleString("es-EC")}</div><div class="sub">en ${[...byStore.values()].filter(l=>l.length).length} de ${stores.length} tiendas</div></div>
+    <div class="vbox"><div class="eyebrow">Más barato en CRESA</div><div class="big num">${bc?money(bc.p):"—"}</div><div class="sub">${bc?esc(storeById[bc.t].nombre+" · "+bc.n):"Sin resultados"}</div></div>
+    <div class="vbox"><div class="eyebrow">Más barato en competencia</div><div class="big num">${bo?money(bo.p):"—"}</div><div class="sub">${bo?esc(storeById[bo.t].nombre+" · "+bo.n):"Sin resultados"}</div></div>`;
+
+  // mismo modelo
+  const groups = new Map();
+  for (const [score, p] of hits){ if (!p.mo) continue; const g = groups.get(p.mo) || {mo:p.mo, score:0, items:[]}; g.items.push(p); g.score = Math.max(g.score, score); groups.set(p.mo, g); }
+  const multi = [...groups.values()].filter(g => new Set(g.items.map(p=>p.t)).size >= 2)
+    .sort((a,b) => b.score - a.score || new Set(b.items.map(p=>p.t)).size - new Set(a.items.map(p=>p.t)).size).slice(0, 12);
+  $("modelsSec").hidden = !multi.length;
+  $("modelsNote").textContent = multi.length ? `${multi.length} modelo${multi.length>1?"s":""} encontrados en 2 o más tiendas` : "";
+  $("models").innerHTML = multi.map(g => {
+    const perStore = new Map();
+    for (const p of g.items){ const c = perStore.get(p.t); if (!c || p.p < c.p) perStore.set(p.t, p); }
+    const list = stores.filter(s => perStore.has(s.id)).map(s => perStore.get(s.id));
+    const min = Math.min(...list.map(p=>p.p));
+    const cr = list.filter(p=>storeById[p.t].grupo==="cresa"), co = list.filter(p=>storeById[p.t].grupo!=="cresa");
+    let gap = "";
+    if (cr.length && co.length){ const a = Math.min(...cr.map(p=>p.p)), b = Math.min(...co.map(p=>p.p)); const d = a-b;
+      gap = `<div class="gap ${d>0?"up":d<0?"down":""}">CRESA ${d===0?"igual que":money(Math.abs(d))+(d>0?" más caro que":" más barato que")} la competencia (${d===0?"0":(d>0?"+":"−")+Math.abs(d/b*100).toFixed(1)}%)</div>`; }
+    const pic = list.find(p=>p.i)?.i;
+    const name = list.slice().sort((a,b)=>a.n.length-b.n.length)[0].n;
+    return `<article class="model">${pic?`<img src="${esc(pic)}" alt="" loading="lazy">`:`<div class="thumb"></div>`}
+      <div style="min-width:0"><h3>${esc(name)}</h3><div class="ref">Modelo ${esc(g.mo)}</div>
+      <div class="prices">${list.map(p => `<a class="pp ${storeById[p.t].grupo==="cresa"?"cresa":""} ${p.p===min?"best":""}" href="${esc(p.u)}" target="_blank" rel="noopener"><span class="s">${esc(storeById[p.t].nombre)}</span><span class="v num">${money(p.p)}</span></a>`).join("")}</div>${gap}</div></article>`;
+  }).join("");
+
+  // estantes
+  $("shelvesTitle").textContent = "Resultados por tienda";
+  $("shelvesNote").textContent = "Toca un producto para abrirlo en la tienda";
+  $("shelves").innerHTML = stores.map(s => {
+    const l = byStore.get(s.id) || [];
+    const show = expanded.has(s.id) ? l.slice(0, 60) : l.slice(0, PER_SHELF);
+    const body = s.error ? `<div class="none err">${esc(s.error)}</div>` : !l.length ? `<div class="none">Sin resultados para “${esc(q)}”.</div>` :
+      show.map(([, p]) => `<a class="item" href="${esc(p.u)}" target="_blank" rel="noopener">${p.i?`<img src="${esc(p.i)}" alt="" loading="lazy">`:`<span class="thumb" style="width:64px;height:64px"></span>`}
+        <span style="min-width:0"><span class="n">${esc(p.n)}</span><span class="b">${esc([p.m, p.mo].filter(Boolean).join(" · "))}</span></span>
+        <span class="pr num">${money(p.p)}${p.l && p.l > p.p ? `<span class="was">${money(p.l)}</span><span class="off">−${Math.round((1-p.p/p.l)*100)}%</span>`:""}</span></a>`).join("") +
+      (l.length > show.length ? `<button class="more" data-more="${s.id}">Ver ${Math.min(l.length,60)-show.length} más</button>` : "");
+    return `<div class="shelf ${s.grupo==="cresa"?"cresa":""}"><div class="shelf-h"><span class="store">${esc(s.nombre)}</span><span class="cnt">${l.length.toLocaleString("es-EC")} resultado${l.length===1?"":"s"}</span></div><div class="items">${body}</div></div>`;
+  }).join("");
+}
+let storeById = {};
+
+$("shelves").addEventListener("click", e => { const b = e.target.closest("[data-more]"); if (b){ expanded.add(b.dataset.more); render(); } });
+let t; $("q").addEventListener("input", () => { clearTimeout(t); expanded.clear(); t = setTimeout(() => { render(); const q=$("q").value.trim(); history.replaceState(null,"",q?"#"+encodeURIComponent(q):location.pathname); }, 150); });
+$("orden").addEventListener("change", render);
+EXAMPLES.forEach(x => { const b=document.createElement("button"); b.className="chip"; b.type="button"; b.textContent=x; b.onclick=()=>{ $("q").value=x; expanded.clear(); render(); }; $("chips").append(b); });
+
+async function load(){
+  try {
+    meta = await fetch(RAW + "resumen.json?t=" + Date.now()).then(r => { if(!r.ok) throw new Error(r.status); return r.json(); });
+  } catch (e) { $("status").innerHTML = '<span class="err">Todavía no hay un escaneo publicado.</span>'; return; }
+  stores = meta.tiendas; storeById = Object.fromEntries(stores.map(s => [s.id, s]));
+  const lists = await Promise.all(stores.map(s => s.error ? [] : fetch(RAW + s.id + ".json?t=" + encodeURIComponent(meta.actualizado)).then(r => r.ok ? r.json() : []).catch(() => [])));
+  products = lists.flat();
+  for (const p of products){ p._n = norm(p.n); p._k = " " + norm([p.n, p.m, p.mo, p.c].join(" ")); p._c = p._k.replace(/[\s\-.]/g,""); }
+  const when = new Date(meta.actualizado);
+  $("status").innerHTML = `<b>${products.length.toLocaleString("es-EC")}</b> productos en ${stores.filter(s=>!s.error).length} tiendas<br>Último escaneo: <b>${when.toLocaleString("es-EC",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</b>`;
+  const h = decodeURIComponent(location.hash.slice(1)); if (h) $("q").value = h;
+  render();
+}
+load();
+})();
+</script>
+</body>
+</html>

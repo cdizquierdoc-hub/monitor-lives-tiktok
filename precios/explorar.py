@@ -1,52 +1,24 @@
-"""Diagnóstico 2: Artefacta (Magento), Jaher y Almacenes España."""
-import json, re, sys, urllib.request, urllib.error, urllib.parse
-
+"""Diagnóstico 3: cómo arma Artefacta su búsqueda y sus listados."""
+import re, sys, json, urllib.request, urllib.error
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36"
-Q = sys.argv[1] if len(sys.argv) > 1 else "refrigeradora"
-
-def get(url, accept="application/json,text/html;q=0.9,*/*;q=0.8", data=None, headers=None, timeout=25):
-    h = {"User-Agent": UA, "Accept": accept, "Accept-Language": "es-EC,es;q=0.9"}
-    h.update(headers or {})
-    req = urllib.request.Request(url, data=data, headers=h)
+def get(url, accept="text/html,*/*"):
+    req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": accept, "Accept-Language": "es-EC,es;q=0.9"})
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            return r.status, dict(r.headers), r.read().decode("utf-8", "replace"), r.geturl()
-    except urllib.error.HTTPError as e:
-        return e.code, dict(e.headers or {}), (e.read() or b"").decode("utf-8", "replace"), url
-    except Exception as e:
-        return 0, {}, f"ERROR {type(e).__name__}: {e}", url
-
-print("===== ARTEFACTA")
-gql = '{ products(search: "%s", pageSize: 3, currentPage: 1) { total_count page_info { total_pages } items { sku name url_key url_suffix manufacturer small_image { url } price_range { minimum_price { regular_price { value } final_price { value } } } } } }' % Q
-for url in ["https://www.artefacta.com/graphql?query=" + urllib.parse.quote(gql)]:
-    s, hd, b, _ = get(url, headers={"Store": "default"})
-    print("graphql GET:", s, b[:1500])
-s, hd, b, _ = get("https://www.artefacta.com/graphql", data=json.dumps({"query": gql}).encode(), headers={"Content-Type": "application/json"})
-print("graphql POST:", s, b[:600])
-gql2 = '{ products(filter: {price: {from: "1"}}, pageSize: 2, currentPage: 1) { total_count items { sku name } } }'
-s, hd, b, _ = get("https://www.artefacta.com/graphql?query=" + urllib.parse.quote(gql2))
-print("graphql all:", s, b[:400])
-s, hd, b, u = get(f"https://www.artefacta.com/catalogsearch/result/?q={Q}", accept="text/html")
-print("catalogsearch:", s, len(b), u)
-print("  data-price-amount:", re.findall(r'data-price-amount="([\d.]+)"', b)[:8])
-print("  product names:", [re.sub(r"\s+"," ",x).strip() for x in re.findall(r'class="product-item-link"[^>]*>(.*?)</a>', b, re.S)[:5]])
-print("  imgs:", re.findall(r'class="product-image-photo[^"]*"[^>]*src="([^"]+)"', b)[:3])
-print("  amount/toolbar:", re.findall(r'toolbar-number">(\d+)<', b)[:4])
-s, hd, b, u = get("https://www.artefacta.com/sitemap.xml", accept="*/*")
-print("sitemap:", s, len(b), b[:300])
-
-print("\n===== JAHER")
-s, hd, b, u = get("https://www.jaher.com.ec/", accept="text/html")
-print("home:", s, len(b), u)
-links = sorted(set(re.findall(r'href="([^"#]+)"', b)))
-print("links:", links[:80])
-print("scripts:", re.findall(r'<script[^>]+src="([^"]+)"', b)[:15])
-print("text:", re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", b))[:1200])
-for path in ["/sitemap.xml", "/robots.txt", "/productos/", "/catalogo/", "/tienda/", "/api/productos/", "/api/products/"]:
-    s, hd, b, u = get("https://www.jaher.com.ec" + path, accept="*/*")
-    print(f" {path}: {s} {len(b)} {re.sub(chr(10),' ',b[:200])!r}")
-
-print("\n===== ALMACENES ESPAÑA")
-for url in ["https://almacenesespana.com.ec/", "http://almacenesespana.com.ec/", "https://www.almacenesespana.com.ec/", "https://almacenesespana.ec/"]:
-    s, hd, b, u = get(url, accept="text/html", timeout=40)
-    print(url, s, len(b), u, b[:120].replace("\n", " "))
+        with urllib.request.urlopen(req, timeout=30) as r: return r.status, r.read().decode("utf-8","replace"), r.geturl()
+    except urllib.error.HTTPError as e: return e.code, (e.read() or b"").decode("utf-8","replace"), url
+    except Exception as e: return 0, str(e), url
+for url in ["https://www.artefacta.com/search/refrigeradora", "https://www.artefacta.com/c/linea-blanca/refrigeracion/refrigeradoras", "https://www.artefacta.com/refrigeradora-indurama-side-by-side-2-puertas-568-l-no-frost-ri-7568-158735/p"]:
+    s, b, u = get(url)
+    print(f"\n######## {url} -> {s} {len(b)} {u}")
+    low = b.lower()
+    print("marks:", {m: low.count(m) for m in ["algolia","doofinder","klevu","searchanise","amasty","product-item","price-box","data-price-amount","ld+json","__initial","window.checkout","mage-init","x-magento-init","pagebuilder","price","precio","/p\"","itemprop"]})
+    print("scripts:", [x for x in re.findall(r'<script[^>]+src="([^"]+)"', b) if "artefacta" not in x or "static" not in x][:20])
+    for m in re.finditer(r"\$\s?[0-9]{2,3}[.,][0-9]{2}|\$\s?[0-9],?[0-9]{3}", b):
+        print("PRICE CTX:", re.sub(r"\s+"," ",b[max(0,m.start()-400):m.end()+150])); break
+    for m in re.finditer(r'href="(https://www\.artefacta\.com/[^"]+/p)"', b):
+        print("PRODUCT LINK CTX:", re.sub(r"\s+"," ",b[max(0,m.start()-300):m.end()+700])); break
+    for j in re.findall(r'<script type="application/ld\+json">(.*?)</script>', b, re.S)[:3]:
+        print("LDJSON:", re.sub(r"\s+"," ",j)[:800])
+    for m in re.finditer(r'"(?:api|endpoint|url)"\s*:\s*"([^"]*(?:search|catalog|product)[^"]*)"', b):
+        print("ENDPOINT:", m.group(1)[:200])
+    print("first 'x-magento-init' blocks w/ search:", [re.sub(r"\s+"," ",x)[:300] for x in re.findall(r'<script type="text/x-magento-init">(.*?)</script>', b, re.S) if "search" in x.lower() or "product" in x.lower()][:4])
