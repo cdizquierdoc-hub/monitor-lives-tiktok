@@ -12,7 +12,7 @@ Formato de cada producto (claves cortas para que los archivos pesen poco):
   i  foto              u  enlace             c  categoría
   pa precio anterior   cf fecha del último cambio de precio
 """
-import json, os, re, sys, time, urllib.request, urllib.error, urllib.parse
+import gzip, html, json, os, re, sys, time, urllib.request, urllib.error, urllib.parse
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
@@ -27,6 +27,18 @@ TIENDAS = [
     {"id": "artefacta", "nombre": "Artefacta",       "grupo": "comp",  "tipo": "magento", "host": "www.artefacta.com", "store": 16},
     {"id": "marcimex",  "nombre": "Marcimex",        "grupo": "comp",  "tipo": "vtex",    "host": "www.marcimex.com"},
     {"id": "comandato", "nombre": "Comandato",       "grupo": "comp",  "tipo": "vtex",    "host": "www.comandato.com"},
+    # --- sitios agregados en COTI ---
+    {"id": "pycca",     "nombre": "Pycca",           "grupo": "comp",  "tipo": "vtex",    "host": "www.pycca.com", "cats": r"electro|linea blanca|l[ií]nea blanca|climatiza|refrigera|lavad|cocina"},
+    {"id": "estuardo",  "nombre": "Estuardo Sánchez","grupo": "comp",  "tipo": "vtex",    "host": "www.estuardosanchez.com", "cats": r"electro|linea blanca|l[ií]nea blanca|climatiza|refrigera|lavad|cocina|tv|televis|audio"},
+    {"id": "unity",     "nombre": "Unity Stores",    "grupo": "comp",  "tipo": "vtex",    "host": "www.unitystores.com"},
+    {"id": "bodeguita", "nombre": "Bodeguita del Ahorro", "grupo": "comp", "tipo": "woo", "host": "bodeguitadelahorro.com"},
+    {"id": "bestpc",    "nombre": "BestPC",          "grupo": "comp",  "tipo": "woo",     "host": "bestpc.ec"},
+    {"id": "computron", "nombre": "Computron",       "grupo": "comp",  "tipo": "woo",     "host": "www.computron.com.ec"},
+    {"id": "eljuri",    "nombre": "El Juri",         "grupo": "comp",  "tipo": "presta",  "host": "eljuri.store", "rutas": ["3-electrodomesticos"]},
+    {"id": "mibodega",  "nombre": "Mi Bodega",       "grupo": "comp",  "tipo": "presta",  "host": "mibodega.ec", "rutas": ["2-inicio"]},
+    {"id": "tia",       "nombre": "Tía",             "grupo": "comp",  "tipo": "magehtml","host": "www.tia.com.ec", "rutas": ["electrodomesticos"]},
+    {"id": "coral",     "nombre": "Coral Hipermercados", "grupo": "comp", "tipo": "magehtml", "host": "coralhipermercados.com", "rutas": ["electrodomesticos.html"]},
+    {"id": "etafashion","nombre": "Etafashion",      "grupo": "comp",  "tipo": "hybris",  "host": "www.etafashion.com", "rutas": ["es_EC/HOGAR/c/109"], "solo": r"/(LINEA-BLANCA|ELECTRO|TECNOLOG|CLIMATIZ|AUDIO|TV)"},
 ]
 
 
@@ -42,7 +54,10 @@ def get(url, data=None, headers=None, timeout=40, intentos=3):
         try:
             req = urllib.request.Request(url, data=data, headers=h)
             with urllib.request.urlopen(req, timeout=timeout) as r:
-                return r.status, r.read().decode("utf-8", "replace")
+                raw = r.read()
+                if raw[:2] == b"\x1f\x8b":
+                    raw = gzip.decompress(raw)
+                return r.status, raw.decode("utf-8", "replace")
         except urllib.error.HTTPError as e:
             ultimo = e
             if e.code in (400, 404):
@@ -77,18 +92,22 @@ def modelo_de(nombre, ref=None):
 
 
 # ---------------------------------------------------------------- VTEX
-def vtex_hojas(host):
-    st, b = get(f"https://{host}/api/catalog_system/pub/category/tree/4")
+def vtex_hojas(t):
+    st, b = get(f"https://{t['host']}/api/catalog_system/pub/category/tree/4")
     arbol = json.loads(b)
+    filtro = re.compile(t["cats"], re.I) if t.get("cats") else None
     hojas = []
 
-    def rec(nodos, ruta):
+    def rec(nodos, ruta, nombres, dentro):
         for n in nodos:
             r = ruta + [str(n["id"])]
+            nom = nombres + [n.get("name", "")]
+            ok = dentro or not filtro or bool(filtro.search(n.get("name", "")))
             if n.get("children"):
-                rec(n["children"], r)
-            hojas.append(r)  # también los padres: atrapa productos colgados directo de ellos
-    rec(arbol, [])
+                rec(n["children"], r, nom, ok)
+            if ok:
+                hojas.append(r)  # también los padres: atrapa productos colgados directo de ellos
+    rec(arbol, [], [], False)
     return hojas
 
 
@@ -138,7 +157,7 @@ def vtex_categoria(t, ruta):
 
 
 def escanear_vtex(t):
-    hojas = vtex_hojas(t["host"])
+    hojas = vtex_hojas(t)
     log(f"[{t['id']}] {len(hojas)} categorías")
     vistos = {}
     with ThreadPoolExecutor(4) as ex:
@@ -209,7 +228,163 @@ def escanear_magento(t):
     return list(vistos.values())
 
 
-ESCANERES = {"vtex": escanear_vtex, "magento": escanear_magento}
+# ---------------------------------------------------------------- WooCommerce (Store API pública)
+def escanear_woo(t):
+    vistos, pag, total = {}, 1, 1
+    while pag <= total and pag <= 200:
+        url = f"https://{t['host']}/wp-json/wc/store/v1/products?per_page=100&page={pag}"
+        req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            total = int(r.headers.get("X-WP-TotalPages") or r.headers.get("x-wp-totalpages") or 1)
+            lote = json.loads(r.read().decode("utf-8", "replace"))
+        for p in lote:
+            if not p.get("is_in_stock", True) or not p.get("is_purchasable", True):
+                continue
+            pr = p.get("prices") or {}
+            dec = 10 ** int(pr.get("currency_minor_unit") or 0)
+            try:
+                precio = int(pr.get("price") or 0) / dec
+                lista = int(pr.get("regular_price") or 0) / dec
+            except ValueError:
+                continue
+            if precio < 1:
+                continue
+            nombre = html.unescape(re.sub(r"<[^>]+>", "", p.get("name") or "")).strip()
+            img = (p.get("images") or [{}])[0]
+            marca = ", ".join(b.get("name", "") for b in (p.get("brands") or []))
+            vistos[p["id"]] = {"t": t["id"], "n": nombre, "m": html.unescape(marca), "mo": modelo_de(nombre + " " + (p.get("sku") or "")),
+                               "p": round(precio, 2), "l": round(lista, 2) if lista > precio + 0.5 else None,
+                               "i": img.get("thumbnail") or img.get("src"), "u": p.get("permalink") or "",
+                               "c": html.unescape((p.get("categories") or [{}])[0].get("name", ""))}
+        pag += 1
+    log(f"[{t['id']}] {total} páginas")
+    return list(vistos.values())
+
+
+# ---------------------------------------------------------------- PrestaShop (listado con ?from-xhr)
+def escanear_presta(t):
+    vistos = {}
+    for ruta in t["rutas"]:
+        pag, total = 1, 1
+        while pag <= total and pag <= 300:
+            st, b = get(f"https://{t['host']}/{ruta}?page={pag}&resultsPerPage=48&from-xhr", headers={"X-Requested-With": "XMLHttpRequest"})
+            d = json.loads(b or "{}")
+            total = (d.get("pagination") or {}).get("pages_count") or 1
+            for p in d.get("products") or []:
+                if str(p.get("availability")) == "unavailable" and not p.get("quantity"):
+                    continue
+                precio = float(p.get("price_amount") or 0)
+                lista = float(p.get("regular_price_amount") or 0)
+                if precio < 1:
+                    continue
+                cover = p.get("cover") or {}
+                foto = ((cover.get("bySize") or {}).get("home_default") or {}).get("url") or (cover.get("medium") or {}).get("url") or (cover.get("large") or {}).get("url")
+                nombre = html.unescape(p.get("name") or "").strip()
+                vistos[p.get("id_product")] = {"t": t["id"], "n": nombre, "m": p.get("manufacturer_name") or "",
+                                               "mo": modelo_de(nombre + " " + (p.get("reference") or "")),
+                                               "p": round(precio, 2), "l": round(lista, 2) if lista > precio + 0.5 else None,
+                                               "i": foto, "u": p.get("url") or "", "c": p.get("category_name") or ""}
+            pag += 1
+        log(f"[{t['id']}] {ruta}: {total} páginas")
+    return list(vistos.values())
+
+
+# ---------------------------------------------------------------- Magento leyendo el listado HTML (Tía, Coral)
+def num(txt):
+    txt = re.sub(r"[^\d.,]", "", txt or "")
+    if not txt:
+        return None
+    if txt.rfind(",") > txt.rfind("."):
+        txt = txt.replace(".", "").replace(",", ".")
+    else:
+        txt = txt.replace(",", "")
+    try:
+        return float(txt)
+    except ValueError:
+        return None
+
+
+def escanear_magehtml(t):
+    vistos = {}
+    for ruta in t["rutas"]:
+        primero = None
+        for pag in range(1, 200):
+            st, b = get(f"https://{t['host']}/{ruta}?p={pag}&product_list_limit=36", headers={"Accept": "text/html"})
+            bloques = re.split(r'<li[^>]*class="[^"]*\bproduct-item\b[^"]*"', b)[1:]
+            if not bloques:
+                break
+            enlaces = re.findall(r'class="product-item-link"\s+href="([^"]+)"', b)
+            if enlaces and enlaces[0] == primero:  # Magento repite la última página si se pide una de más
+                break
+            primero = enlaces[0] if enlaces else None
+            for bl in bloques:
+                bl = bl[:20000]
+                m = re.search(r'class="product-item-link"\s+href="([^"]+)"[^>]*>\s*([^<]+)<', bl)
+                if not m:
+                    continue
+                url, nombre = m.group(1), html.unescape(m.group(2)).strip()
+                fp = re.search(r'data-price-type="finalPrice"[^>]*>\s*<span class="price">([^<]+)<', bl)
+                op = re.search(r'data-price-type="oldPrice"[^>]*>\s*<span class="price">([^<]+)<', bl)
+                precio = num(fp.group(1)) if fp else None
+                if not precio or precio < 1:
+                    continue
+                lista = num(op.group(1)) if op else None
+                img = re.search(r'class="product-image-photo[^"]*"[^>]*?src="([^"]+)"', bl) or re.search(r'<img[^>]+src="([^"]+/media/catalog/product/[^"]+)"', bl)
+                marca = re.search(r'product-item-brand"><strong><span>Marca</span>\s*([^<]+)<', bl)
+                vistos[url] = {"t": t["id"], "n": nombre, "m": (marca.group(1).strip() if marca else ""), "mo": modelo_de(nombre),
+                               "p": round(precio, 2), "l": round(lista, 2) if lista and lista > precio + 0.5 else None,
+                               "i": html.unescape(img.group(1)) if img else None, "u": url, "c": ""}
+        log(f"[{t['id']}] {ruta}: {pag - 1} páginas")
+    return list(vistos.values())
+
+
+# ---------------------------------------------------------------- SAP Hybris (Etafashion)
+def precio_hybris(x):
+    if isinstance(x, dict):
+        return x.get("value")
+    return x
+
+
+def escanear_hybris(t):
+    vistos, ejemplo = {}, False
+    solo = re.compile(t["solo"], re.I) if t.get("solo") else None
+    for ruta in t["rutas"]:
+        pag, total = 0, 1
+        while pag < total and pag < 200:
+            st, b = get(f"https://{t['host']}/{ruta}/results?q=%3Arelevance&page={pag}", headers={"X-Requested-With": "XMLHttpRequest"})
+            d = json.loads(b or "{}")
+            total = (d.get("pagination") or {}).get("numberOfPages") or 1
+            for p in d.get("results") or []:
+                if not ejemplo:
+                    ejemplo = True
+                    log(f"[{t['id']}] campos: {sorted(p.keys())} precio: {json.dumps({k: p.get(k) for k in p if 'rice' in k.lower() or 'discount' in k.lower()}, ensure_ascii=False)[:800]} imagenes: {json.dumps(p.get('images'), ensure_ascii=False)[:300]}")
+                url = p.get("url") or ""
+                if solo and not solo.search(url):
+                    continue
+                if ((p.get("stock") or {}).get("stockLevelStatus") or {}).get("code") == "outOfStock":
+                    continue
+                cands = [precio_hybris(p.get(k)) for k in ("discountPrice", "priceDiscount", "price") if p.get(k) is not None]
+                cands = [float(c) for c in cands if isinstance(c, (int, float)) and c > 0]
+                if not cands:
+                    continue
+                precio = min(cands)
+                lista = max(cands)
+                foto = None
+                for im in p.get("images") or []:
+                    if im.get("format") in ("product", "thumbnail", "zoom") or not foto:
+                        foto = im.get("url")
+                if foto and foto.startswith("/"):
+                    foto = f"https://{t['host']}{foto}"
+                nombre = html.unescape(p.get("name") or "").strip()
+                vistos[p.get("code")] = {"t": t["id"], "n": nombre, "m": (p.get("manufacturer") or ""), "mo": modelo_de(nombre),
+                                         "p": round(precio, 2), "l": round(lista, 2) if lista > precio + 0.5 else None,
+                                         "i": foto, "u": f"https://{t['host']}/es_EC{url}" if url.startswith("/") else url, "c": ""}
+            pag += 1
+        log(f"[{t['id']}] {ruta}: {total} páginas")
+    return list(vistos.values())
+
+
+ESCANERES = {"vtex": escanear_vtex, "magento": escanear_magento, "woo": escanear_woo, "presta": escanear_presta, "magehtml": escanear_magehtml, "hybris": escanear_hybris}
 
 
 # ---------------------------------------------------------------- principal
