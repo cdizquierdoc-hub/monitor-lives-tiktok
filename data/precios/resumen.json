@@ -1,5 +1,5 @@
 {
- "actualizado": "2026-11-05T20:44:46+00:00",
+ "actualizado": "2026-11-05T20:48:45+00:00",
  "tiendas": [
   {
    "id": "crecos",
@@ -23,6 +23,14 @@
    "grupo": "cresa",
    "total": 7801,
    "actualizado": "2026-11-05T20:44:46+00:00",
+   "cambios": 0
+  },
+  {
+   "id": "artefacta",
+   "nombre": "Artefacta",
+   "grupo": "comp",
+   "total": 197,
+   "actualizado": "2026-11-05T20:48:45+00:00",
    "cambios": 0
   },
   {
