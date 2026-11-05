@@ -1,5 +1,5 @@
 {
- "actualizado": "2026-11-05T20:50:45+00:00",
+ "actualizado": "2026-11-05T21:23:35+00:00",
  "tiendas": [
   {
    "id": "crecos",
@@ -47,6 +47,90 @@
    "grupo": "comp",
    "total": 319,
    "actualizado": "2026-11-05T20:50:45+00:00",
+   "cambios": 0
+  },
+  {
+   "id": "pycca",
+   "nombre": "Pycca",
+   "grupo": "comp",
+   "total": 1040,
+   "actualizado": "2026-11-05T21:23:35+00:00",
+   "cambios": 0
+  },
+  {
+   "id": "estuardo",
+   "nombre": "Estuardo Sánchez",
+   "grupo": "comp",
+   "total": 1914,
+   "actualizado": "2026-11-05T21:23:35+00:00",
+   "cambios": 0
+  },
+  {
+   "id": "unity",
+   "nombre": "Unity Stores",
+   "grupo": "comp",
+   "error": "Esta tienda no respondió al escaneo."
+  },
+  {
+   "id": "bodeguita",
+   "nombre": "Bodeguita del Ahorro",
+   "grupo": "comp",
+   "total": 468,
+   "actualizado": "2026-11-05T21:23:35+00:00",
+   "cambios": 0
+  },
+  {
+   "id": "bestpc",
+   "nombre": "BestPC",
+   "grupo": "comp",
+   "error": "Esta tienda no respondió al escaneo."
+  },
+  {
+   "id": "computron",
+   "nombre": "Computron",
+   "grupo": "comp",
+   "total": 1226,
+   "actualizado": "2026-11-05T21:23:35+00:00",
+   "cambios": 0
+  },
+  {
+   "id": "eljuri",
+   "nombre": "El Juri",
+   "grupo": "comp",
+   "total": 454,
+   "actualizado": "2026-11-05T21:23:35+00:00",
+   "cambios": 0
+  },
+  {
+   "id": "mibodega",
+   "nombre": "Mi Bodega",
+   "grupo": "comp",
+   "total": 48,
+   "actualizado": "2026-11-05T21:23:35+00:00",
+   "cambios": 0
+  },
+  {
+   "id": "tia",
+   "nombre": "Tía",
+   "grupo": "comp",
+   "total": 847,
+   "actualizado": "2026-11-05T21:23:35+00:00",
+   "cambios": 0
+  },
+  {
+   "id": "coral",
+   "nombre": "Coral Hipermercados",
+   "grupo": "comp",
+   "total": 222,
+   "actualizado": "2026-11-05T21:23:35+00:00",
+   "cambios": 0
+  },
+  {
+   "id": "etafashion",
+   "nombre": "Etafashion",
+   "grupo": "comp",
+   "total": 516,
+   "actualizado": "2026-11-05T21:23:35+00:00",
    "cambios": 0
   }
  ]
