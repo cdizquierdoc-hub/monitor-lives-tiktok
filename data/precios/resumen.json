@@ -1,60 +1,60 @@
 {
- "actualizado": "2026-11-07T10:20:57+00:00",
+ "actualizado": "2026-11-07T16:52:35+00:00",
  "tiendas": [
   {
    "id": "crecos",
    "nombre": "Crecos",
    "grupo": "cresa",
-   "total": 8014,
-   "actualizado": "2026-11-07T10:20:57+00:00",
-   "cambios": 43
+   "total": 8037,
+   "actualizado": "2026-11-07T16:52:35+00:00",
+   "cambios": 106
   },
   {
    "id": "orve",
    "nombre": "Orve Hogar",
    "grupo": "cresa",
-   "total": 7857,
-   "actualizado": "2026-11-07T10:20:57+00:00",
-   "cambios": 40
+   "total": 7880,
+   "actualizado": "2026-11-07T16:52:35+00:00",
+   "cambios": 81
   },
   {
    "id": "japon",
    "nombre": "Almacenes Japón",
    "grupo": "cresa",
-   "total": 7837,
-   "actualizado": "2026-11-07T10:20:57+00:00",
-   "cambios": 39
+   "total": 7842,
+   "actualizado": "2026-11-07T16:52:35+00:00",
+   "cambios": 80
   },
   {
    "id": "artefacta",
    "nombre": "Artefacta",
    "grupo": "comp",
-   "total": 2115,
-   "actualizado": "2026-11-07T10:20:57+00:00",
-   "cambios": 0
+   "total": 2104,
+   "actualizado": "2026-11-07T16:52:35+00:00",
+   "cambios": 73
   },
   {
    "id": "marcimex",
    "nombre": "Marcimex",
    "grupo": "comp",
-   "total": 3682,
-   "actualizado": "2026-11-07T10:20:57+00:00",
-   "cambios": 8
+   "total": 3681,
+   "actualizado": "2026-11-07T16:52:35+00:00",
+   "cambios": 6
   },
   {
    "id": "comandato",
    "nombre": "Comandato",
    "grupo": "comp",
-   "total": 320,
-   "actualizado": "2026-11-07T10:20:57+00:00",
-   "cambios": 16
+   "total": 319,
+   "actualizado": "2026-11-07T16:52:35+00:00",
+   "cambios": 0
   },
   {
    "id": "pycca",
    "nombre": "Pycca",
    "grupo": "comp",
-   "total": 1002,
-   "actualizado": "2026-11-07T10:20:57+00:00",
+   "total": 1003,
+   "actualizado": "2026-11-07T16:52:35+00:00",
    "cambios": 0
   },
   {
@@ -62,23 +62,23 @@
    "nombre": "Estuardo Sánchez",
    "grupo": "comp",
    "total": 1923,
-   "actualizado": "2026-11-07T10:20:57+00:00",
-   "cambios": 103
+   "actualizado": "2026-11-07T16:52:35+00:00",
+   "cambios": 91
   },
   {
    "id": "unity",
    "nombre": "Unity Stores",
    "grupo": "comp",
-   "total": 8797,
-   "actualizado": "2026-11-07T10:20:57+00:00",
-   "cambios": 9
+   "total": 8796,
+   "actualizado": "2026-11-07T16:52:35+00:00",
+   "cambios": 6
   },
   {
    "id": "bodeguita",
    "nombre": "Bodeguita del Ahorro",
    "grupo": "comp",
    "total": 468,
-   "actualizado": "2026-11-07T10:20:57+00:00",
+   "actualizado": "2026-11-07T16:52:35+00:00",
    "cambios": 0
   },
   {
@@ -86,7 +86,7 @@
    "nombre": "BestPC",
    "grupo": "comp",
    "total": 127,
-   "actualizado": "2026-11-07T10:20:57+00:00",
+   "actualizado": "2026-11-07T16:52:35+00:00",
    "cambios": 0
   },
   {
@@ -94,48 +94,48 @@
    "nombre": "Computron",
    "grupo": "comp",
    "total": 1213,
-   "actualizado": "2026-11-07T10:20:57+00:00",
-   "cambios": 0
+   "actualizado": "2026-11-07T16:52:35+00:00",
+   "cambios": 8
   },
   {
    "id": "eljuri",
    "nombre": "El Juri",
    "grupo": "comp",
-   "total": 453,
-   "actualizado": "2026-11-07T10:20:57+00:00",
-   "cambios": 21
+   "total": 450,
+   "actualizado": "2026-11-07T16:52:35+00:00",
+   "cambios": 0
   },
   {
    "id": "mibodega",
    "nombre": "Mi Bodega",
    "grupo": "comp",
    "total": 48,
-   "actualizado": "2026-11-07T10:20:57+00:00",
+   "actualizado": "2026-11-07T16:52:35+00:00",
    "cambios": 0
   },
   {
    "id": "tia",
    "nombre": "Tía",
    "grupo": "comp",
-   "total": 838,
-   "actualizado": "2026-11-07T10:20:57+00:00",
-   "cambios": 0
+   "total": 832,
+   "actualizado": "2026-11-07T16:52:35+00:00",
+   "cambios": 2
   },
   {
    "id": "coral",
    "nombre": "Coral Hipermercados",
    "grupo": "comp",
-   "total": 204,
-   "actualizado": "2026-11-07T10:20:57+00:00",
+   "total": 194,
+   "actualizado": "2026-11-07T16:52:35+00:00",
    "cambios": 0
   },
   {
    "id": "etafashion",
    "nombre": "Etafashion",
    "grupo": "comp",
-   "total": 514,
-   "actualizado": "2026-11-07T10:20:57+00:00",
-   "cambios": 2
+   "total": 503,
+   "actualizado": "2026-11-07T16:52:35+00:00",
+   "cambios": 0
   }
  ]
 }
