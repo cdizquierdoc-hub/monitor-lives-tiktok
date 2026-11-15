@@ -1,12 +1,12 @@
 {
- "actualizado": "2026-11-15T02:44:40+00:00",
+ "actualizado": "2026-11-15T11:03:55+00:00",
  "tiendas": [
   {
    "id": "crecos",
    "nombre": "Crecos",
    "grupo": "cresa",
-   "total": 7973,
-   "actualizado": "2026-11-15T02:44:40+00:00",
+   "total": 7971,
+   "actualizado": "2026-11-15T11:03:55+00:00",
    "cambios": 2
   },
   {
@@ -14,63 +14,63 @@
    "nombre": "Orve Hogar",
    "grupo": "cresa",
    "total": 7830,
-   "actualizado": "2026-11-15T02:44:40+00:00",
+   "actualizado": "2026-11-15T11:03:55+00:00",
    "cambios": 0
   },
   {
    "id": "japon",
    "nombre": "Almacenes Japón",
    "grupo": "cresa",
-   "total": 7760,
-   "actualizado": "2026-11-15T02:44:40+00:00",
-   "cambios": 1
+   "total": 7758,
+   "actualizado": "2026-11-15T11:03:55+00:00",
+   "cambios": 0
   },
   {
    "id": "artefacta",
    "nombre": "Artefacta",
    "grupo": "comp",
    "total": 2206,
-   "actualizado": "2026-11-15T02:44:40+00:00",
-   "cambios": 45
+   "actualizado": "2026-11-15T11:03:55+00:00",
+   "cambios": 0
   },
   {
    "id": "marcimex",
    "nombre": "Marcimex",
    "grupo": "comp",
-   "total": 3731,
-   "actualizado": "2026-11-15T02:44:40+00:00",
-   "cambios": 0
+   "total": 3735,
+   "actualizado": "2026-11-15T11:03:55+00:00",
+   "cambios": 2
   },
   {
    "id": "comandato",
    "nombre": "Comandato",
    "grupo": "comp",
    "total": 312,
-   "actualizado": "2026-11-15T02:44:40+00:00",
+   "actualizado": "2026-11-15T11:03:55+00:00",
    "cambios": 0
   },
   {
    "id": "pycca",
    "nombre": "Pycca",
    "grupo": "comp",
-   "total": 1124,
-   "actualizado": "2026-11-15T02:44:40+00:00",
+   "total": 1116,
+   "actualizado": "2026-11-15T11:03:55+00:00",
    "cambios": 0
   },
   {
    "id": "estuardo",
    "nombre": "Estuardo Sánchez",
    "grupo": "comp",
-   "total": 1939,
-   "actualizado": "2026-11-15T02:44:40+00:00",
+   "total": 1940,
+   "actualizado": "2026-11-15T11:03:55+00:00",
    "cambios": 0
   },
   {
    "id": "unity",
    "nombre": "Unity Stores",
    "grupo": "comp",
-   "total": 8827,
-   "actualizado": "2026-11-15T02:44:40+00:00",
+   "total": 8826,
+   "actualizado": "2026-11-15T11:03:55+00:00",
    "cambios": 0
   },
   {
@@ -78,7 +78,7 @@
    "nombre": "Bodeguita del Ahorro",
    "grupo": "comp",
    "total": 470,
-   "actualizado": "2026-11-15T02:44:40+00:00",
+   "actualizado": "2026-11-15T11:03:55+00:00",
    "cambios": 0
   },
   {
@@ -94,7 +94,7 @@
    "nombre": "Computron",
    "grupo": "comp",
    "total": 1197,
-   "actualizado": "2026-11-15T02:44:40+00:00",
+   "actualizado": "2026-11-15T11:03:55+00:00",
    "cambios": 0
   },
   {
@@ -102,7 +102,7 @@
    "nombre": "El Juri",
    "grupo": "comp",
    "total": 431,
-   "actualizado": "2026-11-15T02:44:40+00:00",
+   "actualizado": "2026-11-15T11:03:55+00:00",
    "cambios": 0
   },
   {
@@ -110,31 +110,31 @@
    "nombre": "Mi Bodega",
    "grupo": "comp",
    "total": 48,
-   "actualizado": "2026-11-15T02:44:40+00:00",
+   "actualizado": "2026-11-15T11:03:55+00:00",
    "cambios": 0
   },
   {
    "id": "tia",
    "nombre": "Tía",
    "grupo": "comp",
-   "total": 827,
-   "actualizado": "2026-11-14T23:03:50+00:00",
-   "aviso": "No respondió en el último escaneo; se muestran los datos anteriores."
+   "total": 829,
+   "actualizado": "2026-11-15T11:03:55+00:00",
+   "cambios": 0
   },
   {
    "id": "coral",
    "nombre": "Coral Hipermercados",
    "grupo": "comp",
    "total": 204,
-   "actualizado": "2026-11-15T02:44:40+00:00",
+   "actualizado": "2026-11-15T11:03:55+00:00",
    "cambios": 0
   },
   {
    "id": "etafashion",
    "nombre": "Etafashion",
    "grupo": "comp",
-   "total": 493,
-   "actualizado": "2026-11-15T02:44:40+00:00",
+   "total": 494,
+   "actualizado": "2026-11-15T11:03:55+00:00",
    "cambios": 0
   }
  ]
