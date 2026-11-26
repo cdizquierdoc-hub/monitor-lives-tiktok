@@ -11,6 +11,8 @@ Formato de cada producto (claves cortas para que los archivos pesen poco):
   mo modelo            p  precio actual      l  precio normal (tachado)
   i  foto              u  enlace             c  categoría
   pa precio anterior   cf fecha del último cambio de precio
+  r  puesto en "más vendidos" de la tienda (1 = el más vendido; solo los primeros TOP)
+  cr precio total a crédito   cn número de cuotas   cv valor de cada cuota   ct tipo de crédito
 """
 import gzip, html, json, os, re, sys, time, urllib.request, urllib.error, urllib.parse
 from concurrent.futures import ThreadPoolExecutor
@@ -30,16 +32,33 @@ TIENDAS = [
     # --- sitios agregados en COTI ---
     {"id": "pycca",     "nombre": "Pycca",           "grupo": "comp",  "tipo": "vtex",    "host": "www.pycca.com", "cats": r"electro|linea blanca|l[ií]nea blanca|climatiza|refrigera|lavad|cocina"},
     {"id": "estuardo",  "nombre": "Estuardo Sánchez","grupo": "comp",  "tipo": "vtex",    "host": "www.estuardosanchez.com", "cats": r"electro|linea blanca|l[ií]nea blanca|climatiza|refrigera|lavad|cocina|tv|televis|audio"},
-    {"id": "unity",     "nombre": "Unity Stores",    "grupo": "comp",  "tipo": "vtex",    "host": "www.unitystores.com"},
+    {"id": "unity",     "nombre": "Unity Stores",    "grupo": "comp",  "tipo": "vtex",    "host": "www.unitystores.com", "cats": r"electro|tecnolog|l[ií]nea blanca|climatiza|refrigera|lavad|cocina|tv|televis|audio|celular|comput|gaming|video ?juego|consola"},
     {"id": "bodeguita", "nombre": "Bodeguita del Ahorro", "grupo": "comp", "tipo": "woo", "host": "bodeguitadelahorro.com"},
     {"id": "bestpc",    "nombre": "BestPC",          "grupo": "comp",  "tipo": "woo",     "host": "bestpc.ec"},
     {"id": "computron", "nombre": "Computron",       "grupo": "comp",  "tipo": "woo",     "host": "www.computron.com.ec"},
     {"id": "eljuri",    "nombre": "El Juri",         "grupo": "comp",  "tipo": "presta",  "host": "eljuri.store", "rutas": ["3-electrodomesticos"]},
     {"id": "mibodega",  "nombre": "Mi Bodega",       "grupo": "comp",  "tipo": "presta",  "host": "mibodega.ec", "rutas": ["2-inicio"]},
-    {"id": "tia",       "nombre": "Tía",             "grupo": "comp",  "tipo": "magehtml","host": "www.tia.com.ec", "rutas": ["electrodomesticos"]},
+    {"id": "tia",       "nombre": "Tía",             "grupo": "comp",  "tipo": "magehtml","host": "www.tia.com.ec", "rutas": ["electrodomesticos"], "orden": "bestsellers"},
     {"id": "coral",     "nombre": "Coral Hipermercados", "grupo": "comp", "tipo": "magehtml", "host": "coralhipermercados.com", "rutas": ["electrodomesticos.html"]},
     {"id": "etafashion","nombre": "Etafashion",      "grupo": "comp",  "tipo": "hybris",  "host": "www.etafashion.com", "rutas": ["es_EC/HOGAR/c/109"], "solo": r"/(LINEA-BLANCA|ELECTRO|TECNOLOG|CLIMATIZ|AUDIO|TV)"},
 ]
+
+
+TOP = 60  # cuántos "más vendidos" se guardan por tienda
+CREDITO = re.compile(r"cr[eé]dito|directa|club ?pycca|credi|unity ?card|propi", re.I)
+
+
+def credito_vtex(oferta):
+    """Plan de crédito propio de la tienda (no tarjetas bancarias): total, cuotas y valor de cuota."""
+    planes = [x for x in oferta.get("Installments") or [] if CREDITO.search(x.get("PaymentSystemName") or "")]
+    if not planes:
+        return {}
+    largo = max(planes, key=lambda x: (x.get("NumberOfInstallments") or 0, -(x.get("Value") or 0)))
+    total = max(x.get("TotalValuePlusInterestRate") or 0 for x in planes)
+    out = {"cr": round(total, 2), "ct": planes[0]["PaymentSystemName"].strip()}
+    if (largo.get("NumberOfInstallments") or 1) > 1:
+        out.update(cn=largo["NumberOfInstallments"], cv=round(largo["Value"], 2), cr=round(largo.get("TotalValuePlusInterestRate") or total, 2))
+    return out
 
 
 def log(*a):
@@ -139,6 +158,7 @@ def vtex_producto(t, p):
         "mo": modelo_de(p.get("productName", ""), ref if t["grupo"] == "cresa" else None),
         "p": precio, "l": round(lista, 2) if lista > precio + 0.5 else None,
         "i": vtex_foto(foto), "u": p.get("link") or "", "c": cat, "_id": str(p.get("productId")),
+        **credito_vtex(mejor),
     }
 
 
@@ -160,6 +180,31 @@ def vtex_categoria(t, ruta):
     return out
 
 
+def vtex_top(t):
+    """Ids de producto ordenados por ventas (lo que la tienda muestra como "más vendidos")."""
+    ids = []
+    for desde in range(0, 1000, 50):
+        try:
+            st, b = get(f"https://{t['host']}/api/catalog_system/pub/products/search?O=OrderByTopSaleDESC&_from={desde}&_to={desde + 49}")
+        except RuntimeError:
+            break
+        lote = json.loads(b or "[]")
+        ids += [str(p.get("productId")) for p in lote]
+        if len(lote) < 50:
+            break
+    return ids
+
+
+def poner_rank(vistos, orden):
+    r = 0
+    for k in orden:
+        if k in vistos and "r" not in vistos[k]:
+            r += 1
+            vistos[k]["r"] = r
+            if r >= TOP:
+                break
+
+
 def escanear_vtex(t):
     hojas = vtex_hojas(t)
     log(f"[{t['id']}] {len(hojas)} categorías")
@@ -173,6 +218,9 @@ def escanear_vtex(t):
                 x = vtex_producto(t, p)
                 if x:
                     vistos[pid] = x
+    poner_rank(vistos, vtex_top(t))
+    medios = sorted({x.get("ct") for x in vistos.values() if x.get("ct")})
+    log(f"[{t['id']}] con crédito: {sum(1 for x in vistos.values() if x.get('cr'))} · planes: {medios}")
     return list(vistos.values())
 
 
@@ -236,7 +284,7 @@ def escanear_magento(t):
 def escanear_woo(t):
     vistos, pag, total = {}, 1, 1
     while pag <= total and pag <= 200:
-        url = f"https://{t['host']}/wp-json/wc/store/v1/products?per_page=100&page={pag}"
+        url = f"https://{t['host']}/wp-json/wc/store/v1/products?per_page=100&page={pag}&orderby=popularity&order=desc"
         for intento in range(4):
             try:
                 req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/json"})
@@ -269,6 +317,7 @@ def escanear_woo(t):
                                "c": html.unescape((p.get("categories") or [{}])[0].get("name", ""))}
         pag += 1
     log(f"[{t['id']}] {total} páginas")
+    poner_rank(vistos, list(vistos.keys()))  # la API devolvió los productos ordenados por popularidad
     return list(vistos.values())
 
 
@@ -278,7 +327,7 @@ def escanear_presta(t):
     for ruta in t["rutas"]:
         pag, total, param, previo_ids = 1, 1, "page", None
         while pag <= total and pag <= 300:
-            st, b = get(f"https://{t['host']}/{ruta}?{param}={pag}&resultsPerPage=48&from-xhr&nc={int(time.time())}{pag}",
+            st, b = get(f"https://{t['host']}/{ruta}?{param}={pag}&resultsPerPage=48&order=product.sales.desc&from-xhr&nc={int(time.time())}{pag}",
                         headers={"X-Requested-With": "XMLHttpRequest", "Cache-Control": "no-cache", "Pragma": "no-cache"})
             d = json.loads(b or "{}")
             total = (d.get("pagination") or {}).get("pages_count") or 1
@@ -304,6 +353,7 @@ def escanear_presta(t):
                                                "i": foto, "u": p.get("url") or "", "c": p.get("category_name") or ""}
             pag += 1
         log(f"[{t['id']}] {ruta}: {total} páginas")
+    poner_rank(vistos, list(vistos.keys()))  # listado pedido por ventas
     return list(vistos.values())
 
 
@@ -327,7 +377,7 @@ def escanear_magehtml(t):
     for ruta in t["rutas"]:
         primero = None
         for pag in range(1, 200):
-            st, b = get(f"https://{t['host']}/{ruta}?p={pag}&product_list_limit=36", headers={"Accept": "text/html"})
+            st, b = get(f"https://{t['host']}/{ruta}?p={pag}&product_list_limit=36" + (f"&product_list_order={t['orden']}" if t.get("orden") else ""), headers={"Accept": "text/html"})
             bloques = re.split(r'<li[^>]*class="[^"]*\bproduct-item\b[^"]*"', b)[1:]
             if not bloques:
                 break
@@ -353,6 +403,8 @@ def escanear_magehtml(t):
                                "p": round(precio, 2), "l": round(lista, 2) if lista and lista > precio + 0.5 else None,
                                "i": html.unescape(img.group(1)) if img else None, "u": url, "c": ""}
         log(f"[{t['id']}] {ruta}: {pag - 1} páginas")
+    if t.get("orden") == "bestsellers":
+        poner_rank(vistos, list(vistos.keys()))
     return list(vistos.values())
 
 
@@ -395,7 +447,13 @@ def escanear_hybris(t):
                 if foto and foto.startswith("/"):
                     foto = f"https://{t['host']}{foto}"
                 nombre = html.unescape(p.get("name") or "").strip()
-                vistos[p.get("code")] = {"t": t["id"], "n": nombre, "m": (p.get("manufacturer") or ""), "mo": modelo_de(nombre),
+                cred = {}
+                cc = p.get("clientCreditPriceData") or {}
+                if isinstance(cc.get("value"), (int, float)) and cc["value"] > 0:
+                    cred = {"cr": round(cc["value"], 2), "ct": "Crédito directo"}
+                    if (cc.get("maxInstallments") or 0) > 1 and cc.get("installmentPrice"):
+                        cred.update(cn=int(cc["maxInstallments"]), cv=round(cc["installmentPrice"], 2))
+                vistos[p.get("code")] = {**cred, "t": t["id"], "n": nombre, "m": (p.get("manufacturer") or ""), "mo": modelo_de(nombre),
                                          "p": round(precio, 2), "l": round(lista, 2) if lista > precio + 0.5 else None,
                                          "i": foto, "u": f"https://{t['host']}/es_EC{url}" if url.startswith("/") else url, "c": ""}
             pag += 1
