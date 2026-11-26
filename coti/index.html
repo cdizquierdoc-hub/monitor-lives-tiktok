@@ -344,12 +344,14 @@ function wheelSlides(storeId){
     const key = p._g || p.u;
     if (seen.has(key)) continue;
     const peers = p._g ? byModel.get(p._g) : [p];
+    const grupos = new Set(peers.map(x => storeById[x.t]?.grupo));
+    const cruza = grupos.has("cresa") && grupos.has("comp");   // está en CRESA y en la competencia
     const n = new Set(peers.map(x => x.t)).size;
-    if (!storeId && n < 2) continue;      // en "Todas" solo los que se pueden comparar
-    seen.add(key); out.push({lead: p, peers, n});
+    if (!storeId && !cruza) continue;      // en "Todas" solo lo que se puede comparar CRESA vs competencia
+    seen.add(key); out.push({lead: p, peers, n, cruza});
     if (out.length >= (storeId ? 15 : 24)) break;
   }
-  if (storeId) out.sort((a,b) => (b.n > 1) - (a.n > 1) || a.lead.r - b.lead.r);
+  if (storeId) out.sort((a,b) => b.cruza - a.cruza || (b.n > 1) - (a.n > 1) || a.lead.r - b.lead.r);
   return out;
 }
 function slideHtml({lead, peers}, idx){
@@ -383,7 +385,7 @@ function renderWheel(){
     .concat(withRank.map(s => `<button class="chip" type="button" data-wstore="${s.id}" aria-pressed="${wheel.store===s.id}">${esc(s.nombre)}</button>`)).join("");
   $("wheelNote").textContent = wheel.store
     ? `Lo más vendido en ${storeById[wheel.store]?.nombre} y su precio en las demás tiendas`
-    : `Lo más vendido de cada tienda que también está en otra · ${wheel.slides.length} productos`;
+    : `Lo más vendido de cada tienda que está en CRESA y en la competencia · ${wheel.slides.length} productos`;
   $("track").innerHTML = wheel.slides.length ? wheel.slides.map(slideHtml).join("") : `<div class="empty" style="flex:1">Esta tienda no publica cuáles son sus más vendidos.</div>`;
   $("dots").innerHTML = wheel.slides.map((_, i) => `<button class="dot" type="button" data-dot="${i}" aria-label="Ir al ${i+1}"></button>`).join("");
   wheel.i = 0; $("track").scrollLeft = 0; markDot(); startWheel();
