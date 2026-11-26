@@ -310,6 +310,19 @@ function render(){
   }).join("");
 }
 let storeById = {};
+// #mas-vendidos abre la rueda con todas; #mas-vendidos-crecos con una tienda; cualquier otro hash es una búsqueda
+function aplicarHash(){
+  const h = decodeURIComponent(location.hash.slice(1));
+  const m = h.match(/^mas-vendidos(?:-([a-z]+))?$/);
+  if (m){
+    wheel.store = m[1] && storeById[m[1]] ? m[1] : "";
+    renderWheel();
+    requestAnimationFrame(() => $("wheel").scrollIntoView({block: "start"}));
+    return;
+  }
+  renderWheel();
+  if (h) $("q").value = h;
+}
 function credTxt(p, largo){
   if (!p.cr) return "";
   if (p.cn > 1) return largo ? `Crédito: <b>${p.cn} × ${money(p.cv)}</b> · total ${money(p.cr)}` : `Crédito ${p.cn} × ${money(p.cv)}`;
@@ -351,7 +364,6 @@ function wheelSlides(storeId){
     seen.add(key); out.push({lead: p, peers, n, cruza});
     if (out.length >= (storeId ? 15 : 24)) break;
   }
-  if (storeId) out.sort((a,b) => b.cruza - a.cruza || (b.n > 1) - (a.n > 1) || a.lead.r - b.lead.r);
   return out;
 }
 function slideHtml({lead, peers}, idx){
@@ -413,7 +425,7 @@ $("wheel").addEventListener("focusout", () => wheel.paused = false);
 $("wheel").addEventListener("touchstart", () => wheel.paused = true, {passive: true});
 let wsc; $("track").addEventListener("scroll", () => { clearTimeout(wsc); wsc = setTimeout(() => { const tr = $("track"); const i = Math.round(tr.scrollLeft / (tr.clientWidth + 12)); if (i !== wheel.i){ wheel.i = i; markDot(); } }, 120); });
 $("wheel").addEventListener("click", e => {
-  const c = e.target.closest("[data-wstore]"); if (c){ wheel.store = c.dataset.wstore; renderWheel(); return; }
+  const c = e.target.closest("[data-wstore]"); if (c){ wheel.store = c.dataset.wstore; renderWheel(); history.replaceState(null, "", "#mas-vendidos" + (wheel.store ? "-" + wheel.store : "")); return; }
   const d = e.target.closest("[data-dot]"); if (d){ goWheel(Number(d.dataset.dot)); return; }
   const b = e.target.closest("[data-buscar]"); if (b){ $("q").value = b.dataset.buscar; expanded.clear(); render(); $("verdict").scrollIntoView({behavior: REDUCED ? "auto" : "smooth"}); }
 });
@@ -439,9 +451,9 @@ async function load(){
   const when = new Date(meta.actualizado);
   $("status").innerHTML = `<b>${products.length.toLocaleString("es-EC")}</b> productos en ${stores.filter(s=>!s.error).length} tiendas<br>Último escaneo: <b>${when.toLocaleString("es-EC",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</b>`;
   buildModels();
-  renderWheel();
-  const h = decodeURIComponent(location.hash.slice(1)); if (h) $("q").value = h;
+  aplicarHash();
   render();
+  addEventListener("hashchange", () => { aplicarHash(); render(); });
 }
 load();
 })();
