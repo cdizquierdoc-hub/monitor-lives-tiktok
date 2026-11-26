@@ -46,11 +46,13 @@ TIENDAS = [
 
 TOP = 60  # cuántos "más vendidos" se guardan por tienda
 CREDITO = re.compile(r"cr[eé]dito|directa|club ?pycca|credi|unity ?card|propi", re.I)
+TARJETA = re.compile(r"tarjeta de cr|visa|master|diners|discover|american|amex|alia|paymentez|placetopay|d[eé]bito", re.I)
 
 
 def credito_vtex(oferta):
     """Plan de crédito propio de la tienda (no tarjetas bancarias): total, cuotas y valor de cuota."""
-    planes = [x for x in oferta.get("Installments") or [] if CREDITO.search(x.get("PaymentSystemName") or "")]
+    planes = [x for x in oferta.get("Installments") or []
+              if CREDITO.search(x.get("PaymentSystemName") or "") and not TARJETA.search(x.get("PaymentSystemName") or "")]
     if not planes:
         return {}
     largo = max(planes, key=lambda x: (x.get("NumberOfInstallments") or 0, -(x.get("Value") or 0)))
@@ -285,6 +287,7 @@ def escanear_woo(t):
     vistos, pag, total = {}, 1, 1
     while pag <= total and pag <= 200:
         url = f"https://{t['host']}/wp-json/wc/store/v1/products?per_page=100&page={pag}&orderby=popularity&order=desc"
+        fin = False
         for intento in range(4):
             try:
                 req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/json"})
@@ -292,10 +295,22 @@ def escanear_woo(t):
                     total = int(r.headers.get("X-WP-TotalPages") or r.headers.get("x-wp-totalpages") or 1)
                     lote = json.loads(r.read().decode("utf-8", "replace"))
                 break
+            except urllib.error.HTTPError as e:
+                if e.code in (400, 404) and pag > 1:  # se acabaron las páginas
+                    fin = True
+                    break
+                if e.code in (400, 404) and "orderby=" in url:  # el sitio no acepta ordenar por popularidad
+                    url = url.split("&orderby=")[0]
+                    continue
+                if intento == 3:
+                    raise
+                time.sleep(4 + intento * 4)
             except Exception as e:
                 if intento == 3:
                     raise
                 time.sleep(4 + intento * 4)
+        if fin:
+            break
         for p in lote:
             if not p.get("is_in_stock", True) or not p.get("is_purchasable", True):
                 continue

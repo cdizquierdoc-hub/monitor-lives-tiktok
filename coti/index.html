@@ -100,6 +100,31 @@ select{padding:10px;border:1px solid var(--line);border-radius:10px;background:v
 .empty{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:16px;color:var(--muted)}
 .none{padding:12px;color:var(--muted);font-size:13px}
 .err{color:var(--bad)}
+/* rueda de más vendidos */
+.wheel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.wheel-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.wheel-ctl{display:flex;gap:6px;align-items:center}
+.wbtn{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-size:16px;line-height:1}
+.wbtn:hover{border-color:var(--accent)}
+.wchips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+.wchips .chip{white-space:nowrap}
+.track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;gap:12px;scrollbar-width:none;min-width:0}
+.track::-webkit-scrollbar{display:none}
+.slide{flex:0 0 100%;scroll-snap-align:start;display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:start;min-width:0}
+.slide img,.slide .thumb{width:180px;height:180px;object-fit:contain;background:var(--img);border-radius:12px;border:1px solid var(--line)}
+.rank{display:inline-flex;gap:6px;align-items:center;font-family:var(--f-mono);font-size:12px;background:var(--tag);color:var(--tag-ink);padding:2px 8px;border-radius:999px;font-weight:500}
+.slide h3{font-family:var(--f-display);font-size:24px;font-weight:600;line-height:1.15;margin:6px 0 2px;text-wrap:balance}
+.slide .ref{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.slide .prices{margin-top:10px}
+.solo{font-size:13px;color:var(--muted);margin-top:8px}
+.linkish{background:none;border:0;padding:0;color:var(--accent);cursor:pointer;font-size:13px;text-decoration:underline;margin-top:8px}
+.dots{display:flex;gap:5px;justify-content:center;flex-wrap:wrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--line);border:0;padding:0;cursor:pointer}
+.dot[aria-current="true"]{background:var(--accent);width:20px;border-radius:4px}
+.pp .c{font-family:var(--f-mono);font-size:11px;color:var(--muted);line-height:1.3}
+.pp .c b{color:var(--ink);font-weight:500}
+.item .cred{display:block;font-family:var(--f-mono);font-size:11px;font-weight:400;color:var(--muted)}
+@media (max-width:620px){.slide{grid-template-columns:1fr}.slide img,.slide .thumb{width:100%;height:170px}.slide h3{font-size:20px}}
 @media (max-width:520px){.model{grid-template-columns:64px 1fr}.model img,.model .thumb{width:64px;height:64px}.pp{min-width:0;flex:1 1 calc(50% - 6px)}.pp .v{font-size:21px}}
 </style>
 </head>
@@ -129,6 +154,20 @@ select{padding:10px;border:1px solid var(--line);border-radius:10px;background:v
     </div>
   </div>
 
+  <section class="wheel" id="wheel" aria-roledescription="carrusel" aria-label="Más vendidos">
+    <div class="wheel-h">
+      <div><h2>Más vendidos</h2><div class="eyebrow" id="wheelNote">Cargando…</div></div>
+      <div class="wheel-ctl">
+        <button class="wbtn" type="button" id="wPrev" aria-label="Anterior">‹</button>
+        <button class="wbtn" type="button" id="wPlay" aria-label="Pausar">❚❚</button>
+        <button class="wbtn" type="button" id="wNext" aria-label="Siguiente">›</button>
+      </div>
+    </div>
+    <div class="wchips" id="wChips"></div>
+    <div class="track" id="track"></div>
+    <div class="dots" id="dots"></div>
+  </section>
+
   <section class="verdict" id="verdict" hidden></section>
 
   <section id="modelsSec" hidden>
@@ -142,7 +181,7 @@ select{padding:10px;border:1px solid var(--line);border-radius:10px;background:v
     <p class="hint" id="sinRes" hidden style="margin-top:10px"></p>
   </section>
 
-  <p class="foot">COTI escanea cada hora los catálogos en línea de Crecos, Orve Hogar y Almacenes Japón, y de la competencia: Artefacta, Marcimex, Comandato, Pycca, Tía, Coral Hipermercados, Etafashion, El Juri, Mi Bodega, Estuardo Sánchez, Unity Stores, Bodeguita del Ahorro, BestPC y Computron. Solo entran productos con stock y precio publicados; en tiendas grandes se escanean solo las categorías de electrodomésticos y tecnología. “Mismo modelo” agrupa por el código del fabricante que aparece en el nombre.</p>
+  <p class="foot">COTI escanea cada hora los catálogos en línea de Crecos, Orve Hogar y Almacenes Japón, y de la competencia: Artefacta, Marcimex, Comandato, Pycca, Tía, Coral Hipermercados, Etafashion, El Juri, Mi Bodega, Estuardo Sánchez, Unity Stores, Bodeguita del Ahorro, BestPC y Computron. Solo entran productos con stock y precio publicados; en tiendas grandes se escanean solo las categorías de electrodomésticos y tecnología. “Mismo modelo” agrupa por el código del fabricante que aparece en el nombre. “Más vendidos” es el orden de ventas que publica cada tienda; Artefacta, Coral y Etafashion no lo publican. El precio a crédito es el del crédito propio de cada tienda (Crédito Directo, Directa, Club Pycca, crédito Eta), no el de tarjetas bancarias, y solo aparece cuando la tienda lo publica en su catálogo.</p>
 </div>
 
 <script>
@@ -247,7 +286,7 @@ function render(){
     const name = list.slice().sort((a,b)=>a.n.length-b.n.length)[0].n;
     return `<article class="model">${pic?`<img src="${esc(pic)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:`<div class="thumb"></div>`}
       <div style="min-width:0"><h3>${esc(name)}</h3><div class="ref">Modelo ${esc(g.mo)}</div>
-      <div class="prices">${list.map(p => `<a class="pp ${storeById[p.t].grupo==="cresa"?"cresa":""} ${p.p===min?"best":""}" href="${esc(p.u)}" target="_blank" rel="noopener"><span class="s">${esc(storeById[p.t].nombre)}</span><span class="v num">${money(p.p)}</span></a>`).join("")}</div>${gap}</div></article>`;
+      <div class="prices">${list.map(p => `<a class="pp ${storeById[p.t].grupo==="cresa"?"cresa":""} ${p.p===min?"best":""}" href="${esc(p.u)}" target="_blank" rel="noopener"><span class="s">${esc(storeById[p.t].nombre)}</span><span class="v num">${money(p.p)}</span>${p.cr ? `<span class="c">${credTxt(p)}</span>` : ""}</a>`).join("")}</div>${gap}</div></article>`;
   }).join("");
 
   // estantes
@@ -265,12 +304,117 @@ function render(){
     const body = s.error ? `<div class="none err">${esc(s.error)}</div>` : !l.length ? `<div class="none">Sin resultados para “${esc(q)}”.</div>` :
       show.map(([, p]) => `<a class="item" href="${esc(p.u)}" target="_blank" rel="noopener">${p.i?`<img src="${esc(p.i)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:`<span class="thumb" style="width:64px;height:64px"></span>`}
         <span style="min-width:0"><span class="n">${esc(p.n)}</span><span class="b">${esc([p.m, p.mo].filter(Boolean).join(" · "))}</span></span>
-        <span class="pr num">${money(p.p)}${p.l && p.l > p.p ? `<span class="was">${money(p.l)}</span><span class="off">−${Math.round((1-p.p/p.l)*100)}%</span>`:""}${cambio(p)}</span></a>`).join("") +
+        <span class="pr num">${money(p.p)}${p.l && p.l > p.p ? `<span class="was">${money(p.l)}</span><span class="off">−${Math.round((1-p.p/p.l)*100)}%</span>`:""}${p.cr ? `<span class="cred">${credTxt(p)}</span>` : ""}${cambio(p)}</span></a>`).join("") +
       (l.length > show.length ? `<button class="more" data-more="${s.id}">Ver ${Math.min(l.length,60)-show.length} más</button>` : "");
     return `<div class="shelf ${s.grupo==="cresa"?"cresa":""}"><div class="shelf-h"><span class="store">${esc(s.nombre)}</span><span class="cnt">${l.length.toLocaleString("es-EC")} resultado${l.length===1?"":"s"}</span></div><div class="items">${aviso}${body}</div></div>`;
   }).join("");
 }
 let storeById = {};
+function credTxt(p, largo){
+  if (!p.cr) return "";
+  if (p.cn > 1) return largo ? `Crédito: <b>${p.cn} × ${money(p.cv)}</b> · total ${money(p.cr)}` : `Crédito ${p.cn} × ${money(p.cv)}`;
+  return largo ? `Crédito: <b>${money(p.cr)}</b>` : `Crédito ${money(p.cr)}`;
+}
+
+// ---- modelos: une códigos que solo difieren en el sufijo (RI7568 / RI7568D) para todo el catálogo
+let byModel = new Map();
+function buildModels(){
+  const keys = [...new Set(products.filter(p => p.mo && !/^\s*combo\b/i.test(p.n)).map(p => p.mo))].sort();
+  const canon = new Map(); let base = null;
+  for (const k of keys){
+    if (base && base.length >= 6 && k.startsWith(base) && k.length - base.length <= 4) canon.set(k, base);
+    else { base = k; canon.set(k, k); }
+  }
+  byModel = new Map();
+  for (const p of products){
+    p._g = p.mo && canon.has(p.mo) ? canon.get(p.mo) : null;
+    if (p._g){ const l = byModel.get(p._g) || []; l.push(p); byModel.set(p._g, l); }
+  }
+}
+
+// ---- rueda de más vendidos
+const wheel = { store: "", slides: [], i: 0, timer: null, paused: false, user: false };
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function storeOrder(id){ const i = stores.findIndex(s => s.id === id); return i < 0 ? 99 : i; }
+function wheelSlides(storeId){
+  const tops = products.filter(p => p.r && (!storeId || p.t === storeId))
+    .sort((a,b) => a.r - b.r || storeOrder(a.t) - storeOrder(b.t));
+  const seen = new Set(), out = [];
+  for (const p of tops){
+    const key = p._g || p.u;
+    if (seen.has(key)) continue;
+    const peers = p._g ? byModel.get(p._g) : [p];
+    const n = new Set(peers.map(x => x.t)).size;
+    if (!storeId && n < 2) continue;      // en "Todas" solo los que se pueden comparar
+    seen.add(key); out.push({lead: p, peers, n});
+    if (out.length >= (storeId ? 15 : 24)) break;
+  }
+  if (storeId) out.sort((a,b) => (b.n > 1) - (a.n > 1) || a.lead.r - b.lead.r);
+  return out;
+}
+function slideHtml({lead, peers}, idx){
+  const per = new Map();
+  for (const p of peers){ const c = per.get(p.t); if (!c || p.p < c.p) per.set(p.t, p); }
+  const list = stores.filter(s => per.has(s.id)).map(s => per.get(s.id));
+  const min = Math.min(...list.map(p => p.p));
+  const cr = list.filter(p => storeById[p.t]?.grupo === "cresa"), co = list.filter(p => storeById[p.t]?.grupo !== "cresa");
+  let gap = "";
+  if (cr.length && co.length){ const a = Math.min(...cr.map(p=>p.p)), b = Math.min(...co.map(p=>p.p)), d = a - b;
+    gap = `<div class="gap ${d>0?"up":d<0?"down":""}">CRESA ${d===0?"igual que":money(Math.abs(d))+(d>0?" más caro que":" más barato que")} la competencia (${d===0?"0":(d>0?"+":"−")+Math.abs(d/b*100).toFixed(1)}%) al contado</div>`; }
+  const pic = lead.i || list.find(p => p.i)?.i;
+  return `<article class="slide" role="group" aria-roledescription="diapositiva" aria-label="${idx+1} de ${wheel.slides.length}">
+    ${pic ? `<img src="${esc(pic)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<div class="thumb"></div>`}
+    <div style="min-width:0">
+      <span class="rank">#${lead.r} más vendido en ${esc(storeById[lead.t]?.nombre)}</span>
+      <h3>${esc(lead.n)}</h3>
+      ${lead._g ? `<div class="ref">Modelo ${esc(lead._g)}</div>` : ""}
+      <div class="prices">${list.map(p => `<a class="pp ${storeById[p.t]?.grupo==="cresa"?"cresa":""} ${list.length>1 && p.p===min?"best":""}" href="${esc(p.u)}" target="_blank" rel="noopener">
+        <span class="s">${esc(storeById[p.t]?.nombre)}${p.r ? ` · #${p.r}` : ""}</span><span class="v num">${money(p.p)}</span>
+        <span class="c">${p.cr ? credTxt(p, true) : "Contado"}</span></a>`).join("")}</div>
+      ${gap}
+      ${list.length < 2 ? `<div class="solo">Este modelo no aparece en otras tiendas escaneadas.</div>` : ""}
+      ${lead._g ? `<button class="linkish" type="button" data-buscar="${esc(lead._g)}">Buscar este modelo en todas las tiendas</button>` : ""}
+    </div></article>`;
+}
+function renderWheel(){
+  wheel.slides = wheelSlides(wheel.store);
+  const withRank = stores.filter(s => products.some(p => p.t === s.id && p.r));
+  $("wChips").innerHTML = [`<button class="chip" type="button" data-wstore="" aria-pressed="${!wheel.store}">Todas</button>`]
+    .concat(withRank.map(s => `<button class="chip" type="button" data-wstore="${s.id}" aria-pressed="${wheel.store===s.id}">${esc(s.nombre)}</button>`)).join("");
+  $("wheelNote").textContent = wheel.store
+    ? `Lo más vendido en ${storeById[wheel.store]?.nombre} y su precio en las demás tiendas`
+    : `Lo más vendido de cada tienda que también está en otra · ${wheel.slides.length} productos`;
+  $("track").innerHTML = wheel.slides.length ? wheel.slides.map(slideHtml).join("") : `<div class="empty" style="flex:1">Esta tienda no publica cuáles son sus más vendidos.</div>`;
+  $("dots").innerHTML = wheel.slides.map((_, i) => `<button class="dot" type="button" data-dot="${i}" aria-label="Ir al ${i+1}"></button>`).join("");
+  wheel.i = 0; $("track").scrollLeft = 0; markDot(); startWheel();
+}
+function markDot(){ document.querySelectorAll(".dot").forEach((d, i) => d.setAttribute("aria-current", String(i === wheel.i))); }
+function goWheel(i){
+  const n = wheel.slides.length; if (!n) return;
+  wheel.i = (i + n) % n;
+  const tr = $("track"); tr.scrollTo({left: wheel.i * (tr.clientWidth + 12), behavior: REDUCED ? "auto" : "smooth"});
+  markDot();
+}
+function startWheel(){
+  clearInterval(wheel.timer);
+  $("wPlay").textContent = wheel.user ? "▶" : "❚❚"; $("wPlay").setAttribute("aria-label", wheel.user ? "Reproducir" : "Pausar");
+  if (REDUCED || wheel.user || wheel.slides.length < 2) return;
+  wheel.timer = setInterval(() => { if (!wheel.paused && !document.hidden) goWheel(wheel.i + 1); }, 6000);
+}
+$("wPrev").onclick = () => goWheel(wheel.i - 1);
+$("wNext").onclick = () => goWheel(wheel.i + 1);
+$("wPlay").onclick = () => { wheel.user = !wheel.user; startWheel(); };
+$("wheel").addEventListener("mouseenter", () => wheel.paused = true);
+$("wheel").addEventListener("mouseleave", () => wheel.paused = false);
+$("wheel").addEventListener("focusin", () => wheel.paused = true);
+$("wheel").addEventListener("focusout", () => wheel.paused = false);
+$("wheel").addEventListener("touchstart", () => wheel.paused = true, {passive: true});
+let wsc; $("track").addEventListener("scroll", () => { clearTimeout(wsc); wsc = setTimeout(() => { const tr = $("track"); const i = Math.round(tr.scrollLeft / (tr.clientWidth + 12)); if (i !== wheel.i){ wheel.i = i; markDot(); } }, 120); });
+$("wheel").addEventListener("click", e => {
+  const c = e.target.closest("[data-wstore]"); if (c){ wheel.store = c.dataset.wstore; renderWheel(); return; }
+  const d = e.target.closest("[data-dot]"); if (d){ goWheel(Number(d.dataset.dot)); return; }
+  const b = e.target.closest("[data-buscar]"); if (b){ $("q").value = b.dataset.buscar; expanded.clear(); render(); $("verdict").scrollIntoView({behavior: REDUCED ? "auto" : "smooth"}); }
+});
 function cambio(p){
   if (p.pa == null || p.pa === p.p) return "";
   const d = p.p - p.pa, f = p.cf ? new Date(p.cf).toLocaleDateString("es-EC",{day:"2-digit",month:"short"}) : "";
@@ -292,6 +436,8 @@ async function load(){
   for (const p of products){ p._n = norm(p.n); p._k = " " + norm([p.n, p.m, p.mo, p.c].join(" ")); p._c = p._k.replace(/[\s\-.]/g,""); }
   const when = new Date(meta.actualizado);
   $("status").innerHTML = `<b>${products.length.toLocaleString("es-EC")}</b> productos en ${stores.filter(s=>!s.error).length} tiendas<br>Último escaneo: <b>${when.toLocaleString("es-EC",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</b>`;
+  buildModels();
+  renderWheel();
   const h = decodeURIComponent(location.hash.slice(1)); if (h) $("q").value = h;
   render();
 }
