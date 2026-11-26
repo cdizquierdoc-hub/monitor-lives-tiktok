@@ -101,7 +101,7 @@ def modelo_de(nombre, ref=None):
 
     def valido(t):
         c = limpio(t)
-        return (len(c) >= 5 or (len(c) == 4 and "-" in t)) and re.search(r"[A-Z]", c) and re.search(r"\d", c) and not UNIDADES.match(c) and not re.match(r"^(19|20)\d\d[A-Z]?$", c)
+        return (len(c) >= 5 or (len(c) == 4 and "-" in t)) and re.search(r"[A-Z]", c) and re.search(r"\d", c) and not UNIDADES.match(c) and not re.match(r"^(19|20)\d\d[A-Z]?$", c) and not re.match(r"^\d+(EN|IN|X)\d+$", c)
 
     if re.match(r"\s*combo\b", nombre or "", re.I):  # un combo no es el mismo producto que su componente
         return None
